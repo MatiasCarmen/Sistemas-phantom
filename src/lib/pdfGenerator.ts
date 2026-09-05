@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { Quote, Sale, CompanySettings } from '../types';
+import { formatAmount } from './formatters';
 
 export function generateQuotePDF(quote: Quote, settings: CompanySettings): void {
   const doc = new jsPDF({
@@ -104,9 +105,9 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
     const splitName = doc.splitTextToSize(item.name, 65);
     doc.text(splitName[0] || item.name, 45, y + 5);
     doc.text(`${item.quantity} ${item.unit || ''}`, 115, y + 5);
-    doc.text(`${quote.currency} ${item.unitPrice.toFixed(2)}`, 135, y + 5);
+    doc.text(`${quote.currency} ${formatAmount(item.unitPrice)}`, 135, y + 5);
     doc.text(`${item.discountPercent > 0 ? item.discountPercent + '%' : '-'}`, 155, y + 5);
-    doc.text(`${quote.currency} ${item.total.toFixed(2)}`, pageWidth - 20, y + 5, { align: 'right' });
+    doc.text(`${quote.currency} ${formatAmount(item.total)}`, pageWidth - 20, y + 5, { align: 'right' });
 
     y += 7;
   });
@@ -127,13 +128,13 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
   doc.setTextColor(71, 85, 105);
 
   doc.text('Subtotal:', totalsX + 4, y + 7);
-  doc.text(`${quote.currency} ${quote.subtotal.toFixed(2)}`, pageWidth - 18, y + 7, { align: 'right' });
+  doc.text(`${quote.currency} ${formatAmount(quote.subtotal)}`, pageWidth - 18, y + 7, { align: 'right' });
 
   doc.text('Descuentos:', totalsX + 4, y + 13);
-  doc.text(`-${quote.currency} ${quote.discountTotal.toFixed(2)}`, pageWidth - 18, y + 13, { align: 'right' });
+  doc.text(`-${quote.currency} ${formatAmount(quote.discountTotal)}`, pageWidth - 18, y + 13, { align: 'right' });
 
   doc.text(`Impuestos (${settings.defaultTaxRate}%):`, totalsX + 4, y + 19);
-  doc.text(`${quote.currency} ${quote.taxTotal.toFixed(2)}`, pageWidth - 18, y + 19, { align: 'right' });
+  doc.text(`${quote.currency} ${formatAmount(quote.taxTotal)}`, pageWidth - 18, y + 19, { align: 'right' });
 
   doc.setDrawColor(203, 213, 225);
   doc.line(totalsX + 4, y + 22, pageWidth - 18, y + 22);
@@ -142,7 +143,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
   doc.setFontSize(11);
   doc.setTextColor(30, 41, 59);
   doc.text('TOTAL:', totalsX + 4, y + 28);
-  doc.text(`${quote.currency} ${quote.total.toFixed(2)}`, pageWidth - 18, y + 28, { align: 'right' });
+  doc.text(`${quote.currency} ${formatAmount(quote.total)}`, pageWidth - 18, y + 28, { align: 'right' });
 
   // Notes & Terms
   doc.setFont('helvetica', 'bold');
@@ -288,8 +289,8 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
     const splitName = doc.splitTextToSize(item.name, 70);
     doc.text(splitName[0] || item.name, 45, y + 5);
     doc.text(`${item.quantity}`, 120, y + 5);
-    doc.text(`${sale.currency} ${item.unitPrice.toFixed(2)}`, 140, y + 5);
-    doc.text(`${sale.currency} ${item.total.toFixed(2)}`, pageWidth - 20, y + 5, { align: 'right' });
+    doc.text(`${sale.currency} ${formatAmount(item.unitPrice)}`, 140, y + 5);
+    doc.text(`${sale.currency} ${formatAmount(item.total)}`, pageWidth - 20, y + 5, { align: 'right' });
 
     y += 7;
   });
@@ -305,10 +306,10 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
   doc.setTextColor(71, 85, 105);
 
   doc.text('Subtotal:', totalsX + 4, y + 7);
-  doc.text(`${sale.currency} ${sale.subtotal.toFixed(2)}`, pageWidth - 18, y + 7, { align: 'right' });
+  doc.text(`${sale.currency} ${formatAmount(sale.subtotal)}`, pageWidth - 18, y + 7, { align: 'right' });
 
   doc.text(`Impuesto (${settings.defaultTaxRate}%):`, totalsX + 4, y + 13);
-  doc.text(`${sale.currency} ${sale.taxTotal.toFixed(2)}`, pageWidth - 18, y + 13, { align: 'right' });
+  doc.text(`${sale.currency} ${formatAmount(sale.taxTotal)}`, pageWidth - 18, y + 13, { align: 'right' });
 
   doc.setDrawColor(203, 213, 225);
   doc.line(totalsX + 4, y + 17, pageWidth - 18, y + 17);
@@ -317,7 +318,7 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
   doc.text('TOTAL A PAGAR:', totalsX + 4, y + 25);
-  doc.text(`${sale.currency} ${sale.total.toFixed(2)}`, pageWidth - 18, y + 25, { align: 'right' });
+  doc.text(`${sale.currency} ${formatAmount(sale.total)}`, pageWidth - 18, y + 25, { align: 'right' });
 
   if (sale.notes) {
     doc.setFont('helvetica', 'italic');

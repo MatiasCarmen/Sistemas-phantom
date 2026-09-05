@@ -5,7 +5,7 @@ import apiRoutes from './server/routes';
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT || 8081);
+  const PORT = Number(process.env.PORT || 3000);
 
   // JSON & URL-encoded body parser
   app.use(express.json({ limit: '10mb' }));

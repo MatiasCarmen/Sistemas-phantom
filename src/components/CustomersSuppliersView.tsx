@@ -193,9 +193,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-bold text-white tracking-tight">Directorio de Contactos Comerciales</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Administra la cartera de clientes, RUC/DNI, condiciones crediticias y catálogo de proveedores estratégicos.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

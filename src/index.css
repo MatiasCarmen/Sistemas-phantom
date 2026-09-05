@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
-  --app-bg: #f3f9ff;
-  --app-bg-soft: #edf6ff;
-  --panel-bg: rgba(255, 255, 255, 0.86);
-  --panel-edge: rgba(148, 163, 184, 0.18);
-  --nav-bg: #f8fbff;
-  --nav-soft: rgba(255, 255, 255, 0.96);
-  --brand: #39c7b5;
-  --brand-strong: #1a9ea5;
-  --brand-soft: rgba(57, 199, 181, 0.14);
-  --accent: #5eb7ff;
-  --accent-soft: rgba(94, 183, 255, 0.16);
-  --success: #2ecb9d;
-  --warning: #f3be5a;
-  --danger: #f4797a;
-  --text-primary: #123047;
-  --text-muted: #5d7285;
+  color-scheme: dark;
+  --app-bg: #070b17;
+  --app-bg-soft: #101827;
+  --panel-bg: rgba(15, 23, 42, 0.86);
+  --panel-edge: rgba(148, 163, 184, 0.2);
+  --nav-bg: #0f172a;
+  --nav-soft: rgba(15, 23, 42, 0.96);
+  --brand: #8b5cf6;
+  --brand-strong: #22d3ee;
+  --brand-soft: rgba(139, 92, 246, 0.2);
+  --accent: #22d3ee;
+  --accent-soft: rgba(34, 211, 238, 0.15);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --text-primary: #e2e8f0;
+  --text-muted: #94a3b8;
 }
 
 html, body, #root {
@@ -30,16 +30,16 @@ html, body, #root {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(57, 199, 181, 0.18), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(94, 183, 255, 0.12), transparent 26%),
-    linear-gradient(180deg, #f5fbff 0%, #eef7fb 28%, #f9fafc 100%);
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(180deg, #050816 0%, #0b1220 24%, #111827 100%);
   color: var(--text-primary);
 }
 
 .app-shell {
   background:
-    radial-gradient(circle at top left, rgba(57, 199, 181, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(255, 255, 255, 0.98));
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 14, 24, 0.98));
 }
 
 * {

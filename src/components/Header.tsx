@@ -9,7 +9,6 @@ import {
   Settings, 
   AlertTriangle, 
   Plus, 
-  Search,
   Menu,
   X,
   LogOut,
@@ -181,13 +180,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navGroups = getNavGroups();
 
-  const brandName = companyName || 'Nexus ERP';
-  const brandInitials = brandName
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'NX';
+  const brandName = 'PHANTOM';
+  const brandInitials = 'PH';
 
   const userInitials = currentUser?.name
     ? currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -211,17 +205,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-72 bg-[linear-gradient(180deg,#f7fbff_0%,#eef7ff_100%)] text-slate-700 flex-col border-r border-slate-200/80 shrink-0 h-full select-none z-30 justify-between shadow-[8px_0_30px_rgba(148,163,184,0.18)]">
+      <aside className="hidden lg:flex w-72 bg-[linear-gradient(180deg,#0b1220_0%,#111827_38%,#0f172a_100%)] text-slate-200 flex-col border-r border-violet-500/20 shrink-0 h-full select-none z-30 justify-between shadow-[8px_0_30px_rgba(76,29,149,0.24)]">
         
         {/* Top Part */}
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* Brand Header */}
-          <div className="p-4 flex items-center gap-3 border-b border-slate-200/80 bg-gradient-to-r from-white to-sky-50/80">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-400 via-cyan-500 to-sky-500 rounded-2xl flex items-center justify-center text-white font-black text-xs tracking-wider shadow-lg shadow-cyan-500/20">
-              {brandInitials}
+          <div className="p-4 flex items-center gap-3 border-b border-slate-700/80 bg-gradient-to-r from-slate-900 to-violet-950/70">
+            <div className="w-28 h-12 rounded-xl overflow-hidden border border-violet-400/20 bg-black flex items-center justify-center shadow-md shadow-violet-900/30">
+              <img src="/phantom-logo.svg" alt="PHANTOM logo" className="w-full h-full object-cover" />
             </div>
             <div className="min-w-0">
-              <span className="text-slate-800 font-bold tracking-tight uppercase text-xs truncate block">
+              <span className="text-white font-black tracking-tight uppercase text-[10px] truncate block">
                 {brandName}
               </span>
               <span className="text-[10px] text-cyan-700 font-medium block">
@@ -353,10 +347,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <div className="p-4 flex items-center justify-between border-b border-slate-700/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                    {brandInitials}
+                  <div className="w-20 h-9 rounded-lg overflow-hidden bg-black border border-slate-700 flex items-center justify-center">
+                    <img src="/phantom-logo.svg" alt="PHANTOM logo" className="w-full h-full object-cover" />
                   </div>
-                  <span className="text-white font-semibold uppercase text-xs truncate">
+                  <span className="text-white font-black uppercase text-[10px] truncate">
                     {brandName}
                   </span>
                 </div>
@@ -481,9 +475,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     : 'US';
 
   return (
-    <header className="h-16 bg-[linear-gradient(90deg,#4b5d70_0%,#566d82_35%,#647c92_100%)] backdrop-blur-md border-b border-slate-700/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-[0_12px_28px_rgba(71,85,105,0.18)] z-20">
+    <header className="h-16 bg-[linear-gradient(90deg,#0f172a_0%,#111827_35%,#1e1b4b_100%)] backdrop-blur-md border-b border-violet-500/20 px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 shadow-[0_12px_28px_rgba(76,29,149,0.2)] z-20">
       
-      {/* Left: Mobile Toggle & Global Search */}
+      {/* Left: Mobile Toggle */}
       <div className="flex items-center gap-3">
         <button 
           onClick={onOpenMobileMenu}
@@ -492,16 +486,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2.5 bg-white/92 px-3 py-1.5 rounded-xl w-48 sm:w-72 lg:w-80 border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-          <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <input 
-            type="text" 
-            placeholder="Buscar productos, clientes, cotizaciones..."
-            value={globalSearch}
-            onChange={(e) => onGlobalSearchChange && onGlobalSearchChange(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs w-full placeholder-slate-400 text-slate-800"
-          />
-        </div>
       </div>
 
       {/* Right: Quick Action CTAs, Stock Alert & User Session */}

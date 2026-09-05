@@ -25,7 +25,7 @@ npm run dev
 La aplicacion se ejecuta por defecto en:
 
 ```text
-http://localhost:8081
+http://localhost:3000
 ```
 
 ## Estado del proyecto

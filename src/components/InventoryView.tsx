@@ -24,6 +24,24 @@ import {
 } from 'lucide-react';
 import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings } from '../types';
 
+const createFormCode = (prefix: string, usedCodes: Set<string>): string => {
+  let code = '';
+  do {
+    const randomPart = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    code = `${prefix}${randomPart}`;
+  } while (usedCodes.has(code));
+  return code;
+};
+
+const createFormBarcode = (usedCodes: Set<string>): string => {
+  let code = '';
+  do {
+    code = `775${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+  } while (usedCodes.has(code));
+  return code;
+};
+import { formatAmount } from '../lib/formatters';
+
 interface InventoryViewProps {
   products: Product[];
   categories: Category[];
@@ -102,9 +120,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Open Add Product
   const handleOpenAdd = () => {
     setEditingProduct(null);
+    const usedSkus = new Set(products.map(product => product.sku));
+    const usedBarcodes = new Set(products.map(product => product.barcode).filter(Boolean) as string[]);
     setFormData({
-      sku: `SKU-${Date.now().toString().slice(-6)}`,
-      barcode: `775${Date.now().toString().slice(-10)}`,
+      sku: createFormCode('', usedSkus),
+      barcode: createFormBarcode(usedBarcodes),
       name: '',
       description: '',
       category: categories[0]?.name || 'General',
@@ -269,9 +289,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {filteredProducts.length} productos
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Administra existencias, costos, precios de venta, umbrales mínimos y trazabilidad de almacén.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -462,12 +479,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
                       {/* Cost Price */}
                       <td className="py-3.5 px-4 font-mono font-medium text-slate-700 whitespace-nowrap">
-                        {currency} {prod.costPrice.toFixed(2)}
+                        {currency} {formatAmount(prod.costPrice)}
                       </td>
 
                       {/* Selling Price */}
                       <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
-                        {currency} {prod.sellingPrice.toFixed(2)}
+                        {currency} {formatAmount(prod.sellingPrice)}
                       </td>
 
                       {/* Margin */}
@@ -587,11 +604,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                   <div>
                     <span className="text-[10px] text-slate-400 block">Precio Venta</span>
-                    <span className="text-sm font-bold text-slate-900 font-mono">{currency} {prod.sellingPrice.toFixed(2)}</span>
+                    <span className="text-sm font-bold text-slate-900 font-mono">{currency} {formatAmount(prod.sellingPrice)}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block">Costo</span>
-                    <span className="text-xs font-medium text-slate-600 font-mono">{currency} {prod.costPrice.toFixed(2)}</span>
+                    <span className="text-xs font-medium text-slate-600 font-mono">{currency} {formatAmount(prod.costPrice)}</span>
                   </div>
                 </div>
               </div>
@@ -761,7 +778,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">Margen Calculado</label>
                     <div className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-emerald-700 font-mono">
-                      +{marginPercent}% (${(formData.sellingPrice - formData.costPrice).toFixed(2)})
+                      +{marginPercent}% (${formatAmount(formData.sellingPrice - formData.costPrice)})
                     </div>
                   </div>
                 </div>

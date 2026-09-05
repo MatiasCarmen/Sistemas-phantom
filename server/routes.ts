@@ -70,16 +70,16 @@ router.get('/products/:id', (req: Request, res: Response) => {
 router.post('/products', (req: Request, res: Response) => {
   try {
     const { name, sku, category, costPrice, sellingPrice, stock, minStock, unit } = req.body;
-    if (!name || !sku || !category || costPrice === undefined || sellingPrice === undefined || stock === undefined) {
+    if (!name || !category || costPrice === undefined || sellingPrice === undefined || stock === undefined) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Faltan campos obligatorios (nombre, SKU, categoría, precio costo, precio venta, stock)' 
+        error: 'Faltan campos obligatorios (nombre, categoría, precio costo, precio venta, stock)' 
       });
     }
 
     const newProduct = db.addProduct({
       name,
-      sku,
+      sku: sku || '',
       barcode: req.body.barcode || '',
       description: req.body.description || '',
       category,
@@ -381,6 +381,17 @@ router.post('/quotes', (req: Request, res: Response) => {
 
 router.put('/quotes/:id', (req: Request, res: Response) => {
   try {
+    if (req.body.status !== undefined) {
+      const authHeader = req.headers.authorization;
+      const tokenParts = authHeader?.startsWith('Bearer token_')
+        ? authHeader.replace('Bearer token_', '').split('_')
+        : [];
+      const authenticatedUser = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+      if (authenticatedUser?.role !== 'admin') {
+        return res.status(403).json({ success: false, error: 'Solo los administradores pueden cambiar el estado de una cotización' });
+      }
+    }
+
     const updated = db.updateQuote(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, error: 'Cotización no encontrada' });
     res.json({ success: true, data: updated });

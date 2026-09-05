@@ -16,20 +16,21 @@ import {
   Copy, 
   Check, 
   Calendar, 
-  User, 
   DollarSign, 
   AlertCircle,
   PackageCheck,
   X
 } from 'lucide-react';
-import { Quote, QuoteItem, Customer, Product, CompanySettings, QuoteStatus } from '../types';
+import { Quote, QuoteItem, Customer, Product, CompanySettings, QuoteStatus, User } from '../types';
 import { generateQuotePDF } from '../lib/pdfGenerator';
+import { formatAmount } from '../lib/formatters';
 
 interface QuotesViewProps {
   quotes: Quote[];
   customers: Customer[];
   products: Product[];
   settings: CompanySettings | null;
+  currentUser: User | null;
   onCreateQuote: (quote: Partial<Quote>) => Promise<void>;
   onUpdateQuote: (id: string, quote: Partial<Quote>) => Promise<void>;
   onDeleteQuote: (id: string) => Promise<void>;
@@ -44,6 +45,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
   customers,
   products,
   settings,
+  currentUser,
   onCreateQuote,
   onUpdateQuote,
   onDeleteQuote,
@@ -54,11 +56,13 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
 }) => {
   const currency = settings?.currencySymbol || 'S/.';
   const taxRateDefault = settings?.defaultTaxRate || 18;
+  const canChangeQuoteStatus = currentUser?.role === 'admin';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [quoteToConvert, setQuoteToConvert] = useState<Quote | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // New Quote Form State
@@ -134,23 +138,23 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
     const qty = Math.max(1, quantityToAdd);
     const disc = Math.max(0, Math.min(100, discountToAdd));
     const unitPrice = prod.sellingPrice;
-    const discountedPrice = unitPrice * (1 - disc / 100);
-    const subtotal = discountedPrice * qty;
-    const taxAmount = subtotal * (taxRateDefault / 100);
-    const total = subtotal + taxAmount;
+    const total = unitPrice * (1 - disc / 100) * qty;
+    const subtotal = total / (1 + taxRateDefault / 100);
+    const taxAmount = total - subtotal;
 
     if (existingIndex > -1) {
       const updated = [...quoteItems];
       const newQty = updated[existingIndex].quantity + qty;
-      const newSubtotal = unitPrice * (1 - disc / 100) * newQty;
-      const newTax = newSubtotal * (taxRateDefault / 100);
+      const newTotal = unitPrice * (1 - disc / 100) * newQty;
+      const newSubtotal = newTotal / (1 + taxRateDefault / 100);
+      const newTax = newTotal - newSubtotal;
       updated[existingIndex] = {
         ...updated[existingIndex],
         quantity: newQty,
         discountPercent: disc,
         subtotal: newSubtotal,
         taxAmount: newTax,
-        total: newSubtotal + newTax
+        total: newTotal
       };
       setQuoteItems(updated);
     } else {
@@ -189,8 +193,9 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
     const item = updated[index];
     const validQty = Math.max(1, qty);
     const validDisc = Math.max(0, Math.min(100, disc));
-    const subtotal = item.unitPrice * (1 - validDisc / 100) * validQty;
-    const taxAmount = subtotal * (item.taxRate / 100);
+    const total = item.unitPrice * (1 - validDisc / 100) * validQty;
+    const subtotal = total / (1 + item.taxRate / 100);
+    const taxAmount = total - subtotal;
     
     updated[index] = {
       ...item,
@@ -198,7 +203,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
       discountPercent: validDisc,
       subtotal,
       taxAmount,
-      total: subtotal + taxAmount
+      total
     };
     setQuoteItems(updated);
   };
@@ -243,19 +248,25 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
   };
 
   // Convert to Sale Action
-  const handleConvertAction = async (quote: Quote) => {
-    if (confirm(`¿Deseas convertir la cotización ${quote.quoteNumber} en Venta directa?\n\nEsta acción registrará la factura/comprobante de venta y descontará el stock de almacén automáticamente en el Kardex.`)) {
-      await onConvertToSale(quote.id, {
-        voucherType: 'FACTURA',
-        paymentMethod: 'TRANSFER',
-        sellerName: quote.createdBy
-      });
-      setIsDetailModalOpen(false);
-    }
+  const handleConvertAction = (quote: Quote) => {
+    setQuoteToConvert(quote);
+  };
+
+  const confirmQuoteConversion = async () => {
+    if (!quoteToConvert) return;
+
+    await onConvertToSale(quoteToConvert.id, {
+      voucherType: 'FACTURA',
+      paymentMethod: 'TRANSFER',
+      sellerName: quoteToConvert.createdBy
+    });
+    setQuoteToConvert(null);
+    setIsDetailModalOpen(false);
   };
 
   // Status changer
   const handleStatusChange = async (quote: Quote, newStatus: QuoteStatus) => {
+    if (!canChangeQuoteStatus) return;
     await onUpdateQuote(quote.id, { status: newStatus });
     if (selectedQuote && selectedQuote.id === quote.id) {
       setSelectedQuote({ ...selectedQuote, status: newStatus });
@@ -268,9 +279,9 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
       `Folio: ${quote.quoteNumber}\n` +
       `Cliente: ${quote.customerName}\n` +
       `Fecha: ${quote.date} (Válido hasta: ${quote.expiryDate})\n` +
-      `Total: ${quote.currency} ${quote.total.toFixed(2)}\n\n` +
+      `Total: ${quote.currency} ${formatAmount(quote.total)}\n\n` +
       `Ítems cotizados:\n` +
-      quote.items.map(i => `• ${i.quantity}x ${i.name} - ${quote.currency}${i.total.toFixed(2)}`).join('\n') +
+      quote.items.map(i => `• ${i.quantity}x ${i.name} - ${quote.currency}${formatAmount(i.total)}`).join('\n') +
       `\n\nCondiciones: ${quote.paymentTerms}\n` +
       `Contacto: ${settings?.phone} | ${settings?.email}`;
 
@@ -280,7 +291,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
 
   // Copy text details
   const handleCopyQuoteText = (quote: Quote) => {
-    const text = `COTIZACIÓN ${quote.quoteNumber}\nCliente: ${quote.customerName}\nTotal: ${quote.currency} ${quote.total.toFixed(2)}\nFecha: ${quote.date}\nValidez: ${quote.expiryDate}`;
+    const text = `COTIZACIÓN ${quote.quoteNumber}\nCliente: ${quote.customerName}\nTotal: ${quote.currency} ${formatAmount(quote.total)}\nFecha: ${quote.date}\nValidez: ${quote.expiryDate}`;
     navigator.clipboard.writeText(text);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -328,9 +339,6 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
               {filteredQuotes.length} cotizaciones
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Elabora propuestas profesionales con membrete, desglose de impuestos, generación de PDF y conversión inmediata a venta.
-          </p>
         </div>
 
         <button
@@ -441,7 +449,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                     {/* Total */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="font-mono font-bold text-slate-900 text-sm">
-                        {quote.currency} {quote.total.toFixed(2)}
+                        {quote.currency} {formatAmount(quote.total)}
                       </span>
                     </td>
 
@@ -656,7 +664,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                     >
                       {products.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} · ({currency}{p.sellingPrice.toFixed(2)}) · [Stock: {p.stock} {p.unit}]
+                            {p.name} · ({currency}{formatAmount(p.sellingPrice)}) · [Stock: {p.stock} {p.unit}]
                         </option>
                       ))}
                     </select>
@@ -742,7 +750,7 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                           </td>
 
                           <td className="py-2.5 px-3 text-right font-mono">
-                            {currency} {item.unitPrice.toFixed(2)}
+                            {currency} {formatAmount(item.unitPrice)}
                           </td>
 
                           <td className="py-2.5 px-3 text-center">
@@ -757,11 +765,11 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                           </td>
 
                           <td className="py-2.5 px-3 text-right font-mono text-slate-700">
-                            {currency} {item.subtotal.toFixed(2)}
+                            {currency} {formatAmount(item.subtotal)}
                           </td>
 
                           <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                            {currency} {item.total.toFixed(2)}
+                            {currency} {formatAmount(item.total)}
                           </td>
 
                           <td className="py-2.5 px-3 text-center">
@@ -813,23 +821,23 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal Bruto:</span>
-                    <span className="font-mono">{currency} {rawSubtotal.toFixed(2)}</span>
+                    <span className="font-mono">{currency} {formatAmount(rawSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-emerald-700 font-medium">
                     <span>Descuento Comercial:</span>
-                    <span className="font-mono">-{currency} {totalDiscount.toFixed(2)}</span>
+                    <span className="font-mono">-{currency} {formatAmount(totalDiscount)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Base Imponible:</span>
-                    <span className="font-mono">{currency} {calculatedSubtotal.toFixed(2)}</span>
+                    <span className="font-mono">{currency} {formatAmount(calculatedSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Impuestos (IVA/IGV {taxRateDefault}%):</span>
-                    <span className="font-mono">{currency} {calculatedTax.toFixed(2)}</span>
+                    <span className="font-mono">{currency} {formatAmount(calculatedTax)}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-300 flex justify-between text-sm font-bold text-slate-900">
                     <span>TOTAL COTIZACIÓN:</span>
-                    <span className="font-mono text-base text-blue-700">{currency} {calculatedGrandTotal.toFixed(2)}</span>
+                    <span className="font-mono text-base text-blue-700">{currency} {formatAmount(calculatedGrandTotal)}</span>
                   </div>
                 </div>
 
@@ -894,18 +902,20 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <select
-                    id="select-quote-change-status"
-                    value={selectedQuote.status}
-                    onChange={e => handleStatusChange(selectedQuote, e.target.value as QuoteStatus)}
-                    className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
-                  >
-                    <option value="DRAFT">Marcar Borrador</option>
-                    <option value="SENT">Marcar Enviada</option>
-                    <option value="APPROVED">Marcar Aprobada</option>
-                    <option value="REJECTED">Marcar Rechazada</option>
-                    <option value="EXPIRED">Marcar Vencida</option>
-                  </select>
+                  {canChangeQuoteStatus && (
+                    <select
+                      id="select-quote-change-status"
+                      value={selectedQuote.status}
+                      onChange={e => handleStatusChange(selectedQuote, e.target.value as QuoteStatus)}
+                      className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
+                    >
+                      <option value="DRAFT">Marcar Borrador</option>
+                      <option value="SENT">Marcar Enviada</option>
+                      <option value="APPROVED">Marcar Aprobada</option>
+                      <option value="REJECTED">Marcar Rechazada</option>
+                      <option value="EXPIRED">Marcar Vencida</option>
+                    </select>
+                  )}
 
                   {selectedQuote.status !== 'CONVERTED' && (
                     <button
@@ -937,8 +947,8 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                         <td className="py-2 px-3 font-mono text-[11px]">{i.sku}</td>
                         <td className="py-2 px-3 font-medium text-slate-900">{i.name}</td>
                         <td className="py-2 px-3 text-center font-mono">{i.quantity} {i.unit}</td>
-                        <td className="py-2 px-3 text-right font-mono">{selectedQuote.currency} {i.unitPrice.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">{selectedQuote.currency} {i.total.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-mono">{selectedQuote.currency} {formatAmount(i.unitPrice)}</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">{selectedQuote.currency} {formatAmount(i.total)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -950,15 +960,15 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                 <div className="w-64 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span className="font-mono">{selectedQuote.currency} {selectedQuote.subtotal.toFixed(2)}</span>
+                    <span className="font-mono">{selectedQuote.currency} {formatAmount(selectedQuote.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Impuestos:</span>
-                    <span className="font-mono">{selectedQuote.currency} {selectedQuote.taxTotal.toFixed(2)}</span>
+                    <span className="font-mono">{selectedQuote.currency} {formatAmount(selectedQuote.taxTotal)}</span>
                   </div>
                   <div className="pt-1.5 border-t border-slate-200 flex justify-between font-bold text-sm text-slate-900">
                     <span>Total General:</span>
-                    <span className="font-mono text-blue-700">{selectedQuote.currency} {selectedQuote.total.toFixed(2)}</span>
+                    <span className="font-mono text-blue-700">{selectedQuote.currency} {formatAmount(selectedQuote.total)}</span>
                   </div>
                 </div>
               </div>
@@ -998,6 +1008,56 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {quoteToConvert && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-slate-950/50">
+            <div className="flex items-center gap-3 border-b border-slate-700 bg-slate-950 px-5 py-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                <PackageCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Convertir cotización en venta</h3>
+                <p className="text-[11px] text-slate-400">Confirmación de operación</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuoteToConvert(null)}
+                className="ml-auto rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+                aria-label="Cerrar confirmación"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 px-5 py-5 text-sm text-slate-200">
+              <p>
+                ¿Deseas convertir la cotización <strong className="text-white">{quoteToConvert.quoteNumber}</strong> en una venta directa?
+              </p>
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
+                Se registrará la factura y se descontará automáticamente el stock del almacén en el Kardex.
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-700 bg-slate-950 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setQuoteToConvert(null)}
+                className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmQuoteConversion}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-950/30 transition-colors hover:bg-emerald-500"
+              >
+                Aceptar y convertir
+              </button>
+            </div>
           </div>
         </div>
       )}

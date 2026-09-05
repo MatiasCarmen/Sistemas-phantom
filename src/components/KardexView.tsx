@@ -130,9 +130,6 @@ export const KardexView: React.FC<KardexViewProps> = ({
               {filteredMovements.length} movimientos
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Registro inmutable de todas las entradas, salidas, ventas y ajustes de almacén con saldos anteriores y nuevos.
-          </p>
         </div>
 
         <button

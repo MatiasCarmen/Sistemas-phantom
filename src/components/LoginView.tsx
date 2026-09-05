@@ -19,7 +19,7 @@ interface LoginViewProps {
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
-  companyName = 'NEXUS TECH & INDUSTRIAL S.A.C.'
+  companyName = 'PHANTOM Gaming'
 }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -58,26 +58,26 @@ export const LoginView: React.FC<LoginViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top_left,_rgba(57,199,181,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(94,183,255,0.16),transparent_22%),linear-gradient(180deg,#f5fbff_0%,#edf7ff_100%)] text-slate-800 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top_left,_rgba(139,92,246,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.14),transparent_22%),linear-gradient(180deg,#050816_0%,#0b1220_35%,#111827_100%)] text-slate-100 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden">
       
       {/* Background glow effects */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-200/50 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-sky-200/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-violet-500/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
         
         {/* Left / Top Side: Login Form Card */}
-        <div className="lg:col-span-6 bg-white/90 border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-[0_18px_45px_rgba(148,163,184,0.18)] flex flex-col justify-between backdrop-blur-sm">
+        <div className="lg:col-span-6 bg-slate-900/80 border border-violet-500/30 rounded-2xl p-6 sm:p-8 shadow-[0_18px_45px_rgba(76,29,149,0.28)] flex flex-col justify-between backdrop-blur-sm">
           
           <div>
             {/* Header Brand */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white shadow-md shadow-teal-700/30">
-                <Building2 className="w-5 h-5" />
+              <div className="w-44 h-16 rounded-xl overflow-hidden bg-black border border-slate-200 shadow-md shadow-slate-200/50">
+                <img src="/phantom-logo.svg" alt="PHANTOM logo" className="w-full h-full object-cover" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-slate-800 tracking-wide uppercase">
-                  NEXUS ERP & INVENTARIO
+                <h1 className="text-base font-black text-slate-800 tracking-wide uppercase">
+                  PHANTOM
                 </h1>
                 <p className="text-[11px] text-slate-500 font-medium">
                   {companyName}
@@ -173,7 +173,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
           <div className="pt-6 mt-6 border-t border-slate-700/60 text-center">
             <p className="text-[11px] text-slate-500">
-              Nexus ERP v2.4 • Base de Datos Local y Servidor Express
+              PHANTOM Gaming v2.4 • Base de Datos Local y Servidor Express
             </p>
           </div>
 

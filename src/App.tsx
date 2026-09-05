@@ -27,6 +27,8 @@ import { LoginView } from './components/LoginView';
 import { UsersManagementModal } from './components/UsersManagementModal';
 import { DatabaseExplorerModal } from './components/DatabaseExplorerModal';
 
+type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
+
 export default function App() {
   // Authentication & Session State
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -41,9 +43,24 @@ export default function App() {
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    try {
+      const savedTab = sessionStorage.getItem('phantom_active_tab');
+      return savedTab as ActiveTab || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('phantom_active_tab', activeTab);
+    } catch {
+      // Session storage may be unavailable in restricted browser contexts.
+    }
+  }, [activeTab]);
 
   // Application Domain State
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -498,7 +515,7 @@ export default function App() {
               products={products}
               currentUser={currentUser}
               onNavigate={(tab) => {
-                setActiveTab(tab as any);
+                setActiveTab(tab as ActiveTab);
               }}
               onOpenNewQuote={() => {
                 setActiveTab('quotes');
@@ -550,6 +567,7 @@ export default function App() {
               customers={customers}
               products={products}
               settings={settings}
+              currentUser={currentUser}
               onCreateQuote={handleCreateQuote}
               onUpdateQuote={handleUpdateQuote}
               onDeleteQuote={handleDeleteQuote}

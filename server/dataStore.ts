@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { randomBytes } from 'crypto';
 import { 
   Product, 
   Category, 
@@ -104,29 +105,25 @@ class DataStore {
   }
 
   private normalizeQuoteNumbering(): void {
-    const currentYear = new Date().getFullYear();
-    const quotePrefix = `COT-${currentYear}-`;
+    const chronologicalQuotes = [...this.data.quotes].sort((firstQuote, secondQuote) => {
+      return new Date(firstQuote.createdAt).getTime() - new Date(secondQuote.createdAt).getTime();
+    });
+    const quoteNumbersById = new Map<string, string>();
 
-    this.data.quotes = this.data.quotes.filter((quote) => {
-      if (!quote.quoteNumber || typeof quote.quoteNumber !== 'string') {
-        return false;
-      }
-
-      const isCurrentYearQuote = quote.quoteNumber.startsWith(quotePrefix);
-      const isLegacyQuote = quote.quoteNumber.startsWith('COT-2025-');
-      return isCurrentYearQuote || !isLegacyQuote;
+    chronologicalQuotes.forEach((quote, index) => {
+      const quoteNumber = `COT-${String(index + 1).padStart(8, '0')}`;
+      quote.quoteNumber = quoteNumber;
+      quoteNumbersById.set(quote.id, quoteNumber);
     });
 
-    const currentYearNumbers = this.data.quotes
-      .map((quote) => quote.quoteNumber)
-      .filter((code) => code.startsWith(quotePrefix))
-      .map((code) => Number((code.match(/(\d+)$/)?.[1] ?? '0')))
-      .filter((value) => Number.isFinite(value));
+    for (const sale of this.data.sales) {
+      if (sale.quoteIdReference && quoteNumbersById.has(sale.quoteIdReference)) {
+        sale.quoteNumberReference = quoteNumbersById.get(sale.quoteIdReference);
+      }
+    }
 
-    const highestCurrentYearNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
-
-    this.data.settings.quotePrefix = quotePrefix;
-    this.data.settings.nextQuoteNumber = highestCurrentYearNumber + 1;
+    this.data.settings.quotePrefix = 'COT-';
+    this.data.settings.nextQuoteNumber = chronologicalQuotes.length + 1;
   }
 
   private shouldUseMySQL(): boolean {
@@ -227,6 +224,9 @@ class DataStore {
           ...this.getDefaultSchema(),
           mysqlConfig: { ...defaultMySQLConfig }
         };
+        this.normalizeProductCodes();
+        this.normalizeHistoricalTransactions();
+        this.normalizeSaleNumbering();
         this.normalizeQuoteNumbering();
         this.saveToFile();
         this.isLoaded = true;
@@ -237,8 +237,153 @@ class DataStore {
       this.isLoaded = true;
     }
 
+    this.normalizeProductCodes();
+    this.normalizeHistoricalTransactions();
+    this.normalizeSaleNumbering();
     this.normalizeQuoteNumbering();
+    this.saveToFile();
     void this.hydrateFromMySQLIfEnabled();
+  }
+
+  private normalizeHistoricalTransactions(): void {
+    const productsById = new Map(this.data.products.map((product) => [product.id, product]));
+    const productsBySku = new Map(this.data.products.map((product) => [product.sku, product]));
+
+    const recalculateItems = (items: Array<any>) => {
+      let subtotal = 0;
+      let discountTotal = 0;
+      let taxTotal = 0;
+
+      for (const item of items) {
+        const product = productsById.get(item.productId) || productsBySku.get(item.sku);
+        if (!product) {
+          continue;
+        }
+
+        item.productId = product.id;
+        item.sku = product.sku;
+        item.name = product.name;
+        item.unit = product.unit;
+        item.unitPrice = product.sellingPrice;
+        item.costPrice = product.costPrice;
+        item.taxRate = product.taxRate;
+
+        const quantity = Number(item.quantity) || 0;
+        const discountPercent = Number(item.discountPercent) || 0;
+        const grossLine = item.unitPrice * quantity;
+        const lineTotal = grossLine * (1 - discountPercent / 100);
+        const lineSubtotal = lineTotal / (1 + item.taxRate / 100);
+        const lineTax = lineTotal - lineSubtotal;
+
+        item.subtotal = Number(lineSubtotal.toFixed(2));
+        item.taxAmount = Number(lineTax.toFixed(2));
+        item.total = Number(lineTotal.toFixed(2));
+        subtotal += lineSubtotal;
+        discountTotal += grossLine - lineSubtotal;
+        taxTotal += lineTax;
+      }
+
+      return {
+        subtotal: Number(subtotal.toFixed(2)),
+        discountTotal: Number(discountTotal.toFixed(2)),
+        taxTotal: Number(taxTotal.toFixed(2)),
+        total: Number((subtotal + taxTotal).toFixed(2))
+      };
+    };
+
+    for (const quote of this.data.quotes) {
+      const totals = recalculateItems(quote.items);
+      quote.subtotal = totals.subtotal;
+      quote.discountTotal = totals.discountTotal;
+      quote.taxTotal = totals.taxTotal;
+      quote.total = totals.total;
+    }
+
+    for (const sale of this.data.sales) {
+      const totals = recalculateItems(sale.items);
+      sale.subtotal = totals.subtotal;
+      sale.discountTotal = totals.discountTotal;
+      sale.taxTotal = totals.taxTotal;
+      sale.total = totals.total;
+      sale.paidAmount = sale.paymentStatus === 'PAID'
+        ? totals.total
+        : Math.min(Number(sale.paidAmount) || 0, totals.total);
+      sale.dueAmount = Number(Math.max(totals.total - sale.paidAmount, 0).toFixed(2));
+    }
+
+    for (const movement of this.data.inventoryMovements) {
+      const product = productsById.get(movement.productId);
+      if (product) {
+        movement.productSku = product.sku;
+        movement.productName = product.name;
+        movement.unitCost = product.costPrice;
+      }
+    }
+  }
+
+  private createUniqueSku(usedCodes: Set<string>): string {
+    let code = '';
+    do {
+      code = randomBytes(4).readUInt32BE(0).toString().slice(-6).padStart(6, '0');
+    } while (usedCodes.has(code));
+    usedCodes.add(code);
+    return code;
+  }
+
+  private createUniqueBarcode(usedCodes: Set<string>): string {
+    let code = '';
+    do {
+      code = `775${randomBytes(4).readUInt32BE(0).toString().slice(-6).padStart(6, '0')}`;
+    } while (usedCodes.has(code));
+    usedCodes.add(code);
+    return code;
+  }
+
+  private normalizeProductCodes(): void {
+    const usedSkus = new Set<string>();
+    const usedBarcodes = new Set<string>();
+
+    for (const product of this.data.products) {
+      const hasUniqueSku = Boolean(product.sku) && !usedSkus.has(product.sku) && /^\d{6}$/.test(product.sku);
+      const hasUniqueBarcode = Boolean(product.barcode) && !usedBarcodes.has(product.barcode) && /^775\d{6}$/.test(product.barcode);
+      product.sku = hasUniqueSku ? product.sku : this.createUniqueSku(usedSkus);
+      product.barcode = hasUniqueBarcode ? product.barcode : this.createUniqueBarcode(usedBarcodes);
+      usedSkus.add(product.sku);
+      usedBarcodes.add(product.barcode);
+    }
+  }
+
+  private normalizeSaleNumbering(): void {
+    const chronologicalSales = [...this.data.sales].sort((firstSale, secondSale) => {
+      return new Date(firstSale.createdAt).getTime() - new Date(secondSale.createdAt).getTime();
+    });
+    const saleNumbersById = new Map<string, string>();
+    const saleNumbersByPreviousNumber = new Map<string, string>();
+
+    chronologicalSales.forEach((sale, index) => {
+      const saleNumber = `FAC-${String(index + 1).padStart(8, '0')}`;
+      saleNumbersById.set(sale.id, saleNumber);
+      saleNumbersByPreviousNumber.set(sale.saleNumber, saleNumber);
+      sale.saleNumber = saleNumber;
+    });
+
+    for (const quote of this.data.quotes) {
+      if (quote.convertedToSaleId && saleNumbersById.has(quote.convertedToSaleId)) {
+        quote.convertedToSaleNumber = saleNumbersById.get(quote.convertedToSaleId);
+      }
+    }
+
+    for (const movement of this.data.inventoryMovements) {
+      if (movement.referenceId) {
+        const normalizedReference = saleNumbersByPreviousNumber.get(movement.referenceId);
+        if (normalizedReference) {
+          movement.referenceId = normalizedReference;
+        }
+      }
+    }
+
+    this.data.settings.invoicePrefix = 'FAC-';
+    this.data.settings.nextInvoiceNumber = chronologicalSales.length + 1;
   }
 
   private saveToFile() {
@@ -284,6 +429,14 @@ class DataStore {
   addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { id?: string }): Product {
     const id = productData.id || `prod-${Date.now()}`;
     const now = new Date().toISOString();
+    const usedSkus = new Set(this.data.products.map(product => product.sku));
+    const usedBarcodes = new Set(this.data.products.map(product => product.barcode).filter(Boolean) as string[]);
+    const sku = productData.sku && !usedSkus.has(productData.sku)
+      ? productData.sku
+      : this.createUniqueSku(usedSkus);
+    const barcode = productData.barcode && !usedBarcodes.has(productData.barcode)
+      ? productData.barcode
+      : this.createUniqueBarcode(usedBarcodes);
     
     // Auto status
     let status: Product['status'] = 'in_stock';
@@ -295,6 +448,8 @@ class DataStore {
 
     const newProduct: Product = {
       ...productData,
+      sku,
+      barcode,
       id,
       status,
       createdAt: now,
@@ -328,6 +483,14 @@ class DataStore {
     if (index === -1) return null;
 
     const existing = this.data.products[index];
+    const usedSkus = new Set(this.data.products.filter(product => product.id !== id).map(product => product.sku));
+    const usedBarcodes = new Set(this.data.products.filter(product => product.id !== id).map(product => product.barcode).filter(Boolean) as string[]);
+    const sku = updates.sku === undefined
+      ? existing.sku
+      : (updates.sku && !usedSkus.has(updates.sku) ? updates.sku : this.createUniqueSku(usedSkus));
+    const barcode = updates.barcode === undefined
+      ? existing.barcode
+      : (updates.barcode && !usedBarcodes.has(updates.barcode) ? updates.barcode : this.createUniqueBarcode(usedBarcodes));
     const newStock = updates.stock !== undefined ? updates.stock : existing.stock;
     const minStock = updates.minStock !== undefined ? updates.minStock : existing.minStock;
 
@@ -341,6 +504,8 @@ class DataStore {
     const updated: Product = {
       ...existing,
       ...updates,
+      sku,
+      barcode,
       id, // protect ID
       status,
       updatedAt: new Date().toISOString()
@@ -553,21 +718,12 @@ class DataStore {
 
   addQuote(quoteData: Omit<Quote, 'id' | 'quoteNumber' | 'createdAt' | 'updatedAt'> & { id?: string; quoteNumber?: string }): Quote {
     const settings = this.data.settings;
-    const currentYear = new Date().getFullYear();
-    const quotePrefix = `COT-${currentYear}-`;
-    settings.quotePrefix = quotePrefix;
-
-    const sameYearNumbers = this.data.quotes
-      .map((quote) => quote.quoteNumber)
-      .filter((number) => number.startsWith(`COT-${currentYear}-`))
-      .map((number) => Number((number.match(/(\d+)$/)?.[1] ?? '0')))
-      .filter((value) => Number.isFinite(value));
-
-    const maxExistingSequence = sameYearNumbers.length > 0 ? Math.max(...sameYearNumbers) : 0;
-    const nextSequence = maxExistingSequence + 1;
-    const formattedSequence = String(nextSequence).padStart(4, '0');
-
-    const quoteNumber = quoteData.quoteNumber || `${quotePrefix}${formattedSequence}`;
+    const existingSequences = this.data.quotes
+      .map(quote => Number((quote.quoteNumber.match(/^COT-(\d{8})$/)?.[1] || '0')))
+      .filter(sequence => Number.isFinite(sequence));
+    const nextSequence = existingSequences.length > 0 ? Math.max(...existingSequences) + 1 : 1;
+    const quoteNumber = `COT-${String(nextSequence).padStart(8, '0')}`;
+    settings.quotePrefix = 'COT-';
     settings.nextQuoteNumber = nextSequence + 1;
     const now = new Date().toISOString();
 
@@ -679,17 +835,13 @@ class DataStore {
 
   addSale(saleData: Omit<Sale, 'id' | 'saleNumber' | 'createdAt' | 'updatedAt'> & { id?: string; saleNumber?: string }): Sale {
     const settings = this.data.settings;
-    let prefix = settings.invoicePrefix;
-    let nextNum = settings.nextInvoiceNumber++;
-    
-    if (saleData.voucherType === 'TICKET') {
-      prefix = settings.ticketPrefix;
-      nextNum = settings.nextTicketNumber++;
-    } else if (saleData.voucherType === 'BOLETA') {
-      prefix = 'BOL-2025-';
-    }
-
-    const saleNumber = saleData.saleNumber || `${prefix}${nextNum}`;
+    const existingSequences = this.data.sales
+      .map(sale => Number((sale.saleNumber.match(/^FAC-(\d{8})$/)?.[1] || '0')))
+      .filter(sequence => Number.isFinite(sequence));
+    const nextNum = existingSequences.length > 0 ? Math.max(...existingSequences) + 1 : 1;
+    const saleNumber = `FAC-${String(nextNum).padStart(8, '0')}`;
+    settings.invoicePrefix = 'FAC-';
+    settings.nextInvoiceNumber = nextNum + 1;
     const now = new Date().toISOString();
 
     const newSale: Sale = {

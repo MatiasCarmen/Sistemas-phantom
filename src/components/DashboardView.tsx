@@ -23,6 +23,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { DashboardMetrics, CompanySettings, Product, User } from '../types';
+import { formatAmount } from '../lib/formatters';
 
 interface DashboardViewProps {
   metrics: DashboardMetrics | null;
@@ -150,36 +151,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Didactic Workflow Stepper Banner */}
-      <div className="bg-gradient-to-r from-indigo-50 via-slate-50 to-indigo-50/50 p-3.5 rounded-2xl border border-indigo-100/80 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-indigo-950 font-bold">
-          <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-          <span>Flujo Operativo Integrado:</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 font-semibold text-slate-700 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">1</span>
-            Cotización Formal
-          </span>
-          <ArrowRight className="w-3 h-3 text-slate-400" />
-          <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 font-semibold text-slate-700 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">2</span>
-            Aprobación & Venta POS
-          </span>
-          <ArrowRight className="w-3 h-3 text-slate-400" />
-          <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 font-semibold text-slate-700 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">3</span>
-            Descuento Automático en Kardex
-          </span>
-          <ArrowRight className="w-3 h-3 text-slate-400" />
-          <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 font-semibold text-slate-700 flex items-center gap-1">
-            <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">4</span>
-            Auditoría & Comprobante
-          </span>
-        </div>
-      </div>
-
       {/* KPI Cards Grid - High Density 4 Columns with Didactic Badges */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
@@ -271,7 +242,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
                     <div className="text-[10px] font-semibold text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-sm">
-                      {currency}{day.total.toFixed(0)}
+                      {currency}{formatAmount(day.total, 0)}
                     </div>
                     <div 
                       className="w-full bg-gradient-to-t from-indigo-500 to-indigo-300 hover:from-indigo-400 hover:to-indigo-200 rounded-t-lg transition-all relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
@@ -289,7 +260,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="px-4 py-3 bg-slate-700/60 border-t border-slate-600 flex items-center justify-between text-xs text-slate-200">
-            <span>Total semana: <strong className="text-white">{currency} {metrics.salesByDay.reduce((a, b) => a + b.total, 0).toFixed(2)}</strong></span>
+            <span>Total semana: <strong className="text-white">{currency} {formatAmount(metrics.salesByDay.reduce((a, b) => a + b.total, 0))}</strong></span>
             <span>{metrics.salesByDay.reduce((a, b) => a + b.count, 0)} transacciones registradas</span>
           </div>
         </div>
@@ -396,7 +367,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                   </div>
                   <div className="text-right shrink-0 pl-3">
-                    <p className="font-bold text-slate-900">{currency} {p.revenue.toFixed(2)}</p>
+                    <p className="font-bold text-slate-900">{currency} {formatAmount(p.revenue)}</p>
                     <p className="text-[10px] text-slate-500">{p.soldQuantity} unid. vendidas</p>
                   </div>
                 </div>
@@ -452,7 +423,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <p className="text-slate-600 truncate mt-0.5">{q.customerName}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-bold text-slate-900">{q.currency} {q.total.toFixed(2)}</p>
+                      <p className="font-bold text-slate-900">{q.currency} {formatAmount(q.total)}</p>
                       <p className="text-[10px] text-slate-400">{q.date}</p>
                     </div>
                   </div>

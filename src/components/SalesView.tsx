@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Sale, SaleItem, Product, Customer, CompanySettings, VoucherType, PaymentMethod, Category } from '../types';
 import { generateSaleInvoicePDF } from '../lib/pdfGenerator';
+import { formatAmount } from '../lib/formatters';
 
 interface SalesViewProps {
   sales: Sale[];
@@ -134,19 +135,21 @@ export const SalesView: React.FC<SalesViewProps> = ({
       }
       const updated = [...cartItems];
       const newQty = currentQty + 1;
-      const subtotal = product.sellingPrice * newQty;
-      const taxAmount = subtotal * (taxRateDefault / 100);
+      const total = product.sellingPrice * newQty;
+      const subtotal = total / (1 + taxRateDefault / 100);
+      const taxAmount = total - subtotal;
       updated[existingIndex] = {
         ...updated[existingIndex],
         quantity: newQty,
         subtotal,
         taxAmount,
-        total: subtotal + taxAmount
+        total
       };
       setCartItems(updated);
     } else {
-      const subtotal = product.sellingPrice * 1;
-      const taxAmount = subtotal * (taxRateDefault / 100);
+      const total = product.sellingPrice;
+      const subtotal = total / (1 + taxRateDefault / 100);
+      const taxAmount = total - subtotal;
       const newItem: SaleItem = {
         id: `sitem-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         productId: product.id,
@@ -160,7 +163,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
         taxRate: taxRateDefault,
         subtotal,
         taxAmount,
-        total: subtotal + taxAmount
+        total
       };
       setCartItems([...cartItems, newItem]);
     }
@@ -183,14 +186,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
     }
 
     const updated = [...cartItems];
-    const subtotal = item.unitPrice * (1 - item.discountPercent / 100) * newQty;
-    const taxAmount = subtotal * (item.taxRate / 100);
+    const total = item.unitPrice * (1 - item.discountPercent / 100) * newQty;
+    const subtotal = total / (1 + item.taxRate / 100);
+    const taxAmount = total - subtotal;
     updated[index] = {
       ...item,
       quantity: newQty,
       subtotal,
       taxAmount,
-      total: subtotal + taxAmount
+      total
     };
     setCartItems(updated);
   };
@@ -293,13 +297,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-bold text-white tracking-tight">Control de Ventas & Punto de Venta (POS)</h2>
-            <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-xs font-bold rounded-full">
-              Facturación en Vivo
-            </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Emisión de comprobantes (Factura, Boleta, Ticket), control de caja, cobros y reversión de inventario por anulación.
-          </p>
         </div>
 
         <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-600 self-start md:self-auto">
@@ -413,7 +411,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
                     <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-sm font-bold text-slate-900 font-mono">
-                        {currency} {product.sellingPrice.toFixed(2)}
+                        {currency} {formatAmount(product.sellingPrice)}
                       </span>
                       <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center text-xs group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                         +
@@ -513,7 +511,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-slate-900 truncate">{item.name}</p>
                       <p className="text-[10px] text-slate-500 font-mono">
-                        {currency}{item.unitPrice.toFixed(2)} x {item.quantity} = <strong>{currency}{item.total.toFixed(2)}</strong>
+                        {currency}{formatAmount(item.unitPrice)} x {item.quantity} = <strong>{currency}{formatAmount(item.total)}</strong>
                       </p>
                     </div>
 
@@ -586,14 +584,14 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     step="1"
                     value={cashTendered || ''}
                     onChange={e => setCashTendered(parseFloat(e.target.value) || 0)}
-                    placeholder={cartGrandTotal.toFixed(2)}
+                    placeholder={formatAmount(cartGrandTotal)}
                     className="w-24 px-2 py-1 bg-white border border-emerald-300 rounded-lg text-right font-mono font-bold text-xs"
                   />
                 </div>
                 {cashTendered >= cartGrandTotal && (
                   <div className="flex items-center justify-between text-emerald-900 font-bold">
                     <span>Vuelto / Cambio:</span>
-                    <span className="font-mono text-sm">{currency} {changeDue.toFixed(2)}</span>
+                    <span className="font-mono text-sm">{currency} {formatAmount(changeDue)}</span>
                   </div>
                 )}
               </div>
@@ -603,15 +601,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
             <div className="p-3.5 bg-slate-900 text-white rounded-xl space-y-2 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Subtotal:</span>
-                <span className="font-mono">{currency} {cartSubtotal.toFixed(2)}</span>
+                <span className="font-mono">{currency} {formatAmount(cartSubtotal)}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Impuesto ({taxRateDefault}%):</span>
-                <span className="font-mono">{currency} {cartTax.toFixed(2)}</span>
+                <span className="font-mono">{currency} {formatAmount(cartTax)}</span>
               </div>
               <div className="pt-2 border-t border-slate-800 flex justify-between text-base font-bold">
                 <span>TOTAL A PAGAR:</span>
-                <span className="font-mono text-emerald-400">{currency} {cartGrandTotal.toFixed(2)}</span>
+                <span className="font-mono text-emerald-400">{currency} {formatAmount(cartGrandTotal)}</span>
               </div>
             </div>
 
@@ -727,7 +725,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                           </td>
 
                           <td className="py-3.5 px-4 whitespace-nowrap font-mono font-bold text-slate-900 text-sm">
-                            {sale.currency} {sale.total.toFixed(2)}
+                            {sale.currency} {formatAmount(sale.total)}
                           </td>
 
                           <td className="py-3.5 px-4 whitespace-nowrap">
@@ -850,8 +848,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <td className="py-2 px-3 font-mono text-[11px]">{item.sku}</td>
                         <td className="py-2 px-3 font-medium text-slate-900">{item.name}</td>
                         <td className="py-2 px-3 text-center font-mono">{item.quantity}</td>
-                        <td className="py-2 px-3 text-right font-mono">{selectedSale.currency} {item.unitPrice.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">{selectedSale.currency} {item.total.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-mono">{selectedSale.currency} {formatAmount(item.unitPrice)}</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">{selectedSale.currency} {formatAmount(item.total)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -862,15 +860,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 <div className="w-60 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span className="font-mono">{selectedSale.currency} {selectedSale.subtotal.toFixed(2)}</span>
+                    <span className="font-mono">{selectedSale.currency} {formatAmount(selectedSale.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Impuestos:</span>
-                    <span className="font-mono">{selectedSale.currency} {selectedSale.taxTotal.toFixed(2)}</span>
+                    <span className="font-mono">{selectedSale.currency} {formatAmount(selectedSale.taxTotal)}</span>
                   </div>
                   <div className="pt-1.5 border-t border-slate-200 flex justify-between font-bold text-sm text-slate-900">
                     <span>Total Pagado:</span>
-                    <span className="font-mono text-emerald-600">{selectedSale.currency} {selectedSale.total.toFixed(2)}</span>
+                    <span className="font-mono text-emerald-600">{selectedSale.currency} {formatAmount(selectedSale.total)}</span>
                   </div>
                 </div>
               </div>
@@ -916,7 +914,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
             <div className="p-6 space-y-4 text-xs">
               <p className="text-slate-700">
-                ¿Estás seguro de anular el comprobante <strong>{selectedSale.saleNumber}</strong> por el monto de <strong>{selectedSale.currency} {selectedSale.total.toFixed(2)}</strong>?
+                ¿Estás seguro de anular el comprobante <strong>{selectedSale.saleNumber}</strong> por el monto de <strong>{selectedSale.currency} {formatAmount(selectedSale.total)}</strong>?
               </p>
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
                 <strong>Efecto en inventario:</strong> Las unidades vendidas ({selectedSale.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}) volverán a sumarse al stock de almacén y se registrará un ajuste positivo en el Kardex.
