@@ -1506,7 +1506,7 @@
       "id": "user-1",
       "username": "jperez",
       "name": "Juan Pérez Ramírez",
-      "email": "jperez@agmserver.pe",
+      "email": "jperez@phantom.pe",
       "role": "admin",
       "roleLabel": "Administrador General",
       "avatarColor": "indigo",
@@ -1530,7 +1530,7 @@
       "id": "user-2",
       "username": "mgarcia",
       "name": "María García Torres",
-      "email": "mgarcia@agmserver.pe",
+      "email": "mgarcia@phantom.pe",
       "role": "collaborator",
       "roleLabel": "Ejecutiva de Ventas",
       "avatarColor": "emerald",
@@ -1554,7 +1554,7 @@
       "id": "user-3",
       "username": "lrojas",
       "name": "Luis Rojas Medina",
-      "email": "lrojas@agmserver.pe",
+      "email": "lrojas@phantom.pe",
       "role": "warehouse",
       "roleLabel": "Encargado de Almacén",
       "avatarColor": "amber",
@@ -1578,7 +1578,7 @@
       "id": "user-4",
       "username": "cvasquez",
       "name": "Carla Vásquez Núñez",
-      "email": "cvasquez@agmserver.pe",
+      "email": "cvasquez@phantom.pe",
       "role": "cashier",
       "roleLabel": "Supervisora de Operaciones",
       "avatarColor": "blue",
@@ -1602,7 +1602,7 @@
       "id": "user-5",
       "username": "dsilva",
       "name": "Diego Silva Cárdenas",
-      "email": "dsilva@agmserver.pe",
+      "email": "dsilva@phantom.pe",
       "role": "collaborator",
       "roleLabel": "Ejecutivo de Ventas",
       "avatarColor": "emerald",
@@ -1625,7 +1625,7 @@
     {
       "username": "crojas",
       "name": "Christian Rojas",
-      "email": "christian@empresa.pe",
+      "email": "christian@phantom.pe",
       "role": "admin",
       "roleLabel": "Administrador",
       "password": "123456",
@@ -1660,5 +1660,5 @@
     "connected": true,
     "lastTested": "2026-08-27T17:34:07.851Z"
   },
-  "lastUpdated": "2026-09-05T07:13:33.722Z"
+  "lastUpdated": "2026-09-08T20:09:25.138Z"
 }
