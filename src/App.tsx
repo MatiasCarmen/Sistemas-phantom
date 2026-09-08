@@ -163,7 +163,7 @@ export default function App() {
     checkSession();
   }, []);
 
-  const handleLoginSuccess = (user: User) => {
+  const handleLoginSuccess = (user: User, _token: string) => {
     setCurrentUser(user);
     showToast(`¡Bienvenido(a), ${user.name}!`);
     fetchAllData();
@@ -430,13 +430,13 @@ export default function App() {
     approvedQuotesCount: quotes.filter(q => q.status === 'CONVERTED' || q.status === 'APPROVED').length,
     pendingQuotesCount,
     salesByDay: [
-      { label: 'Lun', total: 0, count: 0 },
-      { label: 'Mar', total: 0, count: 0 },
-      { label: 'Mié', total: 0, count: 0 },
-      { label: 'Jue', total: 0, count: 0 },
-      { label: 'Vie', total: 0, count: 0 },
-      { label: 'Sáb', total: 0, count: 0 },
-      { label: 'Dom', total: 0, count: 0 }
+      { date: '', label: 'Lun', total: 0, count: 0 },
+      { date: '', label: 'Mar', total: 0, count: 0 },
+      { date: '', label: 'Mié', total: 0, count: 0 },
+      { date: '', label: 'Jue', total: 0, count: 0 },
+      { date: '', label: 'Vie', total: 0, count: 0 },
+      { date: '', label: 'Sáb', total: 0, count: 0 },
+      { date: '', label: 'Dom', total: 0, count: 0 }
     ],
     topSellingProducts: [],
     recentSales: sales.slice(0, 5),
