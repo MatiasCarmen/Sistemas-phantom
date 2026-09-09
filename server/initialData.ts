@@ -184,7 +184,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Consolas',
     supplierId: 'sup-1',
     supplierName: 'Tecnologia Peru SAC',
-    imageUrl: '/PlayStation%205%20Consola%20Slim%20Digital.png',
+    imageUrl: '/assets/ps5-slim.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -207,7 +207,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Perifericos',
     supplierId: 'sup-1',
     supplierName: 'Tecnologia Peru SAC',
-    imageUrl: '/dualsense.png',
+    imageUrl: '/assets/dualsense.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -230,7 +230,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Consolas',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/switch-oled.png',
+    imageUrl: '/assets/switch-oled.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -253,7 +253,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Consolas',
     supplierId: 'sup-1',
     supplierName: 'Tecnologia Peru SAC',
-    imageUrl: '/xbox-series-x.png',
+    imageUrl: '/assets/xbox-series-x.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -322,7 +322,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Audio',
     supplierId: 'sup-3',
     supplierName: 'Distribuciones Gamer SAC',
-    imageUrl: '/Audifonos%20JBL%20Tune%20770%20BT%20NC.png',
+    imageUrl: '/assets/audifonos-jbl-tune-770.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -437,7 +437,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Mobiliario',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/thunder-x3.png',
+    imageUrl: '/assets/thunder-x3.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -460,7 +460,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/zelda.png',
+    imageUrl: '/assets/zelda.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -483,7 +483,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20MLS%20Inter%20Miami%20-%20Lionel%20Messi.png',
+    imageUrl: '/assets/funko-messi.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -506,7 +506,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Dragon%20Ball%20Z%20-%20Vegeta.png',
+    imageUrl: '/assets/funko-vegeta.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -529,7 +529,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Jujutsu%20Kaisen%20-%20Satoru%20Gojo.png',
+    imageUrl: '/assets/funko-gojo.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -552,7 +552,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20One%20Piece%20-%20Tony%20Tony%20Chopper%20with%20Rumble%20Ball.png',
+    imageUrl: '/assets/funko-chopper.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -575,7 +575,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Pok%C3%A9mon%20-%20Charizard.png',
+    imageUrl: '/assets/funko-charizard.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -598,7 +598,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Marvel%20Rivals%20Venom.png',
+    imageUrl: '/assets/funko-venom.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -621,7 +621,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Marvel%20Deadpool.png',
+    imageUrl: '/assets/funko-deadpool.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'
@@ -644,7 +644,7 @@ export const initialProducts: Product[] = [
     location: 'Almacén Gamer - Sección Coleccionables',
     supplierId: 'sup-2',
     supplierName: 'Gaming Store SAC',
-    imageUrl: '/Funko%20Pop%20Deluxe%20Marvel%20Deadpool%20On%20Bridge.png',
+    imageUrl: '/assets/funko-deadpool-bridge.png',
     status: 'in_stock',
     createdAt: '2026-09-04T00:00:00.000Z',
     updatedAt: '2026-09-04T00:00:00.000Z'

@@ -54,6 +54,8 @@ export interface Customer {
   phone: string;
   address?: string;
   city?: string;
+  contactPerson?: string;
+  status?: string;
   creditLimit?: number;
   paymentTerms?: string;
   notes?: string;
@@ -219,6 +221,7 @@ export interface DashboardMetrics {
   totalSalesCountMonth: number;
   totalGrossProfitMonth: number;
   totalInventoryValuation: number;
+  totalInventoryCost?: number;
   totalProductsCount: number;
   lowStockCount: number;
   outOfStockCount: number;

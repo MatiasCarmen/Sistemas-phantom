@@ -1,49 +1,77 @@
 @import "tailwindcss";
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 :root {
   color-scheme: dark;
-  --app-bg: #070b17;
-  --app-bg-soft: #101827;
-  --panel-bg: rgba(15, 23, 42, 0.86);
-  --panel-edge: rgba(148, 163, 184, 0.2);
-  --nav-bg: #0f172a;
-  --nav-soft: rgba(15, 23, 42, 0.96);
-  --brand: #8b5cf6;
-  --brand-strong: #22d3ee;
-  --brand-soft: rgba(139, 92, 246, 0.2);
-  --accent: #22d3ee;
-  --accent-soft: rgba(34, 211, 238, 0.15);
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --text-primary: #e2e8f0;
-  --text-muted: #94a3b8;
+
+  /* ── Phantom Brand Palette ── */
+  --color-primary: #E31B23;
+  --color-primary-active: #C7161E;
+  --color-primary-disabled: #3d1214;
+  --color-on-primary: #FFFFFF;
+
+  /* ── Surfaces ── */
+  --color-canvas: #0a0a0a;
+  --color-card: #121212;
+  --color-surface: #181818;
+  --color-border: #262626;
+  --color-border-light: #333333;
+
+  /* ── Text ── */
+  --color-text: #f5f5f7;
+  --color-muted: #8e8e93;
+
+  /* ── Semantic ── */
+  --color-success: #10b981;
+  --color-warning: #eab308;
+  --color-error: #E31B23;
+
+  /* ── App Legacy Vars ── */
+  --app-bg: #0a0a0a;
+  --app-bg-soft: #121212;
+  --panel-bg: rgba(18, 18, 18, 0.96);
+  --panel-edge: #262626;
+  --nav-bg: #0d0d0d;
+  --nav-soft: #121212;
+  --brand: #E31B23;
+  --brand-strong: #C7161E;
+  --brand-soft: rgba(227, 27, 35, 0.15);
+  --accent: #E31B23;
+  --accent-soft: rgba(227, 27, 35, 0.1);
+  --success: #10b981;
+  --warning: #eab308;
+  --danger: #E31B23;
+  --text-primary: #f5f5f7;
+  --text-muted: #8e8e93;
 }
 
 html, body, #root {
   margin: 0;
   min-height: 100%;
   height: 100%;
-  font-family: Inter, "Segoe UI", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.18), transparent 30%),
-    linear-gradient(180deg, #050816 0%, #0b1220 24%, #111827 100%);
+  background: #0a0a0a;
   color: var(--text-primary);
 }
 
 .app-shell {
-  background:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 14, 24, 0.98));
+  background: #0a0a0a;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background-color: #E31B23;
+  color: #ffffff;
 }
 
 ::-webkit-scrollbar {
@@ -52,24 +80,24 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(148, 163, 184, 0.12);
+  background: #121212;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: #333333;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.55);
+  background: #555555;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 input, select, textarea, button {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 button {

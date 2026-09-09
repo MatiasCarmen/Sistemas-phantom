@@ -151,7 +151,7 @@ class DataStore {
       const mysqlMovements = await loadInventoryMovementsFromMySQL(config);
 
       if (snapshot && Array.isArray(snapshot.products)) {
-        this.data = snapshot;
+        this.data = { ...this.data, ...snapshot };
       }
 
       if (Array.isArray(mysqlProducts) && mysqlProducts.length > 0) {

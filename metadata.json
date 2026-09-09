@@ -1,0 +1,6 @@
+{
+  "name": "Sistema de Inventario, Cotización y Ventas",
+  "description": "Sistema integral de gestión de inventario, cotizaciones comerciales y control de ventas con API RESTful y base de datos persistente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

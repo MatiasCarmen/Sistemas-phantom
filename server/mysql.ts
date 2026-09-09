@@ -1,8 +1,9 @@
 import mysql, { type ConnectionOptions } from 'mysql2/promise';
 import type { Customer, MySQLConfig, MySQLTestResult, Quote, Sale, User, UserRole } from '../src/types';
+import type { DatabaseSchema } from './dataStore';
 
 export type MySQLConnectionInput = Partial<MySQLConfig>;
-export type PersistedDatabase = Record<string, any>;
+export type PersistedDatabase = Partial<DatabaseSchema>;
 
 export function buildMySQLConnectionConfig(config: MySQLConnectionInput): ConnectionOptions {
   const port = Number(config.port ?? process.env.MYSQL_PORT ?? 3306);
