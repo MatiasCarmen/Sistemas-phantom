@@ -1,68 +1,121 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@theme {
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Phantom WMS Brand Primary */
+  --color-primary: #C8102E;
+  --color-primary-hover: #A80C25;
+  --color-primary-container: #8A091E;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #FFDAD8;
+
+  /* Industrial Surfaces */
+  --color-surface-lowest: #000000;
+  --color-surface-dim: #0B0B0B;
+  --color-surface-low: #0E0E0E;
+  --color-surface: #111111;
+  --color-surface-container: #141414;
+  --color-surface-high: #1E1E1E;
+  --color-surface-highest: #2D2D2D;
+
+  /* Microborders */
+  --color-outline: #2D2D2D;
+  --color-outline-variant: #1E1E1E;
+
+  /* Typography & Text */
+  --color-on-surface: #FFFFFF;
+  --color-on-surface-variant: #D1D5DB;
+  --color-on-surface-dim: #9CA3AF;
+
+  /* Semantics */
+  --color-success: #10B981;
+  --color-success-container: #064E3B;
+  --color-on-success-container: #A7F3D0;
+
+  --color-warning: #F59E0B;
+  --color-warning-container: #78350F;
+  --color-on-warning-container: #FDE68A;
+
+  --color-info: #3B82F6;
+  --color-info-container: #1E3A8A;
+  --color-on-info-container: #DBEAFE;
+
+  --color-error: #C8102E;
+  --color-error-container: #410006;
+  --color-on-error-container: #FFDAD8;
+
+  /* Industrial Geometry */
+  --radius-sm: 2px;
+  --radius-DEFAULT: 4px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}
 
 :root {
   color-scheme: dark;
 
-  /* ── Phantom Brand Palette ── */
-  --color-primary: #E31B23;
-  --color-primary-active: #C7161E;
-  --color-primary-disabled: #3d1214;
+  /* ── Phantom WMS Official Tokens ── */
+  --color-primary: #C8102E;
+  --color-primary-hover: #A80C25;
+  --color-primary-active: #8A091E;
+  --color-primary-container: #8A091E;
   --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #FFDAD8;
 
   /* ── Surfaces ── */
-  --color-canvas: #0a0a0a;
-  --color-card: #121212;
-  --color-surface: #181818;
-  --color-border: #262626;
-  --color-border-light: #333333;
+  --color-canvas: #0E0E0E;
+  --color-card: #141414;
+  --color-surface: #1E1E1E;
+  --color-border: #2D2D2D;
+  --color-border-light: #3D3D3D;
 
   /* ── Text ── */
-  --color-text: #f5f5f7;
-  --color-muted: #8e8e93;
+  --color-text: #FFFFFF;
+  --color-muted: #D1D5DB;
 
   /* ── Semantic ── */
-  --color-success: #10b981;
-  --color-warning: #eab308;
-  --color-error: #E31B23;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-info: #3B82F6;
+  --color-error: #C8102E;
 
-  /* ── App Legacy Vars ── */
-  --app-bg: #0a0a0a;
-  --app-bg-soft: #121212;
-  --panel-bg: rgba(18, 18, 18, 0.96);
-  --panel-edge: #262626;
-  --nav-bg: #0d0d0d;
-  --nav-soft: #121212;
-  --brand: #E31B23;
-  --brand-strong: #C7161E;
-  --brand-soft: rgba(227, 27, 35, 0.15);
-  --accent: #E31B23;
-  --accent-soft: rgba(227, 27, 35, 0.1);
-  --success: #10b981;
-  --warning: #eab308;
-  --danger: #E31B23;
-  --text-primary: #f5f5f7;
-  --text-muted: #8e8e93;
+  /* ── Legacy & Shell Support ── */
+  --app-bg: #0E0E0E;
+  --app-bg-soft: #141414;
+  --panel-bg: #141414;
+  --panel-edge: #2D2D2D;
+  --nav-bg: #0E0E0E;
+  --nav-soft: #141414;
+  --brand: #C8102E;
+  --brand-strong: #A80C25;
+  --brand-soft: rgba(200, 16, 46, 0.14);
+  --accent: #C8102E;
+  --accent-soft: rgba(200, 16, 46, 0.12);
+  --text-primary: #FFFFFF;
+  --text-muted: #D1D5DB;
 }
 
 html, body, #root {
   margin: 0;
   min-height: 100%;
   height: 100%;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--app-bg);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: #0a0a0a;
-  color: var(--text-primary);
+  background: #0E0E0E;
+  color: #FFFFFF;
 }
 
 .app-shell {
-  background: #0a0a0a;
+  background: #0E0E0E;
+  color: #FFFFFF;
 }
 
 * {
@@ -70,36 +123,352 @@ body {
 }
 
 ::selection {
-  background-color: #E31B23;
-  color: #ffffff;
+  background-color: #C8102E;
+  color: #FFFFFF;
 }
 
+/* Industrial tabular figures for numbers, currency, SKUs and barcodes */
+.font-mono, .tabular-nums {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Crisp industrial scrollbars without round pill excess */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #121212;
+  background: #0E0E0E;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: #2D2D2D;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: #474747;
 }
 
 input, select, textarea, button {
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 button {
   cursor: pointer;
 }
+
+/* Industrial Alert & Quiebre de stock tinting rule */
+.badge-stock-out {
+  background-color: rgba(200, 16, 46, 0.14);
+  color: #FFDAD8;
+  border: 1px solid #C8102E;
+}
+
+.badge-stock-low {
+  background-color: rgba(245, 158, 11, 0.14);
+  color: #FDE68A;
+  border: 1px solid #F59E0B;
+}
+
+.badge-stock-ok {
+  background-color: rgba(16, 185, 129, 0.14);
+  color: #A7F3D0;
+  border: 1px solid #10B981;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PHANTOM CLEAN WHITE (LIGHT MODE OVERRIDES - HIGH CONTRAST)
+   ══════════════════════════════════════════════════════════════════ */
+html.theme-light,
+.theme-light {
+  color-scheme: light;
+  --app-bg: #F1F5F9;
+  --app-bg-soft: #FFFFFF;
+  --panel-bg: #FFFFFF;
+  --panel-edge: #E2E8F0;
+  --nav-bg: #FFFFFF;
+  --nav-soft: #F8FAFC;
+  --text-primary: #0F172A;
+  --text-muted: #475569;
+}
+
+html.theme-light body,
+.theme-light body,
+.theme-light .app-shell {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Light Mode Scrollbars */
+.theme-light ::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+.theme-light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Base Canvas & Containers */
+.theme-light .bg-\[\#0E0E0E\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+.theme-light .bg-\[\#141414\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+}
+.theme-light .bg-\[\#1E1E1E\] {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+.theme-light .bg-\[\#0B0B0B\],
+.theme-light .bg-\[\#000000\],
+.theme-light .bg-\[\#111111\],
+.theme-light .bg-\[\#090909\] {
+  background-color: #F1F5F9 !important;
+}
+.theme-light .bg-\[\#181818\],
+.theme-light .bg-\[\#161616\] {
+  background-color: #FFFFFF !important;
+}
+
+/* Borders & Separators */
+.theme-light .border-\[\#2D2D2D\],
+.theme-light .border-\[\#3D3D3D\],
+.theme-light .border-\[\#2c2c2c\],
+.theme-light .border-\[\#242424\],
+.theme-light .border-\[\#1E1E1E\],
+.theme-light .border-\[\#1f1f1f\],
+.theme-light .border-\[\#2f2f2f\] {
+  border-color: #E2E8F0 !important;
+}
+.theme-light .divide-\[\#2D2D2D\] > :not([hidden]) ~ :not([hidden]),
+.theme-light .divide-\[\#1E1E1E\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E2E8F0 !important;
+}
+
+/* Typography Overrides */
+.theme-light .text-white,
+.theme-light .text-\[\#FFFFFF\] {
+  color: #0F172A !important;
+}
+.theme-light .text-\[\#e5e2e1\],
+.theme-light .text-zinc-200,
+.theme-light .text-zinc-300,
+.theme-light .text-slate-200,
+.theme-light .text-slate-300,
+.theme-light .text-\[\#D1D5DB\] {
+  color: #334155 !important;
+}
+
+.theme-light .text-zinc-400,
+.theme-light .text-zinc-500,
+.theme-light .text-slate-400,
+.theme-light .text-slate-500,
+.theme-light .text-\[\#A1A1AA\],
+.theme-light .text-\[\#a0a0a0\],
+.theme-light .text-\[\#9CA3AF\] {
+  color: #475569 !important;
+}
+
+.theme-light .text-\[\#71717A\] {
+  color: #64748B !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST SEMANTIC TEXT TRANSFORMATION
+   All dark-mode pastel text (which is washed out on white) turns into
+   deep, punchy, high-contrast colors in Light Mode.
+   ══════════════════════════════════════════════════════════════════ */
+.theme-light .text-\[\#FFDAD8\],
+.theme-light .text-\[\#ffdad8\],
+.theme-light .text-\[\#ffb3b1\] {
+  color: #B91C1C !important; /* Deep crimson red */
+}
+
+.theme-light .text-\[\#FDE68A\],
+.theme-light .text-\[\#fde68a\] {
+  color: #B45309 !important; /* Rich amber 700 */
+}
+
+.theme-light .text-\[\#A7F3D0\],
+.theme-light .text-\[\#a7f3d0\] {
+  color: #047857 !important; /* Deep emerald 700 */
+}
+
+.theme-light .text-\[\#DBEAFE\],
+.theme-light .text-\[\#dbeafe\] {
+  color: #1D4ED8 !important; /* Deep blue 700 */
+}
+
+/* Hover surfaces */
+.theme-light .hover\:bg-\[\#1E1E1E\]:hover {
+  background-color: #F1F5F9 !important;
+}
+.theme-light .hover\:bg-\[\#2D2D2D\]:hover {
+  background-color: #E2E8F0 !important;
+}
+.theme-light .hover\:bg-\[\#141414\]:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TINTED BADGES & STATUS PILLS IN LIGHT MODE
+   Transforms all faint/dark badges into crisp, tinted badges with
+   rich backgrounds and dark, legible text.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Red / Error / Out of Stock / High Priority / Admin Role Badges */
+.theme-light .bg-\[\#8A091E\]\/60,
+.theme-light .bg-\[\#8A091E\]\/50,
+.theme-light .bg-\[\#410006\],
+.theme-light .bg-\[\#410006\]\/50,
+.theme-light .bg-\[rgba\(200\,16\,46\,0\.14\)\],
+.theme-light .bg-\[\#C8102E\]\/10,
+.theme-light .bg-\[\#C8102E\]\/15,
+.theme-light .bg-\[\#C8102E\]\/20,
+.theme-light .bg-\[\#C8102E\]\/25,
+.theme-light .badge-stock-out {
+  background-color: #FEF2F2 !important;
+  border-color: #FCA5A5 !important;
+  color: #B91C1C !important;
+}
+.theme-light .bg-\[\#8A091E\]\/60 *,
+.theme-light .bg-\[rgba\(200\,16\,46\,0\.14\)\] *,
+.theme-light .badge-stock-out * {
+  color: #B91C1C !important;
+}
+
+/* Amber / Warning / Low Stock / Warehouse Role Badges */
+.theme-light .bg-\[\#78350F\]\/60,
+.theme-light .bg-\[rgba\(245\,158\,11\,0\.14\)\],
+.theme-light .badge-stock-low {
+  background-color: #FFFBEB !important;
+  border-color: #FCD34D !important;
+  color: #B45309 !important;
+}
+.theme-light .bg-\[\#78350F\]\/60 *,
+.theme-light .bg-\[rgba\(245\,158\,11\,0\.14\)\] *,
+.theme-light .badge-stock-low * {
+  color: #B45309 !important;
+}
+
+/* Green / Success / Stock OK / Collaborator Role Badges */
+.theme-light .bg-\[\#064E3B\]\/60,
+.theme-light .bg-\[rgba\(16\,185\,129\,0\.14\)\],
+.theme-light .badge-stock-ok {
+  background-color: #ECFDF5 !important;
+  border-color: #6EE7B7 !important;
+  color: #047857 !important;
+}
+.theme-light .bg-\[\#064E3B\]\/60 *,
+.theme-light .bg-\[rgba\(16\,185\,129\,0\.14\)\] *,
+.theme-light .badge-stock-ok * {
+  color: #047857 !important;
+}
+
+/* Blue / Info / POS / Cashier Role Badges */
+.theme-light .bg-\[\#1E3A8A\]\/60,
+.theme-light .bg-\[\#1E3A8A\]\/50 {
+  background-color: #EFF6FF !important;
+  border-color: #93C5FD !important;
+  color: #1D4ED8 !important;
+}
+.theme-light .bg-\[\#1E3A8A\]\/60 *,
+.theme-light .bg-\[\#1E3A8A\]\/50 * {
+  color: #1D4ED8 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CRITICAL CONTRAST PROTECTIONS:
+   Solid primary buttons & solid pills MUST strictly keep white text!
+   ══════════════════════════════════════════════════════════════════ */
+.theme-light .bg-\[\#C8102E\],
+.theme-light .bg-\[\#C8102E\] *,
+.theme-light .bg-\[\#A80C25\],
+.theme-light .bg-\[\#A80C25\] *,
+.theme-light .bg-emerald-600,
+.theme-light .bg-emerald-600 *,
+.theme-light .bg-indigo-600,
+.theme-light .bg-indigo-600 *,
+.theme-light .bg-blue-600,
+.theme-light .bg-blue-600 *,
+.theme-light .bg-amber-600,
+.theme-light .bg-amber-600 * {
+  color: #FFFFFF !important;
+}
+
+/* Secondary outline buttons (e.g. "+ Cotizar", "Ver Todo el Inventario", "Actualizar") */
+.theme-light button.bg-\[\#1E1E1E\],
+.theme-light a.bg-\[\#1E1E1E\] {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+.theme-light button.bg-\[\#1E1E1E\]:hover,
+.theme-light a.bg-\[\#1E1E1E\]:hover {
+  background-color: #F8FAFC !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+.theme-light button.bg-\[\#1E1E1E\] svg,
+.theme-light a.bg-\[\#1E1E1E\] svg {
+  color: #475569 !important;
+}
+
+/* Sidebar navigation links */
+.theme-light aside nav button:not(.bg-\[\#C8102E\]) {
+  color: #334155 !important;
+}
+.theme-light aside nav button:not(.bg-\[\#C8102E\]):hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Sidebar active navigation item retains Phantom Red solid background */
+.theme-light aside nav button.bg-\[\#C8102E\] {
+  background-color: #C8102E !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 3px 0 rgba(200, 16, 46, 0.3) !important;
+}
+.theme-light aside nav button.bg-\[\#C8102E\] * {
+  color: #FFFFFF !important;
+}
+
+/* Chart bars in Light Mode */
+.theme-light .h-44 .bg-\[\#8A091E\] {
+  background-color: #C8102E !important;
+}
+
+/* Inputs in Light Mode */
+.theme-light input:not([type="checkbox"]):not([type="radio"]),
+.theme-light select,
+.theme-light textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+.theme-light input:not([type="checkbox"]):not([type="radio"]):focus,
+.theme-light select:focus,
+.theme-light textarea:focus {
+  border-color: #C8102E !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px #C8102E !important;
+}
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Backdrop for modals in Light Mode */
+.theme-light .bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
+

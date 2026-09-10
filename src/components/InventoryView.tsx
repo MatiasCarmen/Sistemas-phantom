@@ -281,11 +281,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     <div className="space-y-6 pb-12">
       
       {/* Top Header & Action Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 shadow-2xl shadow-slate-950/30">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded border border-[#2D2D2D]">
         <div>
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-bold text-white tracking-tight">Catálogo & Control de Inventario</h2>
-            <span className="px-2.5 py-0.5 bg-violet-500/20 text-violet-200 border border-violet-400/30 text-xs font-bold rounded-full">
+            <span className="px-2.5 py-0.5 bg-[#1E1E1E] text-white border border-[#2D2D2D] text-xs font-bold rounded font-mono">
               {filteredProducts.length} productos
             </span>
           </div>
@@ -295,26 +295,26 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <button
             id="btn-export-inventory-csv"
             onClick={handleExportCSV}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-xl text-xs font-semibold transition-colors flex items-center space-x-1.5"
+            className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] rounded text-xs font-semibold transition-colors flex items-center space-x-1.5"
             title="Exportar inventario en formato CSV"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-[#9CA3AF]" />
             <span>Exportar CSV</span>
           </button>
 
           <button
             id="btn-open-kardex-global"
             onClick={() => onOpenKardex()}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-xl text-xs font-semibold transition-colors flex items-center space-x-1.5"
+            className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] rounded text-xs font-semibold transition-colors flex items-center space-x-1.5"
           >
-            <History className="w-3.5 h-3.5 text-blue-600" />
+            <History className="w-3.5 h-3.5 text-[#3B82F6]" />
             <span>Kardex</span>
           </button>
 
           <button
             id="btn-add-product-main"
             onClick={handleOpenAdd}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-violet-900/40 flex items-center space-x-1.5"
+            className="px-4 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-xs font-bold transition-colors flex items-center space-x-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo Producto</span>
@@ -323,24 +323,24 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-700/80 shadow-2xl shadow-slate-950/30 space-y-3">
+      <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
         <div className="flex flex-col lg:flex-row gap-3">
           
           {/* Search Box */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               id="input-inventory-search"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por SKU, nombre de producto, código de barras o marca..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-950/60 border border-slate-600 rounded-xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-slate-950 transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#C8102E] transition-colors"
             />
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm('')} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -353,7 +353,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               id="select-inventory-category"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 bg-slate-950/60 border border-slate-600 rounded-xl text-xs text-slate-100 font-medium focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
             >
               <option value="ALL">Todas las Categorías</option>
               {categories.map(cat => (
@@ -366,7 +366,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               id="select-inventory-status"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 bg-slate-950/60 border border-slate-600 rounded-xl text-xs text-slate-100 font-medium focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
             >
               <option value="ALL">Todos los Estados</option>
               <option value="in_stock">En Stock</option>
@@ -375,11 +375,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </select>
 
             {/* View Mode Toggle */}
-            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-600 shrink-0">
+            <div className="flex bg-[#0E0E0E] p-1 rounded border border-[#2D2D2D] shrink-0">
               <button
                 id="btn-view-table"
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`p-1.5 rounded transition-colors ${viewMode === 'table' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`}
                 title="Vista en tabla detallada"
               >
                 <List className="w-4 h-4" />
@@ -387,7 +387,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <button
                 id="btn-view-grid"
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`}
                 title="Vista en cuadrícula"
               >
                 <Grid className="w-4 h-4" />
@@ -401,15 +401,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
       {/* Products Content: Table or Grid */}
       {filteredProducts.length === 0 ? (
-        <div className="bg-slate-900/80 rounded-2xl border border-slate-700/80 p-12 text-center shadow-2xl shadow-slate-950/30">
-          <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-800">No se encontraron productos</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <div className="bg-[#141414] rounded border border-[#2D2D2D] p-12 text-center">
+          <Package className="w-12 h-12 text-[#9CA3AF] mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-white">No se encontraron productos</h3>
+          <p className="text-xs text-[#9CA3AF] mt-1 max-w-sm mx-auto">
             Prueba ajustando los filtros de búsqueda o registra un nuevo producto en el catálogo.
           </p>
           <button
             onClick={handleOpenAdd}
-            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center space-x-1.5"
+            className="mt-4 px-4 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-xs font-bold inline-flex items-center space-x-1.5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar Producto</span>
@@ -418,10 +418,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       ) : viewMode === 'table' ? (
         
         /* Table View */
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="bg-[#141414] rounded border border-[#2D2D2D] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-[10px]">
+            <table className="w-full text-left text-xs text-[#D1D5DB]">
+              <thead className="bg-[#1E1E1E] border-b border-[#2D2D2D] text-[#9CA3AF] font-bold uppercase tracking-wider text-[10px] font-mono">
                 <tr>
                   <th className="py-3.5 px-4">Producto & SKU</th>
                   <th className="py-3.5 px-4">Categoría</th>
@@ -433,14 +433,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <th className="py-3.5 px-4 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#2D2D2D]">
                 {filteredProducts.map(prod => {
                   const margin = prod.costPrice > 0 
                     ? (((prod.sellingPrice - prod.costPrice) / prod.costPrice) * 100).toFixed(0)
                     : '0';
 
                   return (
-                    <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={prod.id} className="hover:bg-[#1E1E1E] transition-colors">
                       
                       {/* Product Name & SKU */}
                       <td className="py-3.5 px-4">
@@ -449,19 +449,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                             <img 
                               src={prod.imageUrl} 
                               alt={prod.name} 
-                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0" 
+                              className="w-10 h-10 rounded object-cover border border-[#2D2D2D] shrink-0" 
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 border border-slate-200">
-                              <Package className="w-5 h-5" />
+                            <div className="w-10 h-10 rounded bg-[#0E0E0E] flex items-center justify-center text-[#9CA3AF] shrink-0 border border-[#2D2D2D]">
+                              <Package className="w-5 h-5 text-[#9CA3AF]" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 leading-snug">{prod.name}</p>
-                            <div className="flex items-center space-x-2 text-[11px] text-slate-500 font-mono mt-0.5">
+                            <p className="font-semibold text-white leading-snug">{prod.name}</p>
+                            <div className="flex items-center space-x-2 text-[11px] text-[#9CA3AF] font-mono mt-0.5">
                               <span>SKU: {prod.sku}</span>
                               {prod.barcode && <span>· CB: {prod.barcode}</span>}
-                              {prod.brand && <span className="font-sans">· {prod.brand}</span>}
+                              {prod.brand && <span>· {prod.brand}</span>}
                             </div>
                           </div>
                         </div>
@@ -469,28 +469,30 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
                       {/* Category */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px]">
+                        <span className="px-2 py-0.5 bg-[#1E1E1E] text-white rounded border border-[#2D2D2D] font-medium text-[11px]">
                           {prod.category}
                         </span>
                         {prod.location && (
-                          <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]">{prod.location}</p>
+                          <p className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[120px] font-mono">{prod.location}</p>
                         )}
                       </td>
 
                       {/* Cost Price */}
-                      <td className="py-3.5 px-4 font-mono font-medium text-slate-700 whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-mono font-medium text-[#D1D5DB] whitespace-nowrap tabular-nums">
                         {currency} {formatAmount(prod.costPrice)}
                       </td>
 
                       {/* Selling Price */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-mono font-bold text-white whitespace-nowrap tabular-nums">
                         {currency} {formatAmount(prod.sellingPrice)}
                       </td>
 
                       {/* Margin */}
-                      <td className="py-3.5 px-4 font-mono font-medium whitespace-nowrap">
-                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${
-                          Number(margin) >= 30 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                      <td className="py-3.5 px-4 font-mono font-medium whitespace-nowrap tabular-nums">
+                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
+                          Number(margin) >= 30 
+                            ? 'bg-[rgba(16,185,129,0.14)] text-[#A7F3D0] border-[#10B981]' 
+                            : 'bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D]'
                         }`}>
                           +{margin}%
                         </span>
@@ -499,29 +501,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       {/* Stock Level */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center space-x-1.5">
-                          <span className="font-bold text-slate-900 font-mono text-sm">{prod.stock}</span>
-                          <span className="text-[10px] text-slate-500 font-medium">{prod.unit}</span>
+                          <span className="font-bold text-white font-mono text-sm tabular-nums">{prod.stock}</span>
+                          <span className="text-[10px] text-[#9CA3AF] font-medium">{prod.unit}</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-mono">Mín: {prod.minStock}</p>
+                        <p className="text-[10px] text-[#9CA3AF] font-mono tabular-nums">Mín: {prod.minStock}</p>
                       </td>
 
-                      {/* Status Badge */}
+                      {/* Status Badge - Critical differentiation rule */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {prod.status === 'out_of_stock' && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                          <span className="px-2 py-0.5 bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border border-[#C8102E] rounded font-bold text-[10px] font-mono inline-flex items-center space-x-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-[#C8102E]" />
                             <span>Agotado</span>
                           </span>
                         )}
                         {prod.status === 'low_stock' && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span className="px-2 py-0.5 bg-[rgba(245,158,11,0.14)] text-[#FDE68A] border border-[#F59E0B] rounded font-bold text-[10px] font-mono inline-flex items-center space-x-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B]" />
                             <span>Stock Bajo</span>
                           </span>
                         )}
                         {prod.status === 'in_stock' && (
-                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span className="px-2 py-0.5 bg-[rgba(16,185,129,0.14)] text-[#A7F3D0] border border-[#10B981] rounded font-bold text-[10px] font-mono inline-flex items-center space-x-1.5">
+                            <Check className="w-3.5 h-3.5 text-[#10B981]" />
                             <span>En Stock</span>
                           </span>
                         )}
@@ -533,7 +535,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                           <button
                             id={`btn-adjust-stock-${prod.id}`}
                             onClick={() => handleOpenAdjust(prod)}
-                            className="p-1.5 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-[#2D2D2D] text-[#9CA3AF] hover:text-white rounded transition-colors"
                             title="Ajustar stock (Entrada / Salida / Kardex)"
                           >
                             <SlidersHorizontal className="w-4 h-4" />
@@ -541,7 +543,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                           <button
                             id={`btn-kardex-${prod.id}`}
                             onClick={() => onOpenKardex(prod)}
-                            className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-[#2D2D2D] text-[#9CA3AF] hover:text-[#3B82F6] rounded transition-colors"
                             title="Ver Kardex de movimientos"
                           >
                             <History className="w-4 h-4" />
@@ -549,7 +551,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                           <button
                             id={`btn-edit-prod-${prod.id}`}
                             onClick={() => handleOpenEdit(prod)}
-                            className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-[#2D2D2D] text-[#9CA3AF] hover:text-white rounded transition-colors"
                             title="Editar producto"
                           >
                             <Edit className="w-4 h-4" />
@@ -561,7 +563,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                                 onDeleteProduct(prod.id);
                               }
                             }}
-                            className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-[#410006]/50 text-[#9CA3AF] hover:text-[#C8102E] rounded transition-colors"
                             title="Eliminar producto"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -581,49 +583,49 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         /* Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredProducts.map(prod => (
-            <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div key={prod.id} className="bg-[#141414] rounded border border-[#2D2D2D] p-4 flex flex-col justify-between hover:border-[#474747] transition-all">
               <div>
-                <div className="relative h-36 bg-slate-100 rounded-xl overflow-hidden mb-3 border border-slate-100 flex items-center justify-center">
+                <div className="relative h-36 bg-[#0E0E0E] rounded overflow-hidden mb-3 border border-[#2D2D2D] flex items-center justify-center">
                   {prod.imageUrl ? (
                     <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
                   ) : (
-                    <Package className="w-10 h-10 text-slate-300" />
+                    <Package className="w-10 h-10 text-[#9CA3AF]" />
                   )}
-                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                    prod.status === 'out_of_stock' ? 'bg-red-500 text-white' :
-                    prod.status === 'low_stock' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] font-bold font-mono border ${
+                    prod.status === 'out_of_stock' ? 'bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border-[#C8102E]' :
+                    prod.status === 'low_stock' ? 'bg-[rgba(245,158,11,0.14)] text-[#FDE68A] border-[#F59E0B]' : 'bg-[rgba(16,185,129,0.14)] text-[#A7F3D0] border-[#10B981]'
                   }`}>
                     {prod.stock} {prod.unit}
                   </span>
                 </div>
 
-                <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">{prod.category}</span>
-                <h4 className="text-xs font-bold text-slate-900 mt-0.5 line-clamp-2">{prod.name}</h4>
-                <p className="text-[11px] font-mono text-slate-400 mt-1">SKU: {prod.sku}</p>
+                <span className="text-[10px] font-bold text-[#C8102E] uppercase tracking-wider font-mono">{prod.category}</span>
+                <h4 className="text-xs font-bold text-white mt-0.5 line-clamp-2">{prod.name}</h4>
+                <p className="text-[11px] font-mono text-[#9CA3AF] mt-1">SKU: {prod.sku}</p>
 
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#2D2D2D]">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Precio Venta</span>
-                    <span className="text-sm font-bold text-slate-900 font-mono">{currency} {formatAmount(prod.sellingPrice)}</span>
+                    <span className="text-[10px] text-[#9CA3AF] block font-mono">Precio Venta</span>
+                    <span className="text-sm font-bold text-white font-mono tabular-nums">{currency} {formatAmount(prod.sellingPrice)}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block">Costo</span>
-                    <span className="text-xs font-medium text-slate-600 font-mono">{currency} {formatAmount(prod.costPrice)}</span>
+                    <span className="text-[10px] text-[#9CA3AF] block font-mono">Costo</span>
+                    <span className="text-xs font-medium text-[#D1D5DB] font-mono tabular-nums">{currency} {formatAmount(prod.costPrice)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 gap-2">
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2D2D2D] gap-2">
                 <button
                   onClick={() => handleOpenAdjust(prod)}
-                  className="flex-1 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1"
+                  className="flex-1 py-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white text-xs font-semibold rounded border border-[#2D2D2D] transition-colors flex items-center justify-center space-x-1"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#9CA3AF]" />
                   <span>Ajustar</span>
                 </button>
                 <button
                   onClick={() => handleOpenEdit(prod)}
-                  className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                  className="p-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-[#D1D5DB] hover:text-white rounded border border-[#2D2D2D] transition-colors"
                   title="Editar"
                 >
                   <Edit className="w-4 h-4" />
@@ -636,12 +638,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
       {/* Modal: Create / Edit Product */}
       {isProductModalOpen && (
-        <div id="modal-product" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-2xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+        <div id="modal-product" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-[#141414] rounded border border-[#2D2D2D] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden text-white">
             
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#0E0E0E] text-white flex items-center justify-between border-b border-[#2D2D2D]">
               <div className="flex items-center space-x-2">
-                <Package className="w-5 h-5 text-blue-400" />
+                <Package className="w-5 h-5 text-[#C8102E]" />
                 <h3 className="text-base font-bold">
                   {editingProduct ? 'Editar Producto del Inventario' : 'Registrar Nuevo Producto'}
                 </h3>
@@ -649,7 +651,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <button 
                 id="btn-close-product-modal"
                 onClick={() => setIsProductModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#9CA3AF] hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -659,52 +661,52 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Código SKU *</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Código SKU *</label>
                   <input
                     id="input-prod-sku"
                     type="text"
                     required
                     value={formData.sku}
                     onChange={e => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono text-white focus:outline-none focus:border-[#C8102E]"
                     placeholder="e.g. LAP-DELL-5520"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Código de Barras</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Código de Barras</label>
                   <input
                     id="input-prod-barcode"
                     type="text"
                     value={formData.barcode}
                     onChange={e => setFormData({ ...formData, barcode: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono text-white focus:outline-none focus:border-[#C8102E]"
                     placeholder="e.g. 7751234500101"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo del Producto *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Nombre Completo del Producto *</label>
                 <input
                   id="input-prod-name"
                   type="text"
                   required
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
                   placeholder="e.g. Laptop Dell Latitude 5520 Core i7 16GB RAM"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Categoría *</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Categoría *</label>
                   <select
                     id="select-prod-category"
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
                   >
                     {categories.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
@@ -713,24 +715,24 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Marca</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Marca</label>
                   <input
                     id="input-prod-brand"
                     type="text"
                     value={formData.brand}
                     onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
                     placeholder="e.g. Dell, Cisco, Hikvision"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Unidad de Medida</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Unidad de Medida</label>
                   <select
                     id="select-prod-unit"
                     value={formData.unit}
                     onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
                   >
                     <option value="UND">Unidades (UND)</option>
                     <option value="CJ">Caja (CJ)</option>
@@ -743,12 +745,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
               {/* Pricing & Profit Margin Preview */}
-              <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl space-y-3">
-                <span className="text-xs font-bold text-blue-900 block">Precios & Margen de Ganancia</span>
+              <div className="p-4 bg-[#1E1E1E] border border-[#2D2D2D] rounded space-y-3">
+                <span className="text-xs font-bold text-white uppercase font-mono block">Precios & Margen de Ganancia</span>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Costo Unitario ({currency}) *</label>
+                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
                     <input
                       id="input-prod-cost"
                       type="number"
@@ -757,12 +759,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       required
                       value={formData.costPrice}
                       onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold"
+                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Precio Venta ({currency}) *</label>
+                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Precio Venta ({currency}) *</label>
                     <input
                       id="input-prod-price"
                       type="number"
@@ -771,13 +773,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       required
                       value={formData.sellingPrice}
                       onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-blue-700"
+                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#FFDAD8] focus:border-[#C8102E]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Margen Calculado</label>
-                    <div className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-emerald-700 font-mono">
+                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Margen Calculado</label>
+                    <div className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-bold text-[#A7F3D0] font-mono">
                       +{marginPercent}% (${formatAmount(formData.sellingPrice - formData.costPrice)})
                     </div>
                   </div>
@@ -787,7 +789,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {/* Stock and Thresholds */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Stock Actual *</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Actual *</label>
                   <input
                     id="input-prod-stock"
                     type="number"
@@ -795,12 +797,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     required
                     value={formData.stock}
                     onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Stock Mínimo (Alerta) *</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Mínimo (Alerta) *</label>
                   <input
                     id="input-prod-minstock"
                     type="number"
@@ -808,59 +810,59 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     required
                     value={formData.minStock}
                     onChange={e => setFormData({ ...formData, minStock: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono text-white focus:border-[#C8102E]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ubicación en Almacén</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Ubicación en Almacén</label>
                   <input
                     id="input-prod-location"
                     type="text"
                     value={formData.location}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                    placeholder="e.g. Estante B-03"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
+                    placeholder="e.g. CDL-A04-R12-S02"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Descripción / Especificaciones Técnicas</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Descripción / Especificaciones Técnicas</label>
                 <textarea
                   id="textarea-prod-desc"
                   rows={2}
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
                   placeholder="Detalles adicionales, número de parte o compatibilidades..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">URL de Imagen (Opcional)</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">URL de Imagen (Opcional)</label>
                 <input
                   id="input-prod-image"
                   type="url"
                   value={formData.imageUrl}
                   onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
                   placeholder="https://images.unsplash.com/..."
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+              <div className="pt-4 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-[#D1D5DB] text-xs font-semibold rounded border border-[#2D2D2D] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   id="btn-save-product"
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm"
+                  className="px-5 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-bold rounded cursor-pointer transition-colors"
                 >
                   {editingProduct ? 'Guardar Cambios' : 'Registrar Producto'}
                 </button>
@@ -873,18 +875,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
       {/* Modal: Adjust Stock (Kardex Movement) */}
       {isAdjustModalOpen && adjustingProduct && (
-        <div id="modal-adjust-stock" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-2xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+        <div id="modal-adjust-stock" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-[#141414] rounded border border-[#2D2D2D] shadow-2xl max-w-md w-full overflow-hidden text-white">
             
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#0E0E0E] text-white flex items-center justify-between border-b border-[#2D2D2D]">
               <div className="flex items-center space-x-2">
-                <SlidersHorizontal className="w-5 h-5 text-blue-400" />
+                <SlidersHorizontal className="w-5 h-5 text-[#C8102E]" />
                 <h3 className="text-base font-bold">Ajustar Existencias de Stock</h3>
               </div>
               <button 
                 id="btn-close-adjust-modal"
                 onClick={() => setIsAdjustModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-[#9CA3AF] hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -892,21 +894,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
             <form onSubmit={handleSubmitAdjust} className="p-6 space-y-4">
               
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-                <p className="font-bold text-slate-900">{adjustingProduct.name}</p>
-                <div className="flex items-center justify-between text-slate-600 font-mono">
+              <div className="p-3 bg-[#1E1E1E] border border-[#2D2D2D] rounded text-xs space-y-1">
+                <p className="font-bold text-white">{adjustingProduct.name}</p>
+                <div className="flex items-center justify-between text-[#9CA3AF] font-mono">
                   <span>SKU: {adjustingProduct.sku}</span>
-                  <span className="font-bold text-blue-700">Stock Actual: {adjustingProduct.stock} {adjustingProduct.unit}</span>
+                  <span className="font-bold text-[#A7F3D0]">Stock Actual: {adjustingProduct.stock} {adjustingProduct.unit}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de Movimiento Kardex *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Tipo de Movimiento Kardex *</label>
                 <select
                   id="select-adjust-type"
                   value={adjustData.type}
                   onChange={e => setAdjustData({ ...adjustData, type: e.target.value as MovementType })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-medium text-white focus:border-[#C8102E]"
                 >
                   <option value="IN_PURCHASE">Entrada por Compra / Reabastecimiento (+)</option>
                   <option value="IN_ADJUSTMENT">Ajuste Positivo / Conteo de Inventario (+)</option>
@@ -916,7 +918,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Cantidad a Mover *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Cantidad a Mover *</label>
                 <input
                   id="input-adjust-qty"
                   type="number"
@@ -924,10 +926,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   required
                   value={adjustData.quantity}
                   onChange={e => setAdjustData({ ...adjustData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
                 />
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Nuevo stock estimado: <strong>
+                <span className="text-[11px] text-[#9CA3AF] mt-1 block font-mono">
+                  Nuevo stock estimado: <strong className="text-white">
                     {adjustData.type.startsWith('IN_') 
                       ? adjustingProduct.stock + adjustData.quantity 
                       : Math.max(0, adjustingProduct.stock - adjustData.quantity)} {adjustingProduct.unit}
@@ -936,41 +938,41 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Motivo / Justificación *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Motivo / Justificación *</label>
                 <textarea
                   id="textarea-adjust-notes"
                   required
                   rows={2}
                   value={adjustData.notes}
                   onChange={e => setAdjustData({ ...adjustData, notes: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
                   placeholder="e.g. Ingreso por factura de proveedor F-00234 o conteo físico mensual"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Usuario Responsable</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Usuario Responsable</label>
                 <input
                   id="input-adjust-user"
                   type="text"
                   value={adjustData.responsible}
                   onChange={e => setAdjustData({ ...adjustData, responsible: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end space-x-3">
+              <div className="pt-3 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsAdjustModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-[#D1D5DB] text-xs font-semibold rounded border border-[#2D2D2D] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   id="btn-confirm-adjust-stock"
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm"
+                  className="px-5 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-bold rounded cursor-pointer transition-colors"
                 >
                   Confirmar Movimiento
                 </button>

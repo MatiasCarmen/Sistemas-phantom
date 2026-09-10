@@ -188,7 +188,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     <div className="space-y-6 pb-12">
       
       {/* Header & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 shadow-2xl shadow-slate-950/30">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded-md border border-[#2D2D2D]">
         <div>
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-bold text-white tracking-tight">Directorio de Contactos Comerciales</h2>
@@ -196,14 +196,14 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-600">
+          <div className="flex bg-[#0E0E0E] p-1 rounded-md border border-[#2D2D2D]">
             <button
               id="tab-customers-view"
               onClick={() => setActiveTab('customers')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
+              className={`px-4 py-2 text-xs font-bold rounded transition-all flex items-center space-x-1.5 ${
                 activeTab === 'customers'
-                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/30'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-[#C8102E] text-white shadow-sm'
+                  : 'text-[#c8c6c6] hover:text-white'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -212,10 +212,10 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
             <button
               id="tab-suppliers-view"
               onClick={() => setActiveTab('suppliers')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
+              className={`px-4 py-2 text-xs font-bold rounded transition-all flex items-center space-x-1.5 ${
                 activeTab === 'suppliers'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-[#C8102E] text-white shadow-sm'
+                  : 'text-[#c8c6c6] hover:text-white'
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
@@ -226,7 +226,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
           <button
             id="btn-add-contact-action"
             onClick={activeTab === 'customers' ? handleOpenAddCust : handleOpenAddSupp}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-violet-900/40 flex items-center space-x-1.5"
+            className="px-4 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded font-bold text-xs transition-colors shadow-sm flex items-center space-x-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>{activeTab === 'customers' ? 'Nuevo Cliente' : 'Nuevo Proveedor'}</span>
@@ -235,16 +235,16 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       </div>
 
       {/* Search Bar */}
-      <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-700/80 shadow-2xl shadow-slate-950/30">
+      <div className="bg-[#141414] p-4 rounded-md border border-[#2D2D2D]">
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             id="input-contacts-search"
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder={`Buscar en ${activeTab === 'customers' ? 'clientes por nombre, RUC o email' : 'proveedores por empresa o contacto'}...`}
-            className="w-full pl-9 pr-4 py-2 bg-slate-950/60 border border-slate-600 rounded-xl text-xs text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-violet-500 focus:bg-slate-950"
+            className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#C8102E]"
           />
         </div>
       </div>
@@ -255,48 +255,48 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
         /* Customers List */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCustomers.map(cust => (
-            <div key={cust.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div key={cust.id} className="bg-[#141414] rounded-md border border-[#2D2D2D] p-5 flex flex-col justify-between hover:border-[#C8102E] transition-all">
               <div>
                 <div className="flex items-start justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                  <div className="w-10 h-10 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] flex items-center justify-center font-bold text-sm font-mono">
                     {cust.name.slice(0, 2).toUpperCase()}
                   </div>
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-mono text-[10px]">
+                  <span className="px-2 py-0.5 bg-[#1E1E1E] border border-[#2D2D2D] text-[#c8c6c6] rounded font-mono text-[10px]">
                     RUC: {cust.taxId}
                   </span>
                 </div>
 
-                <h4 className="text-sm font-bold text-slate-900 mt-3">{cust.name}</h4>
+                <h4 className="text-sm font-bold text-white mt-3">{cust.name}</h4>
                 
-                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                <div className="mt-3 space-y-1.5 text-xs text-[#c8c6c6]">
                   <div className="flex items-center space-x-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Mail className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                     <span className="truncate">{cust.email}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Phone className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                     <span>{cust.phone}</span>
                   </div>
                   {cust.address && (
                     <div className="flex items-center space-x-2">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                       <span className="truncate">{cust.address}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Límite Crédito:</span>
-                  <span className="font-mono font-bold text-slate-900">
+                <div className="mt-4 pt-3 border-t border-[#1E1E1E] flex items-center justify-between text-xs">
+                  <span className="text-[#71717A]">Límite Crédito:</span>
+                  <span className="font-mono tabular-nums font-bold text-white">
                     {currency} {(cust.creditLimit || 0).toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-[#1E1E1E]">
                 <button
                   onClick={() => handleOpenEditCust(cust)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] text-xs font-semibold rounded transition-colors flex items-center space-x-1"
                 >
                   <Edit className="w-3.5 h-3.5" />
                   <span>Editar</span>
@@ -305,9 +305,9 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                   onClick={() => {
                     if (confirm(`¿Eliminar al cliente ${cust.name}?`)) onDeleteCustomer(cust.id);
                   }}
-                  className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-[#C8102E]/15 text-[#71717A] hover:text-[#C8102E] rounded border border-transparent hover:border-[#C8102E]/40 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -319,47 +319,47 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
         /* Suppliers List */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSuppliers.map(supp => (
-            <div key={supp.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div key={supp.id} className="bg-[#141414] rounded-md border border-[#2D2D2D] p-5 flex flex-col justify-between hover:border-[#C8102E] transition-all">
               <div>
                 <div className="flex items-start justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                  <div className="w-10 h-10 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] flex items-center justify-center font-bold text-sm font-mono">
                     {supp.name.slice(0, 2).toUpperCase()}
                   </div>
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-medium text-[10px]">
+                  <span className="px-2 py-0.5 bg-[#1E1E1E] border border-[#2D2D2D] text-[#c8c6c6] rounded font-mono text-[10px]">
                     {supp.category || 'Proveedor'}
                   </span>
                 </div>
 
-                <h4 className="text-sm font-bold text-slate-900 mt-3">{supp.name}</h4>
-                <p className="text-[11px] font-mono text-slate-400">RUC: {supp.taxId}</p>
+                <h4 className="text-sm font-bold text-white mt-3">{supp.name}</h4>
+                <p className="text-[11px] font-mono text-[#71717A]">RUC: {supp.taxId}</p>
 
-                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                <div className="mt-3 space-y-1.5 text-xs text-[#c8c6c6]">
                   {supp.contactPerson && (
                     <div className="flex items-center space-x-2">
-                      <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <UserCheck className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                       <span>{supp.contactPerson}</span>
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Mail className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                     <span className="truncate">{supp.email}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Phone className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
                     <span>{supp.phone}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Condición Pago:</span>
-                  <span className="font-semibold text-slate-700">{supp.paymentTerms || 'Contado'}</span>
+                <div className="mt-4 pt-3 border-t border-[#1E1E1E] flex items-center justify-between text-xs">
+                  <span className="text-[#71717A]">Condición Pago:</span>
+                  <span className="font-semibold text-white">{supp.paymentTerms || 'Contado'}</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-[#1E1E1E]">
                 <button
                   onClick={() => handleOpenEditSupp(supp)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors flex items-center space-x-1"
+                  className="px-3 py-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] text-xs font-semibold rounded transition-colors flex items-center space-x-1"
                 >
                   <Edit className="w-3.5 h-3.5" />
                   <span>Editar</span>
@@ -368,9 +368,9 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                   onClick={() => {
                     if (confirm(`¿Eliminar al proveedor ${supp.name}?`)) onDeleteSupplier(supp.id);
                   }}
-                  className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-[#C8102E]/15 text-[#71717A] hover:text-[#C8102E] rounded border border-transparent hover:border-[#C8102E]/40 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -381,105 +381,105 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
 
       {/* Modal: Customer Form */}
       {isCustModalOpen && (
-        <div id="modal-customer-form" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-2xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div id="modal-customer-form" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-[#141414] rounded-md shadow-2xl max-w-lg w-full overflow-hidden border border-[#2D2D2D]">
+            <div className="px-6 py-4 bg-[#0E0E0E] text-white flex items-center justify-between border-b border-[#2D2D2D]">
               <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-400" />
-                <h3 className="text-base font-bold">{editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h3>
+                <Users className="w-5 h-5 text-[#C8102E]" />
+                <h3 className="text-base font-bold text-white">{editingCustomer ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</h3>
               </div>
-              <button onClick={() => setIsCustModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsCustModalOpen(false)} className="text-[#71717A] hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmitCust} className="p-6 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre / Razón Social *</label>
+                <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Nombre / Razón Social *</label>
                 <input
                   type="text"
                   required
                   value={custForm.name}
                   onChange={e => setCustForm({ ...custForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">RUC / NIT / DNI *</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">RUC / NIT / DNI *</label>
                   <input
                     type="text"
                     required
                     value={custForm.taxId}
                     onChange={e => setCustForm({ ...custForm, taxId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Teléfono</label>
                   <input
                     type="text"
                     value={custForm.phone}
                     onChange={e => setCustForm({ ...custForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico *</label>
+                <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Correo Electrónico *</label>
                 <input
                   type="email"
                   required
                   value={custForm.email}
                   onChange={e => setCustForm({ ...custForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Dirección Fiscal</label>
+                <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Dirección Fiscal</label>
                 <input
                   type="text"
                   value={custForm.address}
                   onChange={e => setCustForm({ ...custForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Límite de Crédito ({currency})</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Límite de Crédito ({currency})</label>
                   <input
                     type="number"
                     value={custForm.creditLimit}
                     onChange={e => setCustForm({ ...custForm, creditLimit: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono tabular-nums focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Condición de Pago</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condición de Pago</label>
                   <input
                     type="text"
                     value={custForm.paymentTerms}
                     onChange={e => setCustForm({ ...custForm, paymentTerms: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+              <div className="pt-4 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsCustModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] text-xs font-semibold rounded"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl"
+                  className="px-5 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-bold rounded shadow-sm"
                 >
                   Guardar Cliente
                 </button>
@@ -491,105 +491,105 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
 
       {/* Modal: Supplier Form */}
       {isSuppModalOpen && (
-        <div id="modal-supplier-form" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-2xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div id="modal-supplier-form" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-[#141414] rounded-md shadow-2xl max-w-lg w-full overflow-hidden border border-[#2D2D2D]">
+            <div className="px-6 py-4 bg-[#0E0E0E] text-white flex items-center justify-between border-b border-[#2D2D2D]">
               <div className="flex items-center space-x-2">
-                <Truck className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-base font-bold">{editingSupplier ? 'Editar Proveedor' : 'Registrar Proveedor'}</h3>
+                <Truck className="w-5 h-5 text-[#C8102E]" />
+                <h3 className="text-base font-bold text-white">{editingSupplier ? 'Editar Proveedor' : 'Registrar Proveedor'}</h3>
               </div>
-              <button onClick={() => setIsSuppModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsSuppModalOpen(false)} className="text-[#71717A] hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmitSupp} className="p-6 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre / Empresa Proveedora *</label>
+                <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Nombre / Empresa Proveedora *</label>
                 <input
                   type="text"
                   required
                   value={suppForm.name}
                   onChange={e => setSuppForm({ ...suppForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">RUC / NIT *</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">RUC / NIT *</label>
                   <input
                     type="text"
                     required
                     value={suppForm.taxId}
                     onChange={e => setSuppForm({ ...suppForm, taxId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Persona de Contacto</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Persona de Contacto</label>
                   <input
                     type="text"
                     value={suppForm.contactPerson}
                     onChange={e => setSuppForm({ ...suppForm, contactPerson: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Correo Electrónico</label>
                   <input
                     type="email"
                     value={suppForm.email}
                     onChange={e => setSuppForm({ ...suppForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Teléfono</label>
                   <input
                     type="text"
                     value={suppForm.phone}
                     onChange={e => setSuppForm({ ...suppForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Categoría de Suministros</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Categoría de Suministros</label>
                   <input
                     type="text"
                     value={suppForm.category}
                     onChange={e => setSuppForm({ ...suppForm, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Condiciones de Pago</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condiciones de Pago</label>
                   <input
                     type="text"
                     value={suppForm.paymentTerms}
                     onChange={e => setSuppForm({ ...suppForm, paymentTerms: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+              <div className="pt-4 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsSuppModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] text-xs font-semibold rounded"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl"
+                  className="px-5 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-bold rounded shadow-sm"
                 >
                   Guardar Proveedor
                 </button>

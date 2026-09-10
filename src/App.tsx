@@ -54,6 +54,33 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
+  // Theme State (Dark / Light)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('phantom_theme');
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('phantom_theme', theme);
+      if (theme === 'light') {
+        document.documentElement.classList.add('theme-light');
+      } else {
+        document.documentElement.classList.remove('theme-light');
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   useEffect(() => {
     try {
       sessionStorage.setItem('phantom_active_tab', activeTab);
@@ -453,14 +480,14 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell h-screen w-screen text-slate-900 flex overflow-hidden font-sans antialiased selection:bg-teal-600 selection:text-white">
+    <div className="app-shell h-screen w-screen bg-[#0E0E0E] flex overflow-hidden font-sans antialiased">
       
       {/* Toast Notification Banner */}
       {notification && (
-        <div className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold flex items-center space-x-2 transition-all transform duration-200 animate-in fade-in slide-in-from-bottom-5 ${
+        <div className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded border text-xs font-semibold flex items-center space-x-2 transition-all transform duration-200 animate-in fade-in slide-in-from-bottom-5 ${
           notification.type === 'success' 
-            ? 'bg-slate-900 text-white border-slate-700' 
-            : 'bg-rose-600 text-white border-rose-700'
+            ? 'bg-[#141414] text-[#A7F3D0] border-[#10B981]' 
+            : 'bg-[#410006] text-[#FFDAD8] border-[#C8102E]'
         }`}>
           <span>{notification.message}</span>
         </div>
@@ -479,6 +506,8 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenUsersModal={() => setIsUsersModalOpen(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main Content Workspace (Right Column) */}
@@ -503,6 +532,8 @@ export default function App() {
           currentUser={currentUser}
           onLogout={handleLogout}
           onOpenUsersModal={() => setIsUsersModalOpen(true)}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
 
         {/* Scrollable View Area */}

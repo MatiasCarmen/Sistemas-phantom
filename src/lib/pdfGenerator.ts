@@ -13,7 +13,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
   let y = 20;
 
   // Header / Brand
-  doc.setFillColor(37, 99, 235); // Blue #2563eb
+  doc.setFillColor(200, 16, 46); // Phantom Red #C8102E
   doc.rect(0, 0, pageWidth, 8, 'F');
 
   // Company Info
@@ -38,7 +38,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(37, 99, 235);
+  doc.setTextColor(200, 16, 46); // Phantom Red
   doc.text('COTIZACIÓN COMERCIAL', pageWidth - 70, 22);
 
   doc.setFontSize(11);
@@ -189,7 +189,7 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
 
   // Header Color Bar
   const isCancelled = sale.status === 'CANCELLED';
-  doc.setFillColor(isCancelled ? 220 : 16, isCancelled ? 38 : 185, isCancelled ? 38 : 129); // Red or Emerald
+  doc.setFillColor(isCancelled ? 200 : 200, isCancelled ? 16 : 16, isCancelled ? 46 : 46); // Phantom Red #C8102E
   doc.rect(0, 0, pageWidth, 8, 'F');
 
   // Company Info
@@ -214,7 +214,7 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(16, 185, 129);
+  doc.setTextColor(200, 16, 46); // Phantom Red
   doc.text(`COMPROBANTE: ${sale.voucherType}`, pageWidth - 70, 22);
 
   doc.setFontSize(11);
