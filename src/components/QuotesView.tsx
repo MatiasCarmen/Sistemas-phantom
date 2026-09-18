@@ -823,20 +823,22 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                     <span>Subtotal Bruto:</span>
                     <span className="font-mono tabular-nums">{currency} {formatAmount(rawSubtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-[#10B981] font-medium">
-                    <span>Descuento Comercial:</span>
-                    <span className="font-mono tabular-nums">-{currency} {formatAmount(totalDiscount)}</span>
+                  {totalDiscount > 0 && (
+                    <div className="flex justify-between text-[#10B981] font-medium">
+                      <span>Descuento Comercial:</span>
+                      <span className="font-mono tabular-nums">-{currency} {formatAmount(totalDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-[#A1A1AA] pt-1 border-t border-[#2D2D2D]/60">
+                    <span className="font-semibold text-white">Subtotal (Base Imponible):</span>
+                    <span className="font-mono tabular-nums text-white font-bold">{currency} {formatAmount(calculatedSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-[#A1A1AA]">
-                    <span>Base Imponible:</span>
-                    <span className="font-mono tabular-nums">{currency} {formatAmount(calculatedSubtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-[#A1A1AA]">
-                    <span>Impuestos (IVA/IGV {taxRateDefault}%):</span>
-                    <span className="font-mono tabular-nums">{currency} {formatAmount(calculatedTax)}</span>
+                    <span className="font-semibold text-[#A7F3D0]">IGV ({taxRateDefault}%):</span>
+                    <span className="font-mono tabular-nums text-[#A7F3D0] font-bold">+{currency} {formatAmount(calculatedTax)}</span>
                   </div>
                   <div className="pt-2 border-t border-[#2D2D2D] flex justify-between text-sm font-bold text-white">
-                    <span>TOTAL COTIZACIÓN:</span>
+                    <span>TOTAL NETO:</span>
                     <span className="font-mono tabular-nums text-base text-[#ffb3b1]">{currency} {formatAmount(calculatedGrandTotal)}</span>
                   </div>
                 </div>
@@ -955,20 +957,26 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
                 </table>
               </div>
 
-              {/* Totals */}
+              {/* Totals Breakdown */}
               <div className="flex justify-end">
-                <div className="w-64 p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs space-y-1.5">
+                <div className="w-72 p-3.5 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs space-y-2">
                   <div className="flex justify-between text-[#A1A1AA]">
-                    <span>Subtotal:</span>
-                    <span className="font-mono tabular-nums">{selectedQuote.currency} {formatAmount(selectedQuote.subtotal)}</span>
+                    <span className="font-semibold text-white">Subtotal (Base Imponible):</span>
+                    <span className="font-mono tabular-nums text-white font-bold">{selectedQuote.currency} {formatAmount(selectedQuote.subtotal)}</span>
                   </div>
+                  {selectedQuote.discountTotal > 0 && (
+                    <div className="flex justify-between text-[#10B981]">
+                      <span>Descuento Aplicado:</span>
+                      <span className="font-mono tabular-nums">-{selectedQuote.currency} {formatAmount(selectedQuote.discountTotal)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-[#A1A1AA]">
-                    <span>Impuestos:</span>
-                    <span className="font-mono tabular-nums">{selectedQuote.currency} {formatAmount(selectedQuote.taxTotal)}</span>
+                    <span className="font-semibold text-[#A7F3D0]">IGV (18%):</span>
+                    <span className="font-mono tabular-nums text-[#A7F3D0] font-bold">+{selectedQuote.currency} {formatAmount(selectedQuote.taxTotal)}</span>
                   </div>
-                  <div className="pt-1.5 border-t border-[#2D2D2D] flex justify-between font-bold text-sm text-white">
-                    <span>Total General:</span>
-                    <span className="font-mono tabular-nums text-[#ffb3b1]">{selectedQuote.currency} {formatAmount(selectedQuote.total)}</span>
+                  <div className="pt-2 border-t border-[#2D2D2D] flex justify-between font-bold text-sm text-white">
+                    <span>TOTAL NETO:</span>
+                    <span className="font-mono tabular-nums text-base text-[#ffb3b1]">{selectedQuote.currency} {formatAmount(selectedQuote.total)}</span>
                   </div>
                 </div>
               </div>

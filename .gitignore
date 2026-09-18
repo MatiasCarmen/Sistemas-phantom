@@ -12,3 +12,4 @@ build/
 *.swp
 *.swo
 data/db.json.bak
+db.json

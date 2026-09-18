@@ -23,7 +23,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 
 export interface SidebarProps {
   activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
@@ -466,6 +466,7 @@ export interface TopBarProps {
   onOpenUsersModal?: () => void;
   theme?: 'dark' | 'light';
   toggleTheme?: () => void;
+  onRoleChange?: (newRole: UserRole) => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -481,7 +482,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onLogout,
   onOpenUsersModal,
   theme = 'dark',
-  toggleTheme
+  toggleTheme,
+  onRoleChange
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const isAdmin = currentUser?.role === 'admin';
@@ -544,6 +546,28 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         )}
 
+        {/* Quick Role Switcher Selector (APF1) */}
+        {onRoleChange && currentUser && (
+          <div className="flex items-center gap-1.5 bg-[#0E0E0E] border border-[#2D2D2D] hover:border-[#474747] transition-colors rounded px-2.5 py-1.5">
+            <Shield className="w-3.5 h-3.5 text-[#C8102E] shrink-0" />
+            <label htmlFor="select-topbar-role" className="hidden xl:inline text-[10px] font-bold text-[#9CA3AF] uppercase font-mono">
+              Rol:
+            </label>
+            <select
+              id="select-topbar-role"
+              value={currentUser.role}
+              onChange={(e) => onRoleChange(e.target.value as UserRole)}
+              className="bg-transparent text-xs text-white font-bold cursor-pointer focus:outline-none font-mono focus:text-[#ffb3b1]"
+              title="Cambiar rol activo en tiempo real (APF1)"
+            >
+              <option value="admin" className="bg-[#141414] text-white">Administrador (Total & BI)</option>
+              <option value="cashier" className="bg-[#141414] text-white">Vendedor (POS & Ventas)</option>
+              <option value="warehouse" className="bg-[#141414] text-white">Almacenero (Kárdex & Stock)</option>
+              <option value="collaborator" className="bg-[#141414] text-white">Colaborador (Cotizaciones)</option>
+            </select>
+          </div>
+        )}
+
         {/* Theme Toggle Button */}
         {toggleTheme && (
           <button
@@ -599,7 +623,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   className="fixed inset-0 z-30" 
                   onClick={() => setDropdownOpen(false)} 
                 />
-                <div className="absolute right-0 mt-2 w-60 bg-[#141414] border border-[#2D2D2D] rounded shadow-xl py-2 z-40 text-white text-xs">
+                <div className="absolute right-0 mt-2 w-64 bg-[#141414] border border-[#2D2D2D] rounded shadow-xl py-2 z-40 text-white text-xs">
                   <div className="px-3.5 py-2.5 border-b border-[#2D2D2D]">
                     <div className="font-bold text-white">{currentUser.name}</div>
                     <div className="text-[11px] text-[#9CA3AF] truncate font-mono">{currentUser.email}</div>
@@ -613,6 +637,43 @@ export const TopBar: React.FC<TopBarProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {/* Quick Role Switcher inside Dropdown */}
+                  {onRoleChange && (
+                    <div className="px-3.5 py-2.5 border-b border-[#2D2D2D] bg-[#0E0E0E]">
+                      <span className="text-[10px] text-[#9CA3AF] uppercase font-mono font-bold block mb-1.5">Cambiar Rol en Caliente:</span>
+                      <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => { onRoleChange('admin'); setDropdownOpen(false); }}
+                          className={`px-2 py-1 rounded border text-left font-bold ${currentUser.role === 'admin' ? 'bg-[#C8102E] text-white border-[#C8102E]' : 'bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D] hover:bg-[#2D2D2D]'}`}
+                        >
+                          Admin
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onRoleChange('cashier'); setDropdownOpen(false); }}
+                          className={`px-2 py-1 rounded border text-left font-bold ${currentUser.role === 'cashier' ? 'bg-[#C8102E] text-white border-[#C8102E]' : 'bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D] hover:bg-[#2D2D2D]'}`}
+                        >
+                          Vendedor
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onRoleChange('warehouse'); setDropdownOpen(false); }}
+                          className={`px-2 py-1 rounded border text-left font-bold ${currentUser.role === 'warehouse' ? 'bg-[#C8102E] text-white border-[#C8102E]' : 'bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D] hover:bg-[#2D2D2D]'}`}
+                        >
+                          Almacén
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onRoleChange('collaborator'); setDropdownOpen(false); }}
+                          className={`px-2 py-1 rounded border text-left font-bold ${currentUser.role === 'collaborator' ? 'bg-[#C8102E] text-white border-[#C8102E]' : 'bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D] hover:bg-[#2D2D2D]'}`}
+                        >
+                          Asesor
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {isAdmin && onOpenUsersModal && (
                     <button

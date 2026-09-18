@@ -305,10 +305,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <button
             id="btn-open-kardex-global"
             onClick={() => onOpenKardex()}
-            className="px-3 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] rounded text-xs font-semibold transition-colors flex items-center space-x-1.5"
+            className="px-3.5 py-2 bg-[#1E3A8A]/30 hover:bg-[#1E3A8A]/60 text-[#DBEAFE] border border-[#3B82F6]/60 rounded text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
+            title="Ver Kárdex General de Movimientos (Entradas, Salidas y Ajustes)"
           >
             <History className="w-3.5 h-3.5 text-[#3B82F6]" />
-            <span>Kardex</span>
+            <span>Ver Kárdex General</span>
           </button>
 
           <button
@@ -543,10 +544,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                           <button
                             id={`btn-kardex-${prod.id}`}
                             onClick={() => onOpenKardex(prod)}
-                            className="p-1.5 hover:bg-[#2D2D2D] text-[#9CA3AF] hover:text-[#3B82F6] rounded transition-colors"
-                            title="Ver Kardex de movimientos"
+                            className="px-2 py-1 bg-[#1E3A8A]/30 hover:bg-[#1E3A8A]/60 text-[#DBEAFE] border border-[#3B82F6]/60 hover:border-[#3B82F6] rounded transition-all flex items-center gap-1 font-mono text-[11px] font-bold shadow-xs cursor-pointer group"
+                            title="Ver Kárdex de Movimientos (Entradas, Salidas y Stock)"
                           >
-                            <History className="w-4 h-4" />
+                            <History className="w-3.5 h-3.5 text-[#3B82F6] group-hover:rotate-[-45deg] transition-transform" />
+                            <span>Kárdex</span>
                           </button>
                           <button
                             id={`btn-edit-prod-${prod.id}`}
@@ -618,14 +620,22 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2D2D2D] gap-2">
                 <button
                   onClick={() => handleOpenAdjust(prod)}
-                  className="flex-1 py-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white text-xs font-semibold rounded border border-[#2D2D2D] transition-colors flex items-center justify-center space-x-1"
+                  className="flex-1 py-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white text-xs font-semibold rounded border border-[#2D2D2D] transition-colors flex items-center justify-center space-x-1 cursor-pointer"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 text-[#9CA3AF]" />
                   <span>Ajustar</span>
                 </button>
                 <button
+                  onClick={() => onOpenKardex(prod)}
+                  className="px-2.5 py-1.5 bg-[#1E3A8A]/30 hover:bg-[#1E3A8A]/60 text-[#DBEAFE] border border-[#3B82F6]/60 rounded text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ver Kárdex de Movimientos"
+                >
+                  <History className="w-3.5 h-3.5 text-[#3B82F6]" />
+                  <span>Kárdex</span>
+                </button>
+                <button
                   onClick={() => handleOpenEdit(prod)}
-                  className="p-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-[#D1D5DB] hover:text-white rounded border border-[#2D2D2D] transition-colors"
+                  className="p-1.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-[#D1D5DB] hover:text-white rounded border border-[#2D2D2D] transition-colors cursor-pointer"
                   title="Editar"
                 >
                   <Edit className="w-4 h-4" />

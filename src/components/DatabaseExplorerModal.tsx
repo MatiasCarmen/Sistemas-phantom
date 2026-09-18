@@ -13,7 +13,16 @@ import {
   FileSpreadsheet, 
   ShieldCheck,
   Server,
-  Key
+  Key,
+  Package,
+  Tag,
+  BarChart3,
+  FileText,
+  Receipt,
+  Users,
+  Building2,
+  Lock,
+  Settings
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -56,15 +65,15 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
   if (!isOpen) return null;
 
   const tableKeys = [
-    { key: 'products', label: 'Productos', count: dbData?.products?.length || 0, icon: '📦' },
-    { key: 'categories', label: 'Categorías', count: dbData?.categories?.length || 0, icon: '🏷️' },
-    { key: 'inventoryMovements', label: 'Kardex (Movimientos)', count: dbData?.inventoryMovements?.length || 0, icon: '📊' },
-    { key: 'quotes', label: 'Cotizaciones', count: dbData?.quotes?.length || 0, icon: '📑' },
-    { key: 'sales', label: 'Ventas & Facturas', count: dbData?.sales?.length || 0, icon: '💰' },
-    { key: 'customers', label: 'Clientes', count: dbData?.customers?.length || 0, icon: '👥' },
-    { key: 'suppliers', label: 'Proveedores', count: dbData?.suppliers?.length || 0, icon: '🏭' },
-    { key: 'users', label: 'Usuarios / Roles', count: dbData?.users?.length || 0, icon: '🔐' },
-    { key: 'settings', label: 'Configuración Fiscal', count: 1, icon: '⚙️' }
+    { key: 'products', label: 'Productos', count: dbData?.products?.length || 0, icon: Package },
+    { key: 'categories', label: 'Categorías', count: dbData?.categories?.length || 0, icon: Tag },
+    { key: 'inventoryMovements', label: 'Kardex (Movimientos)', count: dbData?.inventoryMovements?.length || 0, icon: BarChart3 },
+    { key: 'quotes', label: 'Cotizaciones', count: dbData?.quotes?.length || 0, icon: FileText },
+    { key: 'sales', label: 'Ventas & Facturas', count: dbData?.sales?.length || 0, icon: Receipt },
+    { key: 'customers', label: 'Clientes', count: dbData?.customers?.length || 0, icon: Users },
+    { key: 'suppliers', label: 'Proveedores', count: dbData?.suppliers?.length || 0, icon: Building2 },
+    { key: 'users', label: 'Usuarios / Roles', count: dbData?.users?.length || 0, icon: Lock },
+    { key: 'settings', label: 'Configuración Fiscal', count: 1, icon: Settings }
   ];
 
   const currentRecords = dbData ? (selectedTable === 'settings' ? [dbData.settings] : (dbData[selectedTable] || [])) : [];
@@ -166,6 +175,7 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
             <div className="space-y-1">
               {tableKeys.map((tbl) => {
                 const isSelected = selectedTable === tbl.key;
+                const TableIcon = tbl.icon;
                 return (
                   <button
                     key={tbl.key}
@@ -181,7 +191,7 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center space-x-2 truncate">
-                      <span className="text-sm">{tbl.icon}</span>
+                      <TableIcon className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate">{tbl.label}</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono tabular-nums font-bold ${

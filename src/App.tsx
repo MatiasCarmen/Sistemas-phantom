@@ -11,7 +11,8 @@ import {
   DashboardStats,
   MovementType,
   QuoteStatus,
-  User
+  User,
+  UserRole
 } from './types';
 import { api } from './lib/api';
 
@@ -204,6 +205,40 @@ export default function App() {
     localStorage.removeItem('nexus_auth_user');
     setCurrentUser(null);
     showToast('Sesión finalizada correctamente.');
+  };
+
+  // Quick Role Switcher for instant testing (APF1)
+  const handleRoleChange = (newRole: UserRole) => {
+    if (!currentUser) return;
+    const roleLabels: Record<UserRole, string> = {
+      admin: 'Administrador',
+      collaborator: 'Asesor Comercial',
+      cashier: 'Vendedor / POS',
+      warehouse: 'Almacenero'
+    };
+
+    const updatedPermissions = {
+      canViewDashboard: true,
+      canManageInventory: newRole === 'admin' || newRole === 'warehouse',
+      canViewCosts: newRole === 'admin',
+      canManageQuotes: newRole === 'admin' || newRole === 'collaborator' || newRole === 'cashier',
+      canManageSales: newRole === 'admin' || newRole === 'collaborator' || newRole === 'cashier',
+      canManageContacts: true,
+      canManageSettings: newRole === 'admin',
+      canManageUsers: newRole === 'admin',
+      canDeleteRecords: newRole === 'admin'
+    };
+
+    const updatedUser: User = {
+      ...currentUser,
+      role: newRole,
+      roleLabel: roleLabels[newRole] || newRole,
+      permissions: updatedPermissions
+    };
+
+    setCurrentUser(updatedUser);
+    localStorage.setItem('nexus_auth_user', JSON.stringify(updatedUser));
+    showToast(`Rol activo cambiado a: ${roleLabels[newRole]}`);
   };
 
   // Handlers for Products
@@ -534,6 +569,7 @@ export default function App() {
           onOpenUsersModal={() => setIsUsersModalOpen(true)}
           theme={theme}
           toggleTheme={toggleTheme}
+          onRoleChange={handleRoleChange}
         />
 
         {/* Scrollable View Area */}
