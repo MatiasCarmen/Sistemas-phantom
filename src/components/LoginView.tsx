@@ -52,8 +52,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
   };
 
   return (
-    <div className="min-h-full flex flex-col bg-[#0a0a0a] text-[#f5f5f7] justify-between" style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <header className="w-full border-b border-[#262626] bg-[#0d0d0d] px-6 py-3.5 flex items-center justify-between z-20">
+    <div className="min-h-full flex flex-col bg-[#0B0B0B] text-[#e5e2e1] justify-between" style={{ fontFamily: 'Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      <header className="w-full border-b border-[#2D2D2D] bg-[#0E0E0E] px-6 py-3.5 flex items-center justify-between z-20">
         <div className="flex items-center gap-4">
           <div className="flex items-baseline gap-2.5">
             <span className="text-2xl text-white tracking-tighter uppercase select-none font-black" style={{ letterSpacing: '-0.04em' }}>PHANTOM</span>
@@ -62,21 +62,21 @@ export const LoginView: React.FC<LoginViewProps> = ({
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 lg:p-8">
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 bg-[#121212] rounded-xl border border-[#262626] shadow-2xl overflow-hidden min-h-[640px]">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 bg-[#141414] rounded-md border border-[#2D2D2D] shadow-2xl overflow-hidden min-h-[640px]">
           <section aria-labelledby="form-header" className="lg:col-span-6 p-8 sm:p-10 lg:p-12 flex flex-col justify-between">
             <div>
               <div className="mb-8">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white" id="form-header">
                   Portal de Operaciones
                 </h1>
-                <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
+                <p className="mt-2 text-sm text-[#A1A1AA] leading-relaxed">
                   Acceso centralizado para gestión de inventarios, recepción, cross-docking y distribución de Phantom Oficial.
                 </p>
               </div>
 
               <div className="space-y-3">
                 <button
-                  className="w-full flex items-center justify-center gap-3 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] hover:border-[#444] text-white font-medium text-sm py-2.5 px-4 rounded transition duration-150"
+                  className="w-full flex items-center justify-center gap-3 bg-[#1E1E1E] hover:bg-[#2D2D2D] border border-[#2D2D2D] hover:border-[#3D3D3D] text-white font-medium text-sm py-2.5 px-4 rounded transition duration-150"
                   type="button"
                 >
                   <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 24 24">
@@ -91,16 +91,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
               <div className="relative my-6">
                 <div aria-hidden="true" className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-neutral-800"></div>
+                  <div className="w-full border-t border-[#2D2D2D]"></div>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#121212] px-3 text-neutral-500 font-medium">o continuar con credenciales corporativas</span>
+                  <span className="bg-[#141414] px-3 text-[#71717A] font-mono font-medium">o continuar con credenciales corporativas</span>
                 </div>
               </div>
 
               {errorMessage && (
-                <div className="mb-4 p-3 bg-red-950/40 border border-red-900/50 rounded-lg flex items-start gap-2.5 text-xs text-[#E31B23]">
-                  <svg className="w-4 h-4 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <div className="mb-4 p-3 bg-[#C8102E]/15 border border-[#C8102E]/40 rounded flex items-start gap-2.5 text-xs text-[#ffb3b1]">
+                  <svg className="w-4 h-4 shrink-0 mt-0.5 text-[#C8102E]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   <span className="leading-relaxed">{errorMessage}</span>
@@ -109,12 +109,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5" htmlFor="corporate-id">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#c8c6c6] mb-1.5" htmlFor="corporate-id">
                     Usuario o Correo Corporativo
                   </label>
                   <div className="relative">
                     <input
-                      className="w-full bg-[#181818] border border-[#262626] rounded px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none focus:border-[#E31B23] focus:shadow-[0_0_0_2px_rgba(227,27,35,0.15)]"
+                      className="w-full bg-[#0E0E0E] border border-[#2D2D2D] rounded px-3.5 py-2.5 text-sm text-white placeholder-[#71717A] transition-colors focus:outline-none focus:border-[#C8102E]"
                       id="corporate-id"
                       name="corporate-id"
                       placeholder="ej. jperez@phantom.com.pe o CÓDIGO EMPLEADO"
@@ -128,12 +128,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300" htmlFor="corporate-password">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#c8c6c6]" htmlFor="corporate-password">
                       Contraseña
                     </label>
                     <button
                       type="button"
-                      className="text-xs text-neutral-400 hover:text-[#E31B23] transition-colors duration-150"
+                      className="text-xs text-[#A1A1AA] hover:text-[#ffb3b1] transition-colors duration-150"
                       onClick={() => { setShowForgotModal(true); setForgotSent(false); setForgotEmail(''); }}
                     >
                       ¿Olvidaste tu contraseña?
@@ -141,7 +141,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </div>
                   <div className="relative">
                     <input
-                      className="w-full bg-[#181818] border border-[#262626] rounded px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 transition-colors pr-10 focus:outline-none focus:border-[#E31B23] focus:shadow-[0_0_0_2px_rgba(227,27,35,0.15)]"
+                      className="w-full bg-[#0E0E0E] border border-[#2D2D2D] rounded px-3.5 py-2.5 text-sm text-white placeholder-[#71717A] transition-colors pr-10 focus:outline-none focus:border-[#C8102E]"
                       id="corporate-password"
                       name="corporate-password"
                       placeholder="••••••••••••"
@@ -152,7 +152,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     />
                     <button
                       aria-label="Alternar visibilidad de contraseña"
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 hover:text-neutral-200 focus:outline-none"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#71717A] hover:text-white focus:outline-none"
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                     >
@@ -172,19 +172,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                 <div className="flex items-center pt-1">
                   <input
-                    className="h-4 w-4 rounded bg-[#181818] border-[#262626] text-[#E31B23] focus:ring-[#E31B23] focus:ring-offset-0 focus:ring-offset-[#121212]"
+                    className="h-4 w-4 rounded bg-[#0E0E0E] border-[#2D2D2D] text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 focus:ring-offset-[#141414]"
                     id="remember-device"
                     name="remember-device"
                     type="checkbox"
                   />
-                  <label className="ml-2.5 block text-xs text-neutral-400 select-none cursor-pointer" htmlFor="remember-device">
+                  <label className="ml-2.5 block text-xs text-[#A1A1AA] select-none cursor-pointer" htmlFor="remember-device">
                     Recordar este dispositivo seguro por 30 días
                   </label>
                 </div>
 
                 <div className="pt-2">
                   <button
-                    className="w-full bg-[#E31B23] hover:bg-[#C7161E] text-white font-semibold text-sm py-2.5 px-4 rounded transition duration-150 ease-in-out shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121212] focus:ring-[#E31B23] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#C8102E] hover:bg-[#A80C25] text-white font-semibold text-sm py-2.5 px-4 rounded transition duration-150 ease-in-out shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#141414] focus:ring-[#C8102E] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -198,14 +198,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
               </form>
             </div>
 
-            <div className="pt-8 mt-6 border-t border-[#262626] text-[11px] text-neutral-500 leading-relaxed">
+            <div className="pt-8 mt-6 border-t border-[#2D2D2D] text-[11px] text-[#71717A] leading-relaxed">
               <p>
                 Sistema exclusivo para uso laboral y operativo de Phantom. Toda interacción queda registrada y auditada de acuerdo al manual interno de TI y seguridad de la información.
               </p>
             </div>
           </section>
 
-          <section aria-label="Instalaciones Logísticas Phantom" className="hidden lg:block lg:col-span-6 relative bg-neutral-900 border-l border-[#262626]">
+          <section aria-label="Instalaciones Logísticas Phantom" className="hidden lg:block lg:col-span-6 relative bg-neutral-900 border-l border-[#2D2D2D]">
             <img
               alt="Operador de almacén de Phantom realizando inventario de productos gaming y consolas"
               className="absolute inset-0 w-full h-full object-cover object-center grayscale-[20%] contrast-105"
@@ -216,7 +216,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
         </div>
       </main>
 
-      <footer className="w-full border-t border-[#262626] bg-[#0d0d0d] px-6 py-4 text-xs text-neutral-400">
+      <footer className="w-full border-t border-[#2D2D2D] bg-[#0E0E0E] px-6 py-4 text-xs text-[#71717A]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span>© 2026 Phantom Oficial. Todos los derechos reservados.</span>
@@ -226,8 +226,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <a className="hover:text-white transition-colors duration-150" href="#terminos">Términos de Servicio</a>
             <a className="hover:text-white transition-colors duration-150" href="#soporte">Mesa de Ayuda TI Almacén</a>
           </nav>
-          <div className="flex items-center gap-1.5 text-[11px] text-neutral-500">
-            <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-1.5 text-[11px] text-[#71717A]">
+            <svg className="w-3.5 h-3.5 text-[#71717A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span>Acceso protegido con cifrado TLS 256-bit</span>
@@ -237,13 +237,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
       {showForgotModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowForgotModal(false); }}
         >
-          <div className="w-full max-w-5xl bg-[#0f0f0f] border border-[#222] rounded-xl shadow-2xl shadow-black/80 overflow-hidden relative">
+          <div className="w-full max-w-5xl bg-[#141414] border border-[#2D2D2D] rounded-md shadow-2xl overflow-hidden relative">
             <button
               type="button"
-              className="absolute top-4 right-4 z-20 text-neutral-500 hover:text-white transition-colors bg-[#181818] border border-[#262626] rounded-full p-1.5"
+              className="absolute top-4 right-4 z-20 text-[#71717A] hover:text-white transition-colors bg-[#1E1E1E] border border-[#2D2D2D] rounded-full p-1.5"
               onClick={() => setShowForgotModal(false)}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,11 +252,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-              <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between bg-[#111111]/80 border-b lg:border-b-0 lg:border-r border-[#1f1f1f]">
+              <div className="lg:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between bg-[#141414] border-b lg:border-b-0 lg:border-r border-[#2D2D2D]">
                 <div>
                   <button
                     type="button"
-                    className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-white transition-colors duration-150 mb-6 group"
+                    className="inline-flex items-center text-xs font-semibold text-[#A1A1AA] hover:text-white transition-colors duration-150 mb-6 group"
                     onClick={() => setShowForgotModal(false)}
                   >
                     <svg className="w-4 h-4 mr-1.5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,8 +266,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </button>
 
                   <div className="mb-4">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#262626] bg-[#161616] text-[10px] font-bold tracking-widest text-[#E31B23] uppercase mb-3">
-                      <svg className="w-3 h-3 text-[#E31B23]" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#C8102E]/40 bg-[#C8102E]/15 text-[10px] font-bold tracking-widest text-[#ffb3b1] uppercase mb-3 font-mono">
+                      <svg className="w-3 h-3 text-[#C8102E]" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
                       </svg>
                       Seguridad y Control de Acceso
@@ -275,7 +275,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                       Recuperar Acceso Corporativo
                     </h2>
-                    <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    <p className="mt-2 text-xs sm:text-sm text-[#A1A1AA] leading-relaxed">
                       Ingresa tu correo institucional o código de colaborador para recibir un enlace seguro de restablecimiento o código de verificación temporal.
                     </p>
                   </div>
@@ -289,17 +289,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       className="space-y-5"
                     >
                       <div>
-                        <label className="block text-[11px] font-semibold tracking-wider text-slate-300 uppercase mb-1.5" htmlFor="recovery-identity">
+                        <label className="block text-[11px] font-semibold tracking-wider text-[#c8c6c6] uppercase mb-1.5" htmlFor="recovery-identity">
                           Correo Corporativo o Código de Empleado
                         </label>
-                        <div className="relative rounded-md">
-                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                        <div className="relative rounded">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#71717A]">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                             </svg>
                           </div>
                           <input
-                            className="block w-full rounded-md border border-[#2c2c2c] bg-[#181818] py-2.5 pl-10 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-[#E31B23] focus:ring-1 focus:ring-[#E31B23] transition-colors outline-none"
+                            className="block w-full rounded border border-[#2D2D2D] bg-[#0E0E0E] py-2.5 pl-10 pr-3 text-xs sm:text-sm text-white placeholder-[#71717A] focus:border-[#C8102E] focus:outline-none transition-colors"
                             id="recovery-identity"
                             placeholder="ej.@phantom.com.pe o EMP-****"
                             required
@@ -311,42 +311,42 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold tracking-wider text-slate-300 uppercase mb-2">
+                        <label className="block text-[11px] font-semibold tracking-wider text-[#c8c6c6] uppercase mb-2">
                           Canal de Verificación Preferido
                         </label>
                         <div className="space-y-2">
-                          <label className="relative flex items-start p-3 rounded-lg border border-[#2c2c2c] bg-[#161616] hover:bg-[#1a1a1a] cursor-pointer transition-colors group">
+                          <label className="relative flex items-start p-3 rounded border border-[#2D2D2D] bg-[#0E0E0E] hover:bg-[#1E1E1E] cursor-pointer transition-colors group">
                             <div className="flex items-center h-5">
                               <input
                                 checked={recoveryMethod === 'email'}
-                                className="h-4 w-4 text-[#E31B23] focus:ring-[#E31B23] focus:ring-offset-0 border-[#3b3b3b] bg-[#222]"
+                                className="h-4 w-4 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 border-[#2D2D2D] bg-[#141414]"
                                 name="recovery-method"
                                 type="radio"
                                 onChange={() => setRecoveryMethod('email')}
                               />
                             </div>
                             <div className="ml-3 text-xs">
-                              <div className="font-medium text-slate-200 group-hover:text-white flex items-center gap-1.5">
+                              <div className="font-medium text-[#e5e2e1] group-hover:text-white flex items-center gap-1.5">
                                 <span>Enlace al correo corporativo</span>
                                 <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.2 rounded font-mono">Recomendado</span>
                               </div>
-                              <p className="text-slate-400 text-[11px] mt-0.5">Sincronizado con Microsoft 365 / Google Workspace corporativo.</p>
+                              <p className="text-[#71717A] text-[11px] mt-0.5">Sincronizado con Microsoft 365 / Google Workspace corporativo.</p>
                             </div>
                           </label>
 
-                          <label className="relative flex items-start p-3 rounded-lg border border-[#242424] bg-[#141414] hover:bg-[#1a1a1a] cursor-pointer transition-colors group">
+                          <label className="relative flex items-start p-3 rounded border border-[#2D2D2D] bg-[#0E0E0E] hover:bg-[#1E1E1E] cursor-pointer transition-colors group">
                             <div className="flex items-center h-5">
                               <input
                                 checked={recoveryMethod === 'sms'}
-                                className="h-4 w-4 text-[#E31B23] focus:ring-[#E31B23] focus:ring-offset-0 border-[#3b3b3b] bg-[#222]"
+                                className="h-4 w-4 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 border-[#2D2D2D] bg-[#141414]"
                                 name="recovery-method"
                                 type="radio"
                                 onChange={() => setRecoveryMethod('sms')}
                               />
                             </div>
                             <div className="ml-3 text-xs">
-                              <span className="font-medium text-slate-200 group-hover:text-white">Código vía SMS al móvil corporativo</span>
-                              <p className="text-slate-400 text-[11px] mt-0.5">Número de teléfono registrado en el perfil operativo central.</p>
+                              <span className="font-medium text-[#e5e2e1] group-hover:text-white">Código vía SMS al móvil corporativo</span>
+                              <p className="text-[#71717A] text-[11px] mt-0.5">Número de teléfono registrado en el perfil operativo central.</p>
                             </div>
                           </label>
                         </div>
@@ -354,7 +354,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                       <div className="pt-1">
                         <button
-                          className="w-full flex justify-center items-center py-3 px-4 rounded font-semibold text-xs sm:text-sm text-white bg-[#E31B23] hover:bg-[#C7161E] shadow-md shadow-red-950/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#111] focus:ring-[#E31B23] transition-all tracking-wide"
+                          className="w-full flex justify-center items-center py-3 px-4 rounded font-semibold text-xs sm:text-sm text-white bg-[#C8102E] hover:bg-[#A80C25] shadow-md shadow-[#C8102E]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#141414] focus:ring-[#C8102E] transition-all tracking-wide"
                           type="submit"
                         >
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,19 +366,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     </form>
                   ) : (
                     <div className="text-center py-8">
-                      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-900/30 border border-emerald-800/50 flex items-center justify-center">
+                      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-950/40 border border-emerald-800/50 flex items-center justify-center">
                         <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                       <p className="text-base text-white font-bold">Correo enviado correctamente</p>
-                      <p className="text-xs text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
+                      <p className="text-xs text-[#A1A1AA] mt-2 max-w-xs mx-auto leading-relaxed">
                         {recoveryMethod === 'email'
                           ? `Se envió un enlace de restablecimiento a ${forgotEmail}. Revise su bandeja de entrada y siga las instrucciones.`
                           : `Se envió un código de verificación vía SMS al número registrado asociado a ${forgotEmail}.`}
                       </p>
                       <button
-                        className="mt-6 text-xs text-[#E31B23] hover:text-[#C7161E] transition-colors font-semibold"
+                        className="mt-6 text-xs text-[#ffb3b1] hover:text-white transition-colors font-semibold"
                         onClick={() => { setShowForgotModal(false); setForgotSent(false); setForgotEmail(''); }}
                       >
                         Volver al inicio de sesión
@@ -387,20 +387,20 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   )}
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-[#1f1f1f] space-y-3">
-                  <div className="p-3 bg-[#161616] border border-[#242424] rounded-lg">
+                <div className="mt-8 pt-6 border-t border-[#2D2D2D] space-y-3">
+                  <div className="p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded">
                     <div className="flex items-start space-x-2.5">
-                      <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
-                      <div className="text-[11px] text-slate-400 leading-relaxed">
-                        <strong className="text-slate-200">Nota de Seguridad:</strong> Por políticas internas de Phantom 2026, los enlaces de restablecimiento expiran en <span className="text-slate-200 font-medium">15 minutos</span> y requieren validación en dispositivo corporativo autorizado. Si perdiste acceso a tu correo o móvil, contacta directamente con Mesa de Ayuda TI Almacén (Anexo 4400).
+                      <div className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                        <strong className="text-white">Nota de Seguridad:</strong> Por políticas internas de Phantom 2026, los enlaces de restablecimiento expiran en <span className="text-white font-medium font-mono">15 minutos</span> y requieren validación en dispositivo corporativo autorizado. Si perdiste acceso a tu correo o móvil, contacta directamente con Mesa de Ayuda TI Almacén (Anexo 4400).
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs pt-1">
-                    <span className="text-slate-500 text-[11px]">¿Problemas con el factor 2FA corporativo?</span>
-                    <button className="font-medium text-slate-300 hover:text-white inline-flex items-center transition-colors text-[11px]">
+                    <span className="text-[#71717A] text-[11px]">¿Problemas con el factor 2FA corporativo?</span>
+                    <button className="font-medium text-[#c8c6c6] hover:text-white inline-flex items-center transition-colors text-[11px]">
                       Contactar Soporte TI
                       <svg className="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -416,21 +416,21 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   className="absolute inset-0 w-full h-full object-cover object-center opacity-45 mix-blend-luminosity contrast-125"
                   src="/assets/Login%20phantom.jpg"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/70 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#090909]/40 to-[#090909]" />                
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0E0E0E] via-[#0E0E0E]/70 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#0E0E0E]/40 to-[#0E0E0E]" />                
 
                 <div className="relative z-10 space-y-4">
-                  <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-[#181818]/90 border border-[#2f2f2f] text-[11px] text-slate-300 backdrop-blur-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#E31B23]" />
+                  <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded bg-[#1E1E1E] border border-[#2D2D2D] text-[11px] text-[#c8c6c6] backdrop-blur-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C8102E]" />
                     <span>Mesa de Seguridad de Cuentas</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white tracking-tight">Centro de Distribución Central</h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-normal">
+                    <p className="text-xs text-[#A1A1AA] mt-1 leading-normal">
                       Auditoría en tiempo real para terminales PDA, escáneres de radiofrecuencia y estaciones de despacho. Todas las solicitudes quedan registradas bajo hash SHA-256.
                     </p>
                   </div>
-                  <div className="pt-2 grid grid-cols-2 gap-2 text-[10px] font-mono border-t border-white/10 text-slate-300">
+                  <div className="pt-2 grid grid-cols-2 gap-2 text-[10px] font-mono border-t border-white/10 text-[#c8c6c6]">
                   </div>
                 </div>
               </div>

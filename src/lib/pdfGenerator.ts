@@ -13,7 +13,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
   let y = 20;
 
   // Header / Brand
-  doc.setFillColor(37, 99, 235); // Blue #2563eb
+  doc.setFillColor(200, 16, 46); // Phantom Red #C8102E
   doc.rect(0, 0, pageWidth, 8, 'F');
 
   // Company Info
@@ -38,7 +38,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(37, 99, 235);
+  doc.setTextColor(200, 16, 46); // Phantom Red
   doc.text('COTIZACIÓN COMERCIAL', pageWidth - 70, 22);
 
   doc.setFontSize(11);
@@ -119,31 +119,31 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
     y = 20;
   }
 
-  const totalsX = pageWidth - 80;
+  const totalsX = pageWidth - 86;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(totalsX, y, 66, 32, 2, 2, 'F');
+  doc.roundedRect(totalsX, y, 72, 34, 2, 2, 'F');
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(71, 85, 105);
 
-  doc.text('Subtotal:', totalsX + 4, y + 7);
+  doc.text('Subtotal (Base Imp.):', totalsX + 4, y + 7);
   doc.text(`${quote.currency} ${formatAmount(quote.subtotal)}`, pageWidth - 18, y + 7, { align: 'right' });
 
   doc.text('Descuentos:', totalsX + 4, y + 13);
   doc.text(`-${quote.currency} ${formatAmount(quote.discountTotal)}`, pageWidth - 18, y + 13, { align: 'right' });
 
-  doc.text(`Impuestos (${settings.defaultTaxRate}%):`, totalsX + 4, y + 19);
+  doc.text(`IGV (${settings.defaultTaxRate || 18}%):`, totalsX + 4, y + 19);
   doc.text(`${quote.currency} ${formatAmount(quote.taxTotal)}`, pageWidth - 18, y + 19, { align: 'right' });
 
   doc.setDrawColor(203, 213, 225);
-  doc.line(totalsX + 4, y + 22, pageWidth - 18, y + 22);
+  doc.line(totalsX + 4, y + 23, pageWidth - 18, y + 23);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setTextColor(30, 41, 59);
-  doc.text('TOTAL:', totalsX + 4, y + 28);
-  doc.text(`${quote.currency} ${formatAmount(quote.total)}`, pageWidth - 18, y + 28, { align: 'right' });
+  doc.text('TOTAL NETO:', totalsX + 4, y + 29);
+  doc.text(`${quote.currency} ${formatAmount(quote.total)}`, pageWidth - 18, y + 29, { align: 'right' });
 
   // Notes & Terms
   doc.setFont('helvetica', 'bold');
@@ -189,7 +189,7 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
 
   // Header Color Bar
   const isCancelled = sale.status === 'CANCELLED';
-  doc.setFillColor(isCancelled ? 220 : 16, isCancelled ? 38 : 185, isCancelled ? 38 : 129); // Red or Emerald
+  doc.setFillColor(isCancelled ? 200 : 200, isCancelled ? 16 : 16, isCancelled ? 46 : 46); // Phantom Red #C8102E
   doc.rect(0, 0, pageWidth, 8, 'F');
 
   // Company Info
@@ -214,7 +214,7 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(16, 185, 129);
+  doc.setTextColor(200, 16, 46); // Phantom Red
   doc.text(`COMPROBANTE: ${sale.voucherType}`, pageWidth - 70, 22);
 
   doc.setFontSize(11);
