@@ -10,9 +10,7 @@ import {
   DashboardMetrics,
   MovementType,
   User,
-  LoginResponse,
-  MySQLConfig,
-  MySQLTestResult
+  LoginResponse
 } from '../types';
 
 const API_BASE = '/api';
@@ -249,19 +247,8 @@ export const api = {
       method: 'DELETE'
     }),
 
-  // MySQL Database Connection & Synchronization
-  getMySQLConfig: () => fetchJson<{ success: boolean; config: MySQLConfig }>('/database/mysql-config'),
-  saveMySQLConfig: (config: Partial<MySQLConfig>) => 
-    fetchJson<{ success: boolean; config: MySQLConfig; message: string }>('/database/mysql-config', {
-      method: 'POST',
-      body: JSON.stringify(config)
-    }),
-  testMySQLConnection: (config: MySQLConfig) => 
-    fetchJson<MySQLTestResult>('/database/mysql-test', {
-      method: 'POST',
-      body: JSON.stringify(config)
-    }),
-  exportMySQLScriptUrl: () => `${API_BASE}/database/mysql-script`,
+  // Database status
+  getDatabaseStatus: () => fetchJson<{ success: boolean; status: { connected: boolean; database: string } }>('/database/status'),
 
   // System
   exportBackupUrl: () => `${API_BASE}/system/export`,

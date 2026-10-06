@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from './dataStore';
-import { testMySQLConnection } from './mysql';
+import { getMongoStatus } from './mongo';
 
 const router = Router();
 
@@ -11,6 +11,10 @@ router.get('/health', (req: Request, res: Response) => {
     message: 'Sistema de Inventario, Cotizaciones y Ventas API RESTful activo',
     timestamp: new Date().toISOString()
   });
+});
+
+router.get('/database/status', (req: Request, res: Response) => {
+  res.json({ success: true, status: getMongoStatus() });
 });
 
 // Dashboard metrics
@@ -894,98 +898,11 @@ router.get('/system/sql-export', (req: Request, res: Response) => {
   }
 });
 
-// --- MYSQL DATABASE INTEGRATION ENDPOINTS ---
-router.get('/database/mysql-config', (req: Request, res: Response) => {
-  try {
-    const config = db.getMySQLConfig();
-    res.json({ success: true, config });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.post('/database/mysql-config', (req: Request, res: Response) => {
-  try {
-    const updated = db.updateMySQLConfig(req.body);
-    res.json({ success: true, config: updated, message: 'Configuración MySQL guardada con éxito' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.post('/database/mysql-test', async (req: Request, res: Response) => {
-  try {
-    const { host, port, database, user, password, ssl, charset } = req.body;
-
-    if (!host || !port || !database || !user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Faltan parámetros obligatorios (Host, Puerto, Base de datos o Usuario).'
-      });
-    }
-
-    const connectionConfig = {
-      host,
-      port: Number(port),
-      database,
-      user,
-      password: password || '',
-      ssl: !!ssl,
-      charset: charset || 'utf8mb4',
-      autoSync: true,
-    };
-
-    const result = await testMySQLConnection(connectionConfig);
-
-    db.updateMySQLConfig({
-      host,
-      port: Number(port),
-      database,
-      user,
-      password: password || '',
-      ssl: !!ssl,
-      charset: charset || 'utf8mb4',
-      connected: true,
-      lastTested: new Date().toISOString()
-    });
-
-    return res.json({
-      success: true,
-      message: result.message,
-      serverVersion: result.serverVersion,
-      database: result.database,
-      user: result.user,
-      latencyMs: result.latencyMs,
-      tablesFound: result.tablesFound || [],
-      details: result.details
-    });
-  } catch (error: any) {
-    const message = error?.message || 'Error al conectar con el servidor MySQL';
-    db.updateMySQLConfig({
-      host: req.body?.host || 'localhost',
-      port: Number(req.body?.port || 3306),
-      database: req.body?.database || 'nexus_erp_db',
-      user: req.body?.user || 'root',
-      password: req.body?.password || '',
-      ssl: !!req.body?.ssl,
-      charset: req.body?.charset || 'utf8mb4',
-      connected: false,
-      lastTested: new Date().toISOString()
-    });
-
-    return res.status(500).json({
-      success: false,
-      message: `Error al conectar con el servidor MySQL: ${message}`
-    });
-  }
-});
-
 router.get('/database/mysql-script', (req: Request, res: Response) => {
   try {
     const data = db.exportDatabase();
-    const config = db.getMySQLConfig();
-    const dbName = config.database || 'nexus_erp_db';
-    const prefix = config.tablePrefix || 'nexus_';
+    const dbName = 'phantom_erp';
+    const prefix = 'nexus_';
 
     let sql = `-- ========================================================\n`;
     sql += `-- NEXUS ERP - SCRIPT OFICIAL DE BASE DE DATOS MYSQL\n`;

@@ -9,6 +9,7 @@ Sistema web para la gestion de inventario, cotizaciones y ventas orientado a peq
 - TypeScript
 - Express
 - Node.js
+- MongoDB
 
 ## Instalacion
 
@@ -17,6 +18,15 @@ npm install
 ```
 
 ## Ejecucion local
+
+Usa Node.js 20.19 o superior. Copia `.env.example` como `.env` y configura `MONGODB_URI` para tu instancia local o MongoDB Atlas; `MONGODB_DATABASE` es opcional (por defecto `phantom_erp`).
+
+```text
+MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_DATABASE=phantom_erp
+```
+
+El servidor requiere MongoDB disponible para iniciar. En el primer arranque, si la colección de estado está vacía y existe `data/db.json`, importa su contenido a MongoDB sin eliminar el archivo original. Los cambios posteriores se guardan en MongoDB.
 
 ```bash
 npm run dev
@@ -28,6 +38,3 @@ La aplicacion se ejecuta por defecto en:
 http://localhost:3000
 ```
 
-## Estado del proyecto
-
-El frontend se encuentra preparado como primer avance visual. La integracion completa del backend y la base de datos en la nube se implementara en las siguientes etapas.

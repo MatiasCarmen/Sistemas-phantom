@@ -272,26 +272,4 @@ export interface LoginResponse {
   message?: string;
 }
 
-export interface MySQLConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password?: string;
-  ssl: boolean;
-  charset: string;
-  tablePrefix?: string;
-  autoSync: boolean;
-  connected?: boolean;
-  lastTested?: string;
-}
-
-export interface MySQLTestResult {
-  success: boolean;
-  message: string;
-  serverVersion?: string;
-  tablesFound?: string[];
-  latencyMs?: number;
-  details?: string;
-}
 

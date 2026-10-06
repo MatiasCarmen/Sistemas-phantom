@@ -120,7 +120,7 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Almacenamiento en <code className="text-[#ffb3b1] font-mono">data/db.json</code> con soporte para exportación en JSON y scripts SQL
+                Persistencia MongoDB en colecciones por entidad, con exportación de respaldos JSON
               </p>
             </div>
           </div>
@@ -169,7 +169,7 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
           {/* Tables Sidebar */}
           <div className="w-full md:w-64 bg-[#0E0E0E] border-r border-[#2D2D2D] p-3 flex flex-col overflow-y-auto shrink-0">
             <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-3 py-2 font-mono">
-              Tablas / Colecciones ({tableKeys.length})
+              Colecciones ({tableKeys.length})
             </div>
 
             <div className="space-y-1">
@@ -209,10 +209,10 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
               <div className="p-3 bg-[#141414] rounded border border-[#2D2D2D] text-[11px] text-zinc-400 space-y-1">
                 <div className="flex items-center space-x-1 font-bold text-zinc-200">
                   <Server className="w-3.5 h-3.5 text-[#ffb3b1]" />
-                  <span>Motor: JSON Atomic Store</span>
+                  <span>Motor: MongoDB</span>
                 </div>
                 <div className="text-zinc-400">
-                  Archivo: <span className="font-mono text-[10px] text-[#ffb3b1]">data/db.json</span>
+                  Colecciones independientes por entidad
                 </div>
                 {dbData?.lastUpdated && (
                   <div className="text-zinc-500 font-mono text-[10px]">

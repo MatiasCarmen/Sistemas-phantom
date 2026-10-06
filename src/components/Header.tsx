@@ -196,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getRoleBadgeInfo = () => {
     switch (role) {
       case 'admin':
-        return { label: 'ADMINISTRADOR', bg: 'bg-[#8A091E]/60 text-[#FFDAD8] border-[#C8102E]/60', desc: 'Acceso Total a Finanzas, MySQL y Usuarios' };
+        return { label: 'ADMINISTRADOR', bg: 'bg-[#8A091E]/60 text-[#FFDAD8] border-[#C8102E]/60', desc: 'Acceso total a finanzas, MongoDB y usuarios' };
       case 'warehouse':
         return { label: 'ALMACÉN & KARDEX', bg: 'bg-[#78350F]/60 text-[#FDE68A] border-[#F59E0B]/60', desc: 'Control de Stock, Entradas y Despachos' };
       case 'cashier':

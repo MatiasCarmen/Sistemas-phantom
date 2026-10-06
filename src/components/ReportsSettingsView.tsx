@@ -9,14 +9,12 @@ import {
   ShieldCheck, 
   FileText, 
   Save, 
-  AlertCircle,
   Users,
   UserPlus,
   RefreshCw,
-  Wifi,
   ServerCog
 } from 'lucide-react';
-import { CompanySettings, Product, Sale, Quote, MySQLConfig } from '../types';
+import { CompanySettings, Product, Sale, Quote } from '../types';
 import { api } from '../lib/api';
 
 interface ReportsSettingsViewProps {
@@ -56,42 +54,24 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [mysqlStatus, setMysqlStatus] = useState<MySQLConfig | null>(null);
-  const [mysqlLoading, setMysqlLoading] = useState(false);
-  const [mysqlMessage, setMysqlMessage] = useState('Sin verificar');
+  const [mongoStatus, setMongoStatus] = useState<{ connected: boolean; database: string } | null>(null);
+  const [mongoLoading, setMongoLoading] = useState(false);
 
-  const loadMySQLStatus = async () => {
+  const loadMongoStatus = async () => {
+    setMongoLoading(true);
     try {
-      const response = await api.getMySQLConfig();
-      setMysqlStatus(response.config ?? null);
-      setMysqlMessage(response.config?.connected ? 'Conexión MySQL activa' : 'MySQL sin conexión activa');
-    } catch (error) {
-      setMysqlMessage('No se pudo consultar el estado de MySQL');
-      setMysqlStatus(null);
+      const response = await api.getDatabaseStatus();
+      setMongoStatus(response.status ?? null);
+    } catch {
+      setMongoStatus(null);
+    } finally {
+      setMongoLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadMySQLStatus();
+    void loadMongoStatus();
   }, []);
-
-  const handleTestMySQLConnection = async () => {
-    if (!mysqlStatus) {
-      setMysqlMessage('Primero configura la conexión MySQL');
-      return;
-    }
-
-    setMysqlLoading(true);
-    try {
-      const result = await api.testMySQLConnection(mysqlStatus);
-      setMysqlMessage(result.message || 'Conexión exitosa');
-      await loadMySQLStatus();
-    } catch (error: any) {
-      setMysqlMessage(error.message || 'No se pudo probar la conexión');
-    } finally {
-      setMysqlLoading(false);
-    }
-  };
 
   // Financial Metrics
   const totalCostValue = products.reduce((acc, p) => acc + (p.costPrice * p.stock), 0);
@@ -359,44 +339,39 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
           <div className="bg-[#141414] rounded-md border border-[#2D2D2D] p-5 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[#2D2D2D]">
               <div className="flex items-center space-x-2">
-                <Wifi className="w-5 h-5 text-[#10B981]" />
-                <h3 className="text-sm font-bold text-white">Estado de conexión</h3>
+                <Database className="w-5 h-5 text-[#10B981]" />
+                <h3 className="text-sm font-bold text-white">Conexión MongoDB</h3>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-1 rounded font-mono text-[10px] font-bold ${mysqlStatus?.connected ? 'bg-emerald-950/40 border border-emerald-800/40 text-emerald-400' : 'bg-amber-950/40 border border-amber-800/40 text-amber-400'}`}>
-                {mysqlStatus?.connected ? 'Conectado' : 'Pendiente'}
+              <span className={`inline-flex items-center px-2.5 py-1 rounded font-mono text-[10px] font-bold ${mongoStatus?.connected ? 'bg-emerald-950/40 border border-emerald-800/40 text-emerald-400' : 'bg-amber-950/40 border border-amber-800/40 text-amber-400'}`}>
+                {mongoStatus?.connected ? 'Conectado' : 'Sin conexión'}
               </span>
             </div>
 
             <div className="space-y-2 text-xs text-[#c8c6c6]">
               <div className="flex items-center justify-between">
-                <span>Servidor</span>
-                <span className="font-semibold text-white font-mono">{mysqlStatus?.host || 'localhost'}</span>
+                <span>Motor</span>
+                <span className="font-semibold text-white font-mono">MongoDB</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Base</span>
-                <span className="font-semibold text-white font-mono">{mysqlStatus?.database || 'nexus_erp_db'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Usuario</span>
-                <span className="font-semibold text-white font-mono">{mysqlStatus?.user || 'root'}</span>
+                <span className="font-semibold text-white font-mono">{mongoStatus?.database || 'phantom_erp'}</span>
               </div>
             </div>
 
             <div className="rounded border border-[#2D2D2D] bg-[#0E0E0E] px-3 py-2 text-[11px] text-[#c8c6c6]">
               <div className="flex items-center space-x-2 font-semibold">
-                {mysqlStatus?.connected ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <AlertCircle className="w-3.5 h-3.5 text-amber-400" />}
-                <span>{mysqlMessage}</span>
+                <span className={mongoStatus?.connected ? 'text-[#10B981]' : 'text-amber-400'}>{mongoStatus?.connected ? 'Los datos se guardan en MongoDB.' : 'No se pudo consultar MongoDB.'}</span>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={handleTestMySQLConnection}
-              disabled={mysqlLoading}
+              onClick={() => void loadMongoStatus()}
+              disabled={mongoLoading}
               className="w-full py-2.5 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-xs font-bold transition-colors shadow-sm flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-60"
             >
-              <RefreshCw className={`w-4 h-4 ${mysqlLoading ? 'animate-spin' : ''}`} />
-              <span>{mysqlLoading ? 'Probando conexión...' : 'Probar conexión MySQL'}</span>
+              <RefreshCw className={`w-4 h-4 ${mongoLoading ? 'animate-spin' : ''}`} />
+              <span>{mongoLoading ? 'Consultando...' : 'Actualizar estado'}</span>
             </button>
           </div>
 
@@ -470,7 +445,7 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
                 <span>Estado de persistencia</span>
               </div>
               <p className="text-[11px] text-[#A1A1AA]">
-                Los datos del sistema se sincronizan con MySQL y se mantienen respaldados con copia local para continuidad operativa.
+                Los datos se persisten en MongoDB. Las copias JSON se descargan manualmente desde esta sección.
               </p>
             </div>
           </div>

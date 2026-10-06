@@ -12,8 +12,7 @@ import {
   CompanySettings, 
   DashboardMetrics,
   MovementType,
-  User,
-  MySQLConfig
+  User
 } from '../src/types';
 import { 
   initialProducts, 
@@ -26,27 +25,7 @@ import {
   initialCompanySettings,
   initialUsers
 } from './initialData';
-import {
-  ensureMySQLSchema,
-  loadCategoriesFromMySQL,
-  loadCustomersFromMySQL,
-  loadDatabaseSnapshot,
-  loadInventoryMovementsFromMySQL,
-  loadProductsFromMySQL,
-  loadQuotesFromMySQL,
-  loadSalesFromMySQL,
-  loadSuppliersFromMySQL,
-  loadUsersFromMySQL,
-  saveCategoriesToMySQL,
-  saveCustomersToMySQL,
-  saveDatabaseSnapshot,
-  saveInventoryMovementsToMySQL,
-  saveProductsToMySQL,
-  saveQuotesToMySQL,
-  saveSalesToMySQL,
-  saveSuppliersToMySQL,
-  saveUsersToMySQL
-} from './mysql';
+import { closeMongoConnection, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
 
 export interface DatabaseSchema {
   products: Product[];
@@ -58,34 +37,17 @@ export interface DatabaseSchema {
   sales: Sale[];
   settings: CompanySettings;
   users: User[];
-  mysqlConfig?: MySQLConfig;
   lastUpdated: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
-
-const defaultMySQLConfig: MySQLConfig = {
-  host: 'localhost',
-  port: 3306,
-  database: 'nexus_erp_db',
-  user: 'root',
-  password: '',
-  ssl: false,
-  charset: 'utf8mb4',
-  tablePrefix: 'nexus_',
-  autoSync: true,
-  connected: false,
-  lastTested: undefined
-};
+const DB_FILE = path.join(process.cwd(), 'data', 'db.json');
 
 class DataStore {
   private data: DatabaseSchema;
-  private isLoaded: boolean = false;
+  private persistenceQueue: Promise<void> = Promise.resolve();
 
   constructor() {
     this.data = this.getDefaultSchema();
-    this.init();
   }
 
   private getDefaultSchema(): DatabaseSchema {
@@ -99,7 +61,6 @@ class DataStore {
       sales: JSON.parse(JSON.stringify(initialSales)),
       settings: JSON.parse(JSON.stringify(initialCompanySettings)),
       users: JSON.parse(JSON.stringify(initialUsers)),
-      mysqlConfig: JSON.parse(JSON.stringify(defaultMySQLConfig)),
       lastUpdated: new Date().toISOString()
     };
   }
@@ -126,115 +87,29 @@ class DataStore {
     this.data.settings.nextQuoteNumber = chronologicalQuotes.length + 1;
   }
 
-  private shouldUseMySQL(): boolean {
-    const config = this.data.mysqlConfig ?? { ...defaultMySQLConfig };
-    return Boolean(config.autoSync ?? true) || (process.env.MYSQL_AUTO_SYNC === 'true');
-  }
-
-  private async hydrateFromMySQLIfEnabled(): Promise<void> {
-    if (!this.shouldUseMySQL()) {
-      return;
-    }
-
-    try {
-      const config = this.getMySQLConfig();
-      await ensureMySQLSchema(config);
-
-      const snapshot = await loadDatabaseSnapshot(config);
-      const mysqlProducts = await loadProductsFromMySQL(config);
-      const mysqlCategories = await loadCategoriesFromMySQL(config);
-      const mysqlSuppliers = await loadSuppliersFromMySQL(config);
-      const mysqlUsers = await loadUsersFromMySQL(config);
-      const mysqlCustomers = await loadCustomersFromMySQL(config);
-      const mysqlQuotes = await loadQuotesFromMySQL(config);
-      const mysqlSales = await loadSalesFromMySQL(config);
-      const mysqlMovements = await loadInventoryMovementsFromMySQL(config);
-
-      if (snapshot && Array.isArray(snapshot.products)) {
-        this.data = { ...this.data, ...snapshot };
+  async initialize(): Promise<void> {
+    const snapshot = await loadDatabaseSnapshot();
+    if (snapshot && Array.isArray(snapshot.products)) {
+      const snapshotData = { ...snapshot } as DatabaseSchema & { mysqlConfig?: unknown };
+      delete snapshotData.mysqlConfig;
+      this.data = {
+        ...this.getDefaultSchema(),
+        ...snapshotData
+      };
+    } else if (fs.existsSync(DB_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) as Partial<DatabaseSchema>;
+      if (!Array.isArray(parsed.products)) {
+        throw new Error('El archivo data/db.json no tiene una estructura válida para migrar.');
       }
-
-      if (Array.isArray(mysqlProducts) && mysqlProducts.length > 0) {
-        this.data.products = mysqlProducts;
+      const parsedData = { ...parsed } as Partial<DatabaseSchema> & { mysqlConfig?: unknown };
+      delete parsedData.mysqlConfig;
+      this.data = {
+        ...this.getDefaultSchema(),
+        ...parsedData
+      };
+      if (!Array.isArray(this.data.users) || this.data.users.length === 0) {
+        this.data.users = JSON.parse(JSON.stringify(initialUsers));
       }
-
-      if (Array.isArray(mysqlCategories) && mysqlCategories.length > 0) {
-        this.data.categories = mysqlCategories;
-      }
-
-      if (Array.isArray(mysqlSuppliers) && mysqlSuppliers.length > 0) {
-        this.data.suppliers = mysqlSuppliers;
-      }
-
-      if (Array.isArray(mysqlUsers) && mysqlUsers.length > 0) {
-        this.data.users = mysqlUsers;
-      }
-
-      if (Array.isArray(mysqlCustomers) && mysqlCustomers.length > 0) {
-        this.data.customers = mysqlCustomers;
-      }
-
-      if (Array.isArray(mysqlQuotes) && mysqlQuotes.length > 0) {
-        this.data.quotes = mysqlQuotes;
-      }
-
-      if (Array.isArray(mysqlSales) && mysqlSales.length > 0) {
-        this.data.sales = mysqlSales;
-      }
-
-      if (Array.isArray(mysqlMovements) && mysqlMovements.length > 0) {
-        this.data.inventoryMovements = mysqlMovements;
-      }
-
-      this.normalizeQuoteNumbering();
-      this.isLoaded = true;
-      return;
-    } catch (err) {
-      console.warn('[DataStore] MySQL not available, falling back to the local JSON store:', err);
-    }
-  }
-
-  private init() {
-    try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-
-      if (fs.existsSync(DB_FILE)) {
-        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
-        const parsed = JSON.parse(fileContent);
-        if (parsed && Array.isArray(parsed.products)) {
-          if (!Array.isArray(parsed.users) || parsed.users.length === 0) {
-            parsed.users = JSON.parse(JSON.stringify(initialUsers));
-          }
-          this.data = {
-            ...this.getDefaultSchema(),
-            ...parsed,
-            mysqlConfig: {
-              ...defaultMySQLConfig,
-              ...(parsed.mysqlConfig || {})
-            }
-          };
-          this.isLoaded = true;
-        }
-      }
-
-      if (!this.isLoaded) {
-        this.data = {
-          ...this.getDefaultSchema(),
-          mysqlConfig: { ...defaultMySQLConfig }
-        };
-        this.normalizeProductCodes();
-        this.normalizeHistoricalTransactions();
-        this.normalizeSaleNumbering();
-        this.normalizeQuoteNumbering();
-        this.saveToFile();
-        this.isLoaded = true;
-      }
-    } catch (err) {
-      console.warn('[DataStore] Warning while loading database file, using memory backup:', err);
-      this.data = this.getDefaultSchema();
-      this.isLoaded = true;
     }
 
     this.normalizeProductCodes();
@@ -242,7 +117,16 @@ class DataStore {
     this.normalizeSaleNumbering();
     this.normalizeQuoteNumbering();
     this.saveToFile();
-    void this.hydrateFromMySQLIfEnabled();
+    await this.flushPersistence();
+  }
+
+  async flushPersistence(): Promise<void> {
+    await this.persistenceQueue;
+  }
+
+  async close(): Promise<void> {
+    await this.flushPersistence();
+    await closeMongoConnection();
   }
 
   private normalizeHistoricalTransactions(): void {
@@ -387,34 +271,13 @@ class DataStore {
   }
 
   private saveToFile() {
-    try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-      this.data.lastUpdated = new Date().toISOString();
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
-    } catch (err) {
-      console.error('[DataStore] Failed to write database file:', err);
-    }
-
-    const config = this.data.mysqlConfig ?? { ...defaultMySQLConfig };
-    if (Boolean(config.autoSync ?? true)) {
-      void ensureMySQLSchema(config)
-        .then(async () => {
-          await saveDatabaseSnapshot(config, this.data);
-          await saveCategoriesToMySQL(config, this.data.categories);
-          await saveSuppliersToMySQL(config, this.data.suppliers);
-          await saveCustomersToMySQL(config, this.data.customers);
-          await saveProductsToMySQL(config, this.data.products);
-          await saveUsersToMySQL(config, this.data.users);
-          await saveQuotesToMySQL(config, this.data.quotes);
-          await saveSalesToMySQL(config, this.data.sales);
-          await saveInventoryMovementsToMySQL(config, this.data.inventoryMovements);
-        })
-        .catch((err) => {
-          console.warn('[DataStore] Unable to sync database snapshot to MySQL, keeping local JSON backup:', err);
-        });
-    }
+    this.data.lastUpdated = new Date().toISOString();
+    const snapshot = JSON.parse(JSON.stringify(this.data)) as DatabaseSchema;
+    this.persistenceQueue = this.persistenceQueue
+      .then(() => saveDatabaseSnapshot(snapshot))
+      .catch((err) => {
+        console.error('[DataStore] Failed to persist snapshot to MongoDB:', err);
+      });
   }
 
   // --- PRODUCTS ---
@@ -673,17 +536,6 @@ class DataStore {
     const index = this.data.customers.findIndex(c => c.id === id);
     if (index === -1) return false;
     this.data.customers.splice(index, 1);
-    const config = this.getMySQLConfig();
-    if (this.shouldUseMySQL()) {
-      void (async () => {
-        try {
-          const { deleteCustomerFromMySQL } = await import('./mysql');
-          await deleteCustomerFromMySQL(config, id);
-        } catch {
-          // no-op: the local store has already been updated
-        }
-      })();
-    }
     this.saveToFile();
     return true;
   }
@@ -759,17 +611,6 @@ class DataStore {
     const index = this.data.quotes.findIndex(q => q.id === id);
     if (index === -1) return false;
     this.data.quotes.splice(index, 1);
-    const config = this.getMySQLConfig();
-    if (this.shouldUseMySQL()) {
-      void (async () => {
-        try {
-          const { deleteQuoteFromMySQL } = await import('./mysql');
-          await deleteQuoteFromMySQL(config, id);
-        } catch {
-          // no-op: the local store has already been updated
-        }
-      })();
-    }
     this.saveToFile();
     return true;
   }
@@ -1165,35 +1006,6 @@ class DataStore {
       return true;
     }
     return false;
-  }
-
-  // --- MYSQL CONFIGURATION ---
-  getMySQLConfig(): MySQLConfig {
-    if (!this.data.mysqlConfig) {
-      this.data.mysqlConfig = { ...defaultMySQLConfig };
-    } else {
-      this.data.mysqlConfig = {
-        ...defaultMySQLConfig,
-        ...this.data.mysqlConfig
-      };
-    }
-
-    if (this.data.mysqlConfig.autoSync === undefined) {
-      this.data.mysqlConfig.autoSync = true;
-    }
-
-    return this.data.mysqlConfig;
-  }
-
-  updateMySQLConfig(updates: Partial<MySQLConfig>): MySQLConfig {
-    const current = this.getMySQLConfig();
-    this.data.mysqlConfig = {
-      ...current,
-      ...updates,
-      autoSync: updates.autoSync ?? current.autoSync ?? true
-    };
-    this.saveToFile();
-    return this.data.mysqlConfig;
   }
 
   // --- SYSTEM BACKUP / RESET ---

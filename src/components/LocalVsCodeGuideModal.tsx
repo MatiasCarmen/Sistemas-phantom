@@ -48,7 +48,8 @@ npm run dev
   const envContent = `# Configuración de variables de entorno para ejecución local
 PORT=3000
 NODE_ENV=development
-DATA_STORAGE_PATH=./data/db.json`;
+MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_DATABASE=phantom_erp`;
 
   const nestJsExample = `// Estructura para migración opcional a Nest.js / PostgreSQL (TypeORM/Prisma)
 // src/products/products.controller.ts
@@ -194,7 +195,7 @@ export class ProductsController {
                 <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded">
                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1 font-mono">Requisitos Previos</span>
                   <p className="text-xs text-zinc-300">
-                    Node.js 18+ o 20+ LTS instalado en su estación de trabajo y Visual Studio Code.
+                    Node.js 20.19+ LTS instalado en su estación de trabajo y Visual Studio Code.
                   </p>
                 </div>
                 <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded">
@@ -206,7 +207,7 @@ export class ProductsController {
                 <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded">
                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1 font-mono">Persistencia</span>
                   <p className="text-xs text-zinc-300">
-                    Los datos se sincronizan en <code className="text-[#ffb3b1] font-mono">data/db.json</code> de manera atómica.
+                    Los datos se guardan en MongoDB; el servidor importa <code className="text-[#ffb3b1] font-mono">data/db.json</code> una sola vez si la colección aún está vacía.
                   </p>
                 </div>
               </div>
@@ -240,7 +241,7 @@ export class ProductsController {
 │   ├── App.tsx           # Router de vistas y estado global
 │   └── main.tsx          # Bootstrap React
 └── data/
-    └── db.json           # Almacenamiento local persistente`}
+  └── db.json           # Fuente heredada para la primera migración`}
                   </pre>
                 </div>
 
@@ -331,9 +332,9 @@ export class ProductsController {
           {activeTab === 'database' && (
             <div className="space-y-4">
               <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded space-y-2">
-                <h4 className="text-sm font-semibold text-white">Almacenamiento Local y Migración a SQL</h4>
+                <h4 className="text-sm font-semibold text-white">MongoDB y migración inicial</h4>
                 <p className="text-xs text-zinc-400">
-                  Por defecto, el sistema guarda todas las tablas y movimientos en un archivo JSON estructurado (<code className="text-[#ffb3b1]">data/db.json</code>) con escritura atómica. Si desea conectarlo a <strong className="text-white">PostgreSQL</strong> o <strong className="text-white">MySQL</strong>, puede utilizar el siguiente esquema DDL:
+                  MongoDB es el almacenamiento principal. Configure <code className="text-[#ffb3b1]">MONGODB_URI</code> y <code className="text-[#ffb3b1]">MONGODB_DATABASE</code>; si MongoDB está vacío, el servidor migra automáticamente el contenido de <code className="text-[#ffb3b1]">data/db.json</code> sin borrar el archivo. El siguiente DDL es solo un formato de exportación SQL heredado y no configura la persistencia activa:
                 </p>
               </div>
 
