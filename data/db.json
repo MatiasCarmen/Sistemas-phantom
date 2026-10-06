@@ -1,6 +1,29 @@
 {
   "products": [
     {
+      "name": "PlayStation 5 Pro Consola (Digital)",
+      "sku": "130588",
+      "barcode": "775572636",
+      "description": "Mejora sus juegos con increíbles funciones como trazado de rayos avanzado, claridad de imagen supernítida para TV 4K y partidas con alta velocidad de fotogramas.",
+      "category": "Consolas",
+      "brand": "Sony",
+      "costPrice": 3700,
+      "sellingPrice": 3999.9,
+      "taxRate": 18,
+      "stock": 15,
+      "minStock": 5,
+      "maxStock": 100,
+      "unit": "UND",
+      "location": "Almacén Principal - Estante A-01",
+      "supplierId": "sup-1",
+      "supplierName": "Tecnologia Peru SAC",
+      "imageUrl": "https://phantom.pe/media/catalog/product/cache/9ced06e337d7a94ebcf7d9d1db26042a/p/s/ps5_pro.jpg",
+      "id": "prod-1791263428688",
+      "status": "in_stock",
+      "createdAt": "2026-10-06T05:10:28.688Z",
+      "updatedAt": "2026-10-06T05:20:41.245Z"
+    },
+    {
       "id": "prod-1",
       "sku": "029587",
       "barcode": "775625730",
@@ -665,6 +688,20 @@
   ],
   "inventoryMovements": [
     {
+      "productId": "prod-1791263428688",
+      "productSku": "130588",
+      "productName": "PlayStation 5 Pro Consola (Digital)",
+      "type": "IN_ADJUSTMENT",
+      "quantity": 15,
+      "previousStock": 0,
+      "newStock": 15,
+      "unitCost": 3700,
+      "notes": "Stock inicial al registrar producto",
+      "createdBy": "Sistema",
+      "id": "mov-1791263428688-60",
+      "createdAt": "2026-10-06T05:10:28.688Z"
+    },
+    {
       "id": "mov-1",
       "productId": "prod-1",
       "productSku": "029587",
@@ -1169,5 +1206,5 @@
     "autoSync": true,
     "connected": false
   },
-  "lastUpdated": "2026-10-06T04:10:48.788Z"
+  "lastUpdated": "2026-10-06T05:20:41.245Z"
 }

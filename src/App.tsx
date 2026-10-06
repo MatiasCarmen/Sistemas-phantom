@@ -27,6 +27,7 @@ import { ReportsSettingsView } from './components/ReportsSettingsView';
 import { LoginView } from './components/LoginView';
 import { UsersManagementModal } from './components/UsersManagementModal';
 import { DatabaseExplorerModal } from './components/DatabaseExplorerModal';
+import { AuditLogModal } from './components/AuditLogModal';
 
 type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
 
@@ -42,6 +43,7 @@ export default function App() {
   });
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
@@ -684,6 +686,7 @@ export default function App() {
               onRefreshAllData={fetchAllData}
               onOpenUsersModal={() => setIsUsersModalOpen(true)}
               onOpenDatabaseModal={() => setIsDbModalOpen(true)}
+              onOpenAuditModal={currentUser?.role === 'admin' ? () => setIsAuditModalOpen(true) : undefined}
             />
           )}
 
@@ -701,6 +704,11 @@ export default function App() {
       <DatabaseExplorerModal
         isOpen={isDbModalOpen}
         onClose={() => setIsDbModalOpen(false)}
+      />
+
+      <AuditLogModal
+        isOpen={isAuditModalOpen}
+        onClose={() => setIsAuditModalOpen(false)}
       />
 
     </div>

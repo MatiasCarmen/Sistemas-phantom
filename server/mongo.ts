@@ -1,9 +1,11 @@
 import { MongoClient, type Document } from 'mongodb';
 import type { DatabaseSchema } from './dataStore';
+import type { AuditLogEvent } from '../src/types';
 
 let client: MongoClient | undefined;
 let connection: Promise<MongoClient> | undefined;
 let connected = false;
+let auditIndexesReady: Promise<void> | undefined;
 type MongoRecord = Document & { _id: string };
 
 function getMongoClient(): MongoClient {
@@ -103,6 +105,60 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
   ]);
 
   await database.collection<MongoRecord>('erp_state').deleteOne({ _id: 'primary' });
+}
+
+export async function saveAuditEvents(events: AuditLogEvent[]): Promise<void> {
+  if (!events.length) {
+    return;
+  }
+
+  const database = await getMongoDatabase();
+  const collection = database.collection<MongoRecord>('audit_logs');
+  if (!auditIndexesReady) {
+    auditIndexesReady = Promise.all([
+      collection.createIndex({ occurredAt: -1 }),
+      collection.createIndex({ entity: 1, occurredAt: -1 })
+    ]).then(() => undefined).catch((error) => {
+      auditIndexesReady = undefined;
+      throw error;
+    });
+  }
+  await auditIndexesReady;
+  await collection.insertMany(events.map((event) => ({ ...event, _id: event.id })));
+}
+
+export async function loadAuditEvents(options: {
+  page: number;
+  limit: number;
+  entity?: string;
+  action?: string;
+  search?: string;
+}): Promise<{ events: AuditLogEvent[]; total: number }> {
+  const database = await getMongoDatabase();
+  const filter: Document = {};
+  if (options.entity) filter.entity = options.entity;
+  if (options.action) filter.action = options.action;
+  if (options.search) {
+    const escapedSearch = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchPattern = new RegExp(escapedSearch, 'i');
+    filter.$or = [
+      { actorName: searchPattern },
+      { actorId: searchPattern },
+      { entityId: searchPattern },
+      { route: searchPattern }
+    ];
+  }
+
+  const collection = database.collection<MongoRecord>('audit_logs');
+  const [documents, total] = await Promise.all([
+    collection.find(filter).sort({ occurredAt: -1 }).skip((options.page - 1) * options.limit).limit(options.limit).toArray(),
+    collection.countDocuments(filter)
+  ]);
+
+  return {
+    events: documents.map(({ _id, ...event }) => ({ ...event, id: String(event.id || _id) } as AuditLogEvent)),
+    total
+  };
 }
 
 export function getMongoStatus(): { connected: boolean; database: string } {

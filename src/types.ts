@@ -272,4 +272,21 @@ export interface LoginResponse {
   message?: string;
 }
 
+export type AuditAction = 'create' | 'update' | 'delete';
+
+export interface AuditLogEvent {
+  id: string;
+  occurredAt: string;
+  actorId: string;
+  actorName: string;
+  action: AuditAction;
+  entity: string;
+  entityId: string;
+  method: string;
+  route: string;
+  ipAddress: string;
+  before?: unknown;
+  after?: unknown;
+}
+
 

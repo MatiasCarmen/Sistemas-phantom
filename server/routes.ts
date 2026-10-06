@@ -1,8 +1,53 @@
-import { Router, Request, Response } from 'express';
-import { db } from './dataStore';
-import { getMongoStatus } from './mongo';
+import { Router, Request, Response, type NextFunction } from 'express';
+import { db, type DatabaseSchema } from './dataStore';
+import { buildAuditEvents } from './audit';
+import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
 
 const router = Router();
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) || req.path.startsWith('/auth/')) {
+    next();
+    return;
+  }
+
+  const before = JSON.parse(JSON.stringify(db.exportDatabase())) as DatabaseSchema;
+  const authHeader = req.headers.authorization;
+  const tokenParts = authHeader?.startsWith('Bearer token_')
+    ? authHeader.replace('Bearer token_', '').split('_')
+    : [];
+  const user = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+  const originalJson = res.json.bind(res);
+  let responseSent = false;
+
+  res.json = ((body: unknown) => {
+    if (responseSent || res.statusCode >= 400) {
+      return originalJson(body);
+    }
+    responseSent = true;
+
+    const after = JSON.parse(JSON.stringify(db.exportDatabase())) as DatabaseSchema;
+    const events = buildAuditEvents(before, after, {
+      id: user?.id || 'unknown',
+      name: user?.name || 'Usuario no identificado'
+    }, {
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip || 'unknown'
+    });
+
+    if (!events.length) {
+      return originalJson(body);
+    }
+
+    void saveAuditEvents(events)
+      .catch((error) => console.error('[Audit] No se pudieron guardar los eventos:', error))
+      .finally(() => originalJson(body));
+    return res;
+  }) as Response['json'];
+
+  next();
+});
 
 // Health check
 router.get('/health', (req: Request, res: Response) => {
@@ -15,6 +60,32 @@ router.get('/health', (req: Request, res: Response) => {
 
 router.get('/database/status', (req: Request, res: Response) => {
   res.json({ success: true, status: getMongoStatus() });
+});
+
+router.get('/audit/logs', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const tokenParts = authHeader?.startsWith('Bearer token_')
+    ? authHeader.replace('Bearer token_', '').split('_')
+    : [];
+  const user = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+  if (user?.role !== 'admin') {
+    return res.status(403).json({ success: false, error: 'Solo los administradores pueden consultar la bitácora' });
+  }
+
+  try {
+    const page = Math.max(1, Number.parseInt(String(req.query.page || '1'), 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(String(req.query.limit || '25'), 10) || 25));
+    const result = await loadAuditEvents({
+      page,
+      limit,
+      entity: typeof req.query.entity === 'string' ? req.query.entity : undefined,
+      action: typeof req.query.action === 'string' ? req.query.action : undefined,
+      search: typeof req.query.search === 'string' ? req.query.search.slice(0, 100) : undefined
+    });
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Dashboard metrics

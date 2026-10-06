@@ -10,7 +10,9 @@ import {
   DashboardMetrics,
   MovementType,
   User,
-  LoginResponse
+  LoginResponse,
+  AuditAction,
+  AuditLogEvent
 } from '../types';
 
 const API_BASE = '/api';
@@ -249,6 +251,16 @@ export const api = {
 
   // Database status
   getDatabaseStatus: () => fetchJson<{ success: boolean; status: { connected: boolean; database: string } }>('/database/status'),
+  getAuditLogs: (params: { page?: number; limit?: number; entity?: string; action?: AuditAction | ''; search?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.limit) query.set('limit', String(params.limit));
+    if (params.entity) query.set('entity', params.entity);
+    if (params.action) query.set('action', params.action);
+    if (params.search) query.set('search', params.search);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return fetchJson<{ events: AuditLogEvent[]; total: number }>(`/audit/logs${qs}`);
+  },
 
   // System
   exportBackupUrl: () => `${API_BASE}/system/export`,

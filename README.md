@@ -38,3 +38,7 @@ La aplicacion se ejecuta por defecto en:
 http://localhost:3000
 ```
 
+## Bitacora de actividad
+
+Un administrador puede abrir **Configuración > Bitácora de actividad** para revisar altas, modificaciones y eliminaciones realizadas mediante la API. Cada evento guarda fecha, usuario, entidad, ruta, dirección IP y valores anterior/nuevo; contraseñas y tokens se redactan. El registro empieza desde que esta versión está activa y no reconstruye cambios anteriores.
+

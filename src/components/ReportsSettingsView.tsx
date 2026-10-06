@@ -12,7 +12,8 @@ import {
   Users,
   UserPlus,
   RefreshCw,
-  ServerCog
+  ServerCog,
+  History
 } from 'lucide-react';
 import { CompanySettings, Product, Sale, Quote } from '../types';
 import { api } from '../lib/api';
@@ -26,6 +27,7 @@ interface ReportsSettingsViewProps {
   onRefreshAllData: () => Promise<void>;
   onOpenUsersModal?: () => void;
   onOpenDatabaseModal?: () => void;
+  onOpenAuditModal?: () => void;
 }
 
 export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
@@ -36,7 +38,8 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
   onUpdateSettings,
   onRefreshAllData,
   onOpenUsersModal,
-  onOpenDatabaseModal
+  onOpenDatabaseModal,
+  onOpenAuditModal
 }) => {
   const [formData, setFormData] = useState<CompanySettings>({
     companyName: settings?.companyName || 'NEXUS GESTIÓN EMPRESARIAL S.A.C.',
@@ -374,6 +377,27 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
               <span>{mongoLoading ? 'Consultando...' : 'Actualizar estado'}</span>
             </button>
           </div>
+
+          {onOpenAuditModal && (
+            <div className="bg-[#141414] rounded-md border border-[#2D2D2D] p-5 space-y-3">
+              <div className="flex items-center space-x-2 pb-2 border-b border-[#2D2D2D]">
+                <History className="w-5 h-5 text-[#ffb3b1]" />
+                <h3 className="text-sm font-bold text-white">Bitácora de actividad</h3>
+              </div>
+              <p className="text-xs text-[#c8c6c6] leading-relaxed">
+                Revise quién creó, modificó o eliminó registros y consulte los valores anteriores y nuevos.
+              </p>
+              <button
+                type="button"
+                id="btn-open-audit-log"
+                onClick={onOpenAuditModal}
+                className="w-full py-2.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] rounded text-xs font-bold transition-colors flex items-center justify-center space-x-2"
+              >
+                <History className="w-4 h-4" />
+                <span>Ver historial de cambios</span>
+              </button>
+            </div>
+          )}
 
           {/* Collaborators Management Box */}
           {onOpenUsersModal && (
