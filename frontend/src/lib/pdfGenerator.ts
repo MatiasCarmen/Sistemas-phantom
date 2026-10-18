@@ -154,7 +154,7 @@ export function generateQuotePDF(quote: Quote, settings: CompanySettings): void 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  const terms = quote.termsAndConditions || settings.quoteTermsDefault;
+  const terms = quote.termsAndConditions || settings.quoteTermsDefault || '';
   const splitTerms = doc.splitTextToSize(terms, 100);
   doc.text(splitTerms, 14, y + 13);
 

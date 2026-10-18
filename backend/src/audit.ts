@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { AuditAction, AuditLogEvent } from '../src/types';
+import type { AuditAction, AuditLogEvent } from './types';
 import type { DatabaseSchema } from './dataStore';
 
 type AuditActor = { id: string; name: string };

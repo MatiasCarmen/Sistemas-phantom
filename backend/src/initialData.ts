@@ -8,7 +8,7 @@ import {
   Sale, 
   CompanySettings,
   User
-} from '../src/types';
+} from './types';
 
 export const initialCompanySettings: CompanySettings = {
   companyName: 'PHANTOM Gaming',

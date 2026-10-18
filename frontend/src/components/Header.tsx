@@ -63,7 +63,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isCollaborator = role === 'collaborator';
 
   // Build role-tailored navigation groups
-  const getNavGroups = () => {
+  interface NavItem {
+    id: SidebarProps['activeTab'];
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    desc: string;
+    badge?: number;
+    badgeColor?: string;
+  }
+
+  interface NavGroup {
+    title: string;
+    items: NavItem[];
+  }
+
+  const getNavGroups = (): NavGroup[] => {
     if (isAdmin) {
       return [
         {

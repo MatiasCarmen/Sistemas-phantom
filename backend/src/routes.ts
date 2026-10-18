@@ -2,8 +2,14 @@ import { Router, Request, Response, type NextFunction } from 'express';
 import { db, type DatabaseSchema } from './dataStore';
 import { buildAuditEvents } from './audit';
 import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
+import { signAuthToken, verifyAuthToken } from './security';
 
 const router = Router();
+
+function getAuthenticatedUser(req: Request) {
+  const verified = verifyAuthToken(req.headers.authorization);
+  return verified ? db.getUserById(verified.userId) : undefined;
+}
 
 router.use((req: Request, res: Response, next: NextFunction) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) || req.path.startsWith('/auth/')) {
@@ -12,11 +18,7 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   const before = JSON.parse(JSON.stringify(db.exportDatabase())) as DatabaseSchema;
-  const authHeader = req.headers.authorization;
-  const tokenParts = authHeader?.startsWith('Bearer token_')
-    ? authHeader.replace('Bearer token_', '').split('_')
-    : [];
-  const user = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+  const user = getAuthenticatedUser(req);
   const originalJson = res.json.bind(res);
   let responseSent = false;
 
@@ -63,11 +65,7 @@ router.get('/database/status', (req: Request, res: Response) => {
 });
 
 router.get('/audit/logs', async (req: Request, res: Response) => {
-  const authHeader = req.headers.authorization;
-  const tokenParts = authHeader?.startsWith('Bearer token_')
-    ? authHeader.replace('Bearer token_', '').split('_')
-    : [];
-  const user = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+  const user = getAuthenticatedUser(req);
   if (user?.role !== 'admin') {
     return res.status(403).json({ success: false, error: 'Solo los administradores pueden consultar la bitácora' });
   }
@@ -457,11 +455,7 @@ router.post('/quotes', (req: Request, res: Response) => {
 router.put('/quotes/:id', (req: Request, res: Response) => {
   try {
     if (req.body.status !== undefined) {
-      const authHeader = req.headers.authorization;
-      const tokenParts = authHeader?.startsWith('Bearer token_')
-        ? authHeader.replace('Bearer token_', '').split('_')
-        : [];
-      const authenticatedUser = tokenParts[0] ? db.getUserById(tokenParts[0]) : undefined;
+      const authenticatedUser = getAuthenticatedUser(req);
       if (authenticatedUser?.role !== 'admin') {
         return res.status(403).json({ success: false, error: 'Solo los administradores pueden cambiar el estado de una cotización' });
       }
@@ -679,7 +673,11 @@ router.post('/auth/login', (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: authResult.error || 'Credenciales inválidas' });
     }
 
-    const token = `token_${authResult.user.id}_${Date.now()}`;
+    const token = signAuthToken({
+      id: authResult.user.id,
+      username: authResult.user.username,
+      role: authResult.user.role
+    });
     res.json({
       success: true,
       token,
@@ -693,18 +691,9 @@ router.post('/auth/login', (req: Request, res: Response) => {
 
 router.get('/auth/me', (req: Request, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    let userId = 'usr-admin';
-    if (authHeader && authHeader.startsWith('Bearer token_')) {
-      const parts = authHeader.replace('Bearer token_', '').split('_');
-      if (parts[0]) {
-        userId = parts[0];
-      }
-    }
-
-    const user = db.getUserById(userId) || db.getUsers()[0];
+    const user = getAuthenticatedUser(req);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+      return res.status(401).json({ success: false, error: 'Sesión no válida o expirada' });
     }
 
     const { password, ...safeUser } = user;

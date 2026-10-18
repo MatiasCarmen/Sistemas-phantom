@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { randomBytes } from 'crypto';
 import { 
   Product, 
@@ -13,7 +12,7 @@ import {
   DashboardMetrics,
   MovementType,
   User
-} from '../src/types';
+} from './types';
 import { 
   initialProducts, 
   initialCategories, 
@@ -25,7 +24,8 @@ import {
   initialCompanySettings,
   initialUsers
 } from './initialData';
-import { closeMongoConnection, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
+import { closeMongoConnection, getLocalDbFilePath, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
+import { hashPassword, verifyPassword } from './security';
 
 export interface DatabaseSchema {
   products: Product[];
@@ -40,7 +40,7 @@ export interface DatabaseSchema {
   lastUpdated: string;
 }
 
-const DB_FILE = path.join(process.cwd(), 'data', 'db.json');
+const DB_FILE = getLocalDbFilePath();
 
 class DataStore {
   private data: DatabaseSchema;
@@ -228,12 +228,15 @@ class DataStore {
     const usedBarcodes = new Set<string>();
 
     for (const product of this.data.products) {
+      const currentBarcode = product.barcode || '';
       const hasUniqueSku = Boolean(product.sku) && !usedSkus.has(product.sku) && /^\d{6}$/.test(product.sku);
-      const hasUniqueBarcode = Boolean(product.barcode) && !usedBarcodes.has(product.barcode) && /^775\d{6}$/.test(product.barcode);
-      product.sku = hasUniqueSku ? product.sku : this.createUniqueSku(usedSkus);
-      product.barcode = hasUniqueBarcode ? product.barcode : this.createUniqueBarcode(usedBarcodes);
-      usedSkus.add(product.sku);
-      usedBarcodes.add(product.barcode);
+      const hasUniqueBarcode = Boolean(currentBarcode) && !usedBarcodes.has(currentBarcode) && /^775\d{6}$/.test(currentBarcode);
+      const resolvedSku = hasUniqueSku ? product.sku : this.createUniqueSku(usedSkus);
+      const resolvedBarcode = hasUniqueBarcode ? currentBarcode : this.createUniqueBarcode(usedBarcodes);
+      product.sku = resolvedSku;
+      product.barcode = resolvedBarcode;
+      usedSkus.add(resolvedSku);
+      usedBarcodes.add(resolvedBarcode);
     }
   }
 
@@ -922,8 +925,13 @@ class DataStore {
       return { error: 'Este usuario se encuentra inactivo. Contacte al administrador.' };
     }
 
-    if (user.password && user.password !== passwordAttempt) {
+    if (user.password && !verifyPassword(passwordAttempt, user.password)) {
       return { error: 'Contraseña incorrecta' };
+    }
+
+    // Upgrade legacy plaintext password to scrypt hash transparently on login
+    if (user.password && !user.password.startsWith('scrypt$')) {
+      user.password = hashPassword(user.password);
     }
 
     // Update lastLogin
@@ -948,6 +956,7 @@ class DataStore {
     const newUser: User = {
       ...userData,
       id,
+      password: hashPassword(userData.password || '123456'),
       roleLabel: userData.roleLabel || roleLabels[userData.role] || 'Colaborador',
       status: userData.status || 'active',
       avatarColor: userData.avatarColor || (userData.role === 'admin' ? 'indigo' : 'emerald'),
@@ -977,9 +986,11 @@ class DataStore {
     if (index === -1) return null;
 
     const existing = this.data.users[index];
+    const resolvedPassword = updates.password ? hashPassword(updates.password) : existing.password;
     this.data.users[index] = {
       ...existing,
       ...updates,
+      password: resolvedPassword,
       id: existing.id,
       createdAt: existing.createdAt
     };
