@@ -283,7 +283,7 @@ export default function App() {
     }
   };
 
-  const handleAdjustStock = async (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) => {
+  const handleAdjustStock = async (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => {
     try {
       const result = await api.adjustStock(data);
       setProducts(products.map(p => p.id === result.product.id ? result.product : p));

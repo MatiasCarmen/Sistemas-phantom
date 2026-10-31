@@ -253,18 +253,26 @@ router.delete('/products/:id', (req: Request, res: Response) => {
 
 router.post('/products/adjust-stock', (req: Request, res: Response) => {
   try {
-    const { productId, type, quantity, notes, createdBy } = req.body;
-    if (!productId || !type || quantity === undefined) {
+    const { productId, type, quantity, locationId, newQuantity, notes, createdBy } = req.body;
+    if (!productId || quantity === undefined) {
       return res.status(400).json({ success: false, error: 'Faltan parámetros requeridos para el ajuste de stock' });
     }
 
-    const result = db.adjustStock({
-      productId,
-      type,
-      quantity: Number(quantity),
-      notes,
-      createdBy
-    });
+    const result = locationId
+      ? db.adjustStockByLocation({
+          productId,
+          locationId,
+          newQuantity: newQuantity ?? Number(quantity),
+          notes,
+          createdBy
+        })
+      : db.adjustStock({
+          productId,
+          type,
+          quantity: Number(quantity),
+          notes,
+          createdBy
+        });
 
     if (!result) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
@@ -309,6 +317,14 @@ router.post('/stock-transfers', (req: Request, res: Response) => {
   }
   if (transfers.length === 0) return res.status(400).json({ success: false, error: 'Indique al menos un producto y una cantidad válida' });
   res.status(201).json({ success: true, data: transfers });
+});
+
+router.post('/stock-transfers/receive', (req: Request, res: Response) => {
+  const { guideNumber, storeId } = req.body;
+  if (!guideNumber || !storeId) return res.status(400).json({ success: false, error: 'Guía y tienda de destino son requeridas' });
+  const transfers = db.confirmTransferReceipt(guideNumber, storeId);
+  if (!transfers) return res.status(404).json({ success: false, error: 'No existe una transferencia pendiente para recibir' });
+  res.json({ success: true, data: transfers });
 });
 
 // --- CATEGORIES ---

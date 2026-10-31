@@ -938,7 +938,7 @@
       "termsAndConditions": "1. Precios expresados en Soles (S/.) e incluyen IGV (18%).\n2. Validez de la oferta: 15 días calendario.\n3. Garantía de 12 meses directa por fabricante.\n4. Forma de pago: 50% anticipo, 50% contra entrega.",
       "createdBy": "Mario Silva - Ingeniero Comercial",
       "createdAt": "2025-01-24T11:00:00.000Z",
-      "updatedAt": "2025-01-24T11:00:00.000Z"
+      "updatedAt": "2026-10-31T17:59:31.914Z"
     }
   ],
   "sales": [
@@ -1117,7 +1117,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-10-31T00:37:22.814Z"
+      "lastLogin": "2026-10-31T15:25:20.230Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -1432,5 +1432,5 @@
     }
   ],
   "stockTransfers": [],
-  "lastUpdated": "2026-10-31T04:37:37.059Z"
+  "lastUpdated": "2026-10-31T17:59:31.914Z"
 }

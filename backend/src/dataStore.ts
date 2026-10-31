@@ -351,8 +351,10 @@ class DataStore {
       status = 'low_stock';
     }
 
+    const mainWarehouse = this.data.stores.find(store => store.type === 'MAIN_WAREHOUSE' && store.status === 'ACTIVE');
     const newProduct: Product = {
       ...productData,
+      location: mainWarehouse?.name || 'Tienda principal',
       sku,
       barcode,
       id,
@@ -406,18 +408,36 @@ class DataStore {
       status = 'low_stock';
     }
 
+    const mainWarehouse = this.data.stores.find(store => store.type === 'MAIN_WAREHOUSE' && store.status === 'ACTIVE');
     const updated: Product = {
       ...existing,
       ...updates,
+      stock: newStock,
+      location: mainWarehouse?.name || 'Tienda principal',
       sku,
       barcode,
-      id, // protect ID
+      id,
       status,
       updatedAt: new Date().toISOString()
     };
 
     this.data.products[index] = updated;
-    this.saveToFile();
+    if (newStock !== existing.stock) {
+      this.addInventoryMovement({
+        productId: existing.id,
+        productSku: updated.sku,
+        productName: updated.name,
+        type: newStock > existing.stock ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT',
+        quantity: Math.abs(newStock - existing.stock),
+        previousStock: existing.stock,
+        newStock,
+        unitCost: updated.costPrice,
+        notes: 'Stock del almacén principal editado desde el producto',
+        createdBy: 'Administrador'
+      });
+    } else {
+      this.saveToFile();
+    }
     return updated;
   }
 
@@ -481,6 +501,56 @@ class DataStore {
     return { product, movement };
   }
 
+  adjustStockByLocation(params: {
+    productId: string;
+    locationId: string;
+    newQuantity: number;
+    notes?: string;
+    createdBy?: string;
+  }): { product: Product; movement: InventoryMovement } | null {
+    const product = this.getProductById(params.productId);
+    if (!product) return null;
+
+    const locationId = params.locationId || 'main-warehouse';
+    const newQuantity = Math.max(0, Math.floor(Number(params.newQuantity)));
+
+    if (locationId === 'main-warehouse') {
+      const movementType = newQuantity >= product.stock ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT';
+      return this.adjustStock({
+        productId: product.id,
+        type: movementType,
+        quantity: Math.abs(newQuantity - product.stock),
+        notes: params.notes,
+        createdBy: params.createdBy
+      });
+    }
+
+    const location = this.getStores().find(store => store.id === locationId && store.status === 'ACTIVE');
+    if (!location) return null;
+
+    const stockIndex = this.data.storeStock.findIndex(item => item.storeId === locationId && item.productId === product.id);
+    const previousStock = stockIndex >= 0 ? this.data.storeStock[stockIndex].quantity : 0;
+    if (stockIndex >= 0) this.data.storeStock[stockIndex].quantity = newQuantity;
+    else this.data.storeStock.push({ storeId: locationId, productId: product.id, quantity: newQuantity });
+
+    const difference = newQuantity - previousStock;
+    const movement = this.addInventoryMovement({
+      productId: product.id,
+      productSku: product.sku,
+      productName: product.name,
+      type: difference >= 0 ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT',
+      quantity: Math.abs(difference),
+      previousStock,
+      newStock: newQuantity,
+      unitCost: product.costPrice,
+      notes: `${params.notes || 'Ajuste manual de existencias'} · ${location.name}`,
+      createdBy: params.createdBy || 'Administrador'
+    });
+
+    this.saveToFile();
+    return { product, movement };
+  }
+
   getStores(): Store[] {
     return this.data.stores || [];
   }
@@ -496,10 +566,6 @@ class DataStore {
     if (!product || !destination || quantity <= 0 || product.stock < quantity) return null;
 
     const sourceStock = product.stock;
-    const destinationIndex = this.data.storeStock.findIndex(item => item.storeId === destination.id && item.productId === product.id);
-    if (destinationIndex >= 0) this.data.storeStock[destinationIndex].quantity += quantity;
-    else this.data.storeStock.push({ storeId: destination.id, productId: product.id, quantity });
-
     const transfer: StockTransfer = {
       id: `TR-${Date.now()}-${product.id}`,
       guideNumber: params.guideNumber || this.createNextTransferGuideNumber(),
@@ -512,6 +578,7 @@ class DataStore {
       transportSupplierId: params.transportSupplierId,
       transportSupplierName: params.transportSupplierName,
       createdBy: params.createdBy || 'Usuario Almacén',
+      status: 'IN_TRANSIT',
       createdAt: new Date().toISOString()
     };
     this.data.stockTransfers.unshift(transfer);
@@ -542,6 +609,22 @@ class DataStore {
       return match ? Math.max(highest, Number(match[1])) : highest;
     }, 0);
     return `TRS-${String(maximum + 1).padStart(8, '0')}`;
+  }
+
+  confirmTransferReceipt(guideNumber: string, storeId: string): StockTransfer[] | null {
+    const transfers = this.data.stockTransfers.filter(transfer => transfer.guideNumber === guideNumber && transfer.toStoreId === storeId && transfer.status !== 'RECEIVED');
+    if (!transfers.length) return null;
+
+    transfers.forEach(transfer => {
+      const stockIndex = this.data.storeStock.findIndex(item => item.storeId === storeId && item.productId === transfer.productId);
+      if (stockIndex >= 0) this.data.storeStock[stockIndex].quantity += transfer.quantity;
+      else this.data.storeStock.push({ storeId, productId: transfer.productId, quantity: transfer.quantity });
+      transfer.status = 'RECEIVED';
+      transfer.receivedAt = new Date().toISOString();
+    });
+
+    this.saveToFile();
+    return transfers;
   }
 
   getStockTransfers(): StockTransfer[] {

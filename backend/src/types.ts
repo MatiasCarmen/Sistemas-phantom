@@ -52,6 +52,8 @@ export interface StockTransfer {
   transportSupplierId?: string;
   transportSupplierName?: string;
   createdBy: string;
+  status?: 'IN_TRANSIT' | 'RECEIVED';
+  receivedAt?: string;
   createdAt: string;
 }
 

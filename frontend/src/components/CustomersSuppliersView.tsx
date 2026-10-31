@@ -57,6 +57,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [custForm, setCustForm] = useState({
     name: '',
+    documentType: 'RUC' as 'RUC' | 'NIT' | 'DNI',
     taxId: '',
     email: '',
     phone: '',
@@ -87,6 +88,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     setEditingCustomer(null);
     setCustForm({
       name: '',
+      documentType: 'RUC' as 'RUC' | 'NIT' | 'DNI',
       taxId: '',
       email: '',
       phone: '',
@@ -102,8 +104,10 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
   // Open Edit Customer
   const handleOpenEditCust = (c: Customer) => {
     setEditingCustomer(c);
+    const inferredDocumentType = c.documentType || (c.taxId.length === 8 ? 'DNI' : c.taxId.length === 9 ? 'NIT' : 'RUC');
     setCustForm({
       name: c.name,
+      documentType: inferredDocumentType,
       taxId: c.taxId,
       email: c.email,
       phone: c.phone,
@@ -124,6 +128,12 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
   const handleSubmitCust = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!custForm.name.trim()) return;
+
+    const documentLengths = { RUC: 12, NIT: 9, DNI: 8 };
+    if (!/^\d+$/.test(custForm.taxId) || custForm.taxId.length !== documentLengths[custForm.documentType]) {
+      alert(`${custForm.documentType} debe contener exactamente ${documentLengths[custForm.documentType]} dígitos.`);
+      return;
+    }
 
     const customerData = {
       ...custForm,
@@ -193,6 +203,13 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
   const normalizedSearch = normalizeSearch(searchTerm);
   const isCashPayment = (paymentTerms?: string) => !paymentTerms || normalizeSearch(paymentTerms).includes('contado');
   const isActive = (status?: string) => !status || normalizeSearch(status) === 'activo' || normalizeSearch(status) === 'active';
+  const getCustomerDocumentType = (customer: Customer): 'RUC' | 'NIT' | 'DNI' => {
+    if (customer.documentType) return customer.documentType;
+    const digits = customer.taxId.replace(/\D/g, '').length;
+    if (digits === 8) return 'DNI';
+    if (digits === 9) return 'NIT';
+    return 'RUC';
+  };
 
   const filteredCustomers = customers
     .filter(c => {
@@ -378,7 +395,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                     {cust.name.slice(0, 2).toUpperCase()}
                   </div>
                   <span className="px-2 py-0.5 bg-[#1E1E1E] border border-[#2D2D2D] text-[#c8c6c6] rounded font-mono text-[10px]">
-                    RUC: {cust.taxId}
+                    {getCustomerDocumentType(cust)}: {cust.taxId}
                   </span>
                 </div>
 
@@ -406,12 +423,18 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                     <span className="text-[#71717A]">Condición de Pago:</span>
                     <span className="font-semibold text-white">{cust.paymentTerms || 'Contado'}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                     <span className="text-[#71717A]">Límite Crédito:</span>
                     <span className="font-mono tabular-nums font-bold text-white">
                       {currency} {(cust.creditLimit || 0).toLocaleString()}
                     </span>
                   </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#71717A]">Estado:</span>
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${isActive(cust.status) ? 'bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50' : 'bg-[#1E1E1E] text-[#9CA3AF] border border-[#3D3D3D]'}`}>
+                        {isActive(cust.status) ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
                 </div>
               </div>
 
@@ -472,9 +495,21 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#1E1E1E] flex items-center justify-between text-xs">
-                  <span className="text-[#71717A]">Condición Pago:</span>
-                  <span className="font-semibold text-white">{supp.paymentTerms || 'Contado'}</span>
+                <div className="mt-4 pt-3 border-t border-[#1E1E1E] space-y-2 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#71717A] shrink-0">Categoría de Suministros:</span>
+                    <span className="font-semibold text-white text-right">{supp.category || 'No definida'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#71717A]">Condición Pago:</span>
+                    <span className="font-semibold text-white">{supp.paymentTerms || 'Contado'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#71717A]">Estado:</span>
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${isActive(supp.status) ? 'border border-[#10B981]/50 bg-[#063A2F] text-[#31D0AA]' : 'border border-[#3D3D3D] bg-[#1E1E1E] text-[#9CA3AF]'}`}>
+                      {isActive(supp.status) ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -529,12 +564,30 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">RUC / NIT / DNI *</label>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Tipo de documento *</label>
+                  <div className="mb-2 grid grid-cols-3 gap-2">
+                    {(['RUC', 'NIT', 'DNI'] as const).map(documentType => (
+                      <button
+                        key={documentType}
+                        type="button"
+                        onClick={() => setCustForm({ ...custForm, documentType, taxId: '' })}
+                        className={`rounded border px-3 py-2 text-xs font-bold transition-colors ${custForm.documentType === documentType ? 'border-[#C8102E] bg-[#C8102E] text-white' : 'border-[#2D2D2D] bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+                      >
+                        {documentType}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="text"
+                    inputMode="numeric"
                     required
                     value={custForm.taxId}
-                    onChange={e => setCustForm({ ...custForm, taxId: e.target.value })}
+                    onChange={e => {
+                      const maxLength = { RUC: 12, NIT: 9, DNI: 8 }[custForm.documentType];
+                      setCustForm({ ...custForm, taxId: e.target.value.replace(/\D/g, '').slice(0, maxLength) });
+                    }}
+                    maxLength={{ RUC: 12, NIT: 9, DNI: 8 }[custForm.documentType]}
+                    placeholder={`${custForm.documentType}: ${ { RUC: 12, NIT: 9, DNI: 8 }[custForm.documentType]} dígitos`}
                     className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
@@ -718,6 +771,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                     {categories.map(category => (
                       <option key={category.id} value={category.name}>{category.name}</option>
                     ))}
+                    {!categories.some(category => category.name === 'Transportista') && <option value="Transportista">Transportista</option>}
                     {!categories.some(category => category.name === suppForm.category) && suppForm.category && (
                       <option value={suppForm.category}>{suppForm.category}</option>
                     )}

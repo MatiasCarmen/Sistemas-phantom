@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'dashboard' as const, label: 'Panel Ejecutivo', icon: BarChart3, desc: 'Métricas generales, ventas y utilidades' },
             { 
               id: 'inventory' as const, 
-              label: 'Inventario & Catálogo', 
+              label: 'Modulo de inventario', 
               icon: Package, 
               desc: 'Control de stock, precios y costos',
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'dashboard' as const, label: 'Panel de Almacén', icon: BarChart3, desc: 'Resumen de stock y alertas' },
             { 
               id: 'inventory' as const, 
-              label: 'Inventario & Stock', 
+              label: 'Modulo de inventario', 
               icon: Package, 
               desc: 'Control de existencias físicas',
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
