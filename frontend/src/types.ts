@@ -52,6 +52,8 @@ export interface StockTransfer {
   transportSupplierId?: string;
   transportSupplierName?: string;
   createdBy: string;
+  status?: 'IN_TRANSIT' | 'RECEIVED';
+  receivedAt?: string;
   createdAt: string;
 }
 
@@ -82,6 +84,7 @@ export interface Customer {
   id: string;
   name: string;
   taxId: string; // DNI / RUC / NIT / RFC
+  documentType?: 'RUC' | 'NIT' | 'DNI';
   email: string;
   phone: string;
   address?: string;

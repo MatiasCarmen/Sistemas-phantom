@@ -86,7 +86,7 @@ export const api = {
       method: 'DELETE'
     }),
 
-  adjustStock: (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) =>
+  adjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) =>
     fetchJson<{ product: Product; movement: InventoryMovement }>('/products/adjust-stock', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -96,6 +96,8 @@ export const api = {
   getStoreStock: () => fetchJson<{ storeStock: StoreStock[]; transfers: StockTransfer[] }>('/store-stock'),
   transferStock: (data: { productId?: string; items?: Array<{ productId: string; quantity: number }>; toStoreId: string; quantity?: number; transportSupplierId?: string; transportSupplierName?: string; notes?: string; createdBy?: string }) =>
     fetchJson<StockTransfer>('/stock-transfers', { method: 'POST', body: JSON.stringify(data) }),
+  confirmTransferReceipt: (guideNumber: string, storeId: string) =>
+    fetchJson<StockTransfer[]>('/stock-transfers/receive', { method: 'POST', body: JSON.stringify({ guideNumber, storeId }) }),
 
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),

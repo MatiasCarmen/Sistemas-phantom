@@ -51,7 +51,7 @@ interface InventoryViewProps {
   onAddProduct: (product: Partial<Product>) => Promise<void>;
   onUpdateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
-  onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) => Promise<void>;
+  onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => Promise<void>;
   onOpenKardex: (product?: Product) => void;
   isLoading: boolean;
 }
@@ -73,8 +73,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Filters & View State
   const [searchTerm, setSearchTerm] = useState('');
   const [storeSearch, setStoreSearch] = useState('');
+  const [storeListFilter, setStoreListFilter] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [productQuickFilter, setProductQuickFilter] = useState<'ALL' | 'ALERTS' | 'STORE_OUT'>('ALL');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [sortField, setSortField] = useState<'name' | 'stock' | 'sellingPrice' | 'sku'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -93,6 +96,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [transferQuantities, setTransferQuantities] = useState<Record<string, number>>({});
   const [transportSupplierId, setTransportSupplierId] = useState('');
   const [stockMatrixProduct, setStockMatrixProduct] = useState<Product | null>(null);
+  const [receivingGuide, setReceivingGuide] = useState<string | null>(null);
+  const [showNoPendingTransfers, setShowNoPendingTransfers] = useState(false);
+
+  const openStoreInventory = (storeId: string) => {
+    setSelectedCategory('ALL');
+    setStoreSearch('');
+    setSelectedStoreId(storeId);
+  };
+
+  const closeStoreInventory = () => {
+    setSelectedCategory('ALL');
+    setStoreSearch('');
+    setSelectedStoreId(null);
+    setIsTransferPanelOpen(false);
+  };
 
   const loadStockLocations = async () => {
     try {
@@ -141,11 +159,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     quantity: number;
     notes: string;
     responsible: string;
+    locationId: string;
+    newQuantity: number;
   }>({
-    type: 'IN_PURCHASE',
+    type: 'IN_ADJUSTMENT',
     quantity: 1,
     notes: '',
-    responsible: 'Administrador Almacén'
+    responsible: 'Administrador',
+    locationId: 'main-warehouse',
+    newQuantity: 1
   });
 
   // Open Add Product
@@ -268,10 +290,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const handleOpenAdjust = (prod: Product) => {
     setAdjustingProduct(prod);
     setAdjustData({
-      type: 'IN_PURCHASE',
-      quantity: 5,
+      type: 'IN_ADJUSTMENT',
+      quantity: prod.stock,
       notes: '',
-      responsible: 'Almacén Central'
+      responsible: 'Administrador',
+      locationId: 'main-warehouse',
+      newQuantity: prod.stock
     });
     setIsAdjustModalOpen(true);
   };
@@ -279,16 +303,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Submit Stock Adjust
   const handleSubmitAdjust = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adjustingProduct || adjustData.quantity <= 0) return;
+    if (!adjustingProduct || adjustData.newQuantity < 0 || !adjustData.locationId) return;
 
     await onAdjustStock({
       productId: adjustingProduct.id,
       type: adjustData.type,
-      quantity: Number(adjustData.quantity),
-      notes: adjustData.notes || `Ajuste manual de stock tipo ${adjustData.type}`,
+      quantity: Number(adjustData.newQuantity),
+      locationId: adjustData.locationId,
+      newQuantity: Number(adjustData.newQuantity),
+      notes: adjustData.notes || 'Ajuste manual de existencias',
       createdBy: adjustData.responsible
     });
 
+    const stockData = await api.getStoreStock();
+    setStoreStock(stockData.storeStock);
     setIsAdjustModalOpen(false);
   };
 
@@ -330,15 +358,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     return normalizedQuery === '' || normalizedQuery.split(/\s+/).every(term => normalizeSearchText(value).includes(term));
   };
 
+  const activeStores = stores.filter(store => store.status === 'ACTIVE' && store.type === 'STORE');
+  const brands = Array.from(new Set(products.map(product => product.brand).filter((brand): brand is string => Boolean(brand)))).sort((a, b) => a.localeCompare(b));
+  const productHasStockAlert = (product: Product) => product.stock <= product.minStock || activeStores.some(store => {
+    const quantity = storeStock.find(item => item.storeId === store.id && item.productId === product.id)?.quantity || 0;
+    return quantity <= product.minStock;
+  });
+  const productHasStoreStockout = (product: Product) => activeStores.some(store =>
+    (storeStock.find(item => item.storeId === store.id && item.productId === product.id)?.quantity || 0) <= 0
+  );
+
   // Filtering & Sorting
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === 'ALL' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesBrand = selectedBrand === 'ALL' || (p.brand || '').toLowerCase() === selectedBrand.toLowerCase();
     const matchesStatus = selectedStatus === 'ALL' || p.status === selectedStatus;
+    const matchesQuickFilter = productQuickFilter === 'ALL'
+      || (productQuickFilter === 'ALERTS' && productHasStockAlert(p))
+      || (productQuickFilter === 'STORE_OUT' && productHasStoreStockout(p));
     const productSearchText = [p.name, p.sku, p.barcode, p.brand, p.category, p.location]
       .filter(Boolean)
       .join(' ');
     const matchesSearch = matchesAllSearchTerms(productSearchText, searchTerm);
-    return matchesCategory && matchesStatus && matchesSearch;
+    return matchesCategory && matchesBrand && matchesStatus && matchesQuickFilter && matchesSearch;
   }).sort((a, b) => {
     let comp = 0;
     if (sortField === 'name') comp = a.name.localeCompare(b.name);
@@ -347,6 +389,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     if (sortField === 'sellingPrice') comp = a.sellingPrice - b.sellingPrice;
     return sortOrder === 'asc' ? comp : -comp;
   });
+
+  const handleConfirmReceipt = async (guideNumber: string, storeId: string) => {
+    await api.confirmTransferReceipt(guideNumber, storeId);
+    await loadStockLocations();
+    setReceivingGuide(null);
+  };
 
   const handleTransfer = async () => {
     setTransferError('');
@@ -370,7 +418,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const filteredStores = stores.filter(store => {
     if (store.status !== 'ACTIVE') return false;
+    if (storeListFilter !== 'ALL' && store.id !== storeListFilter) return false;
+    if (storeListFilter === 'ALL' && store.type === 'MAIN_WAREHOUSE') return true;
     return matchesAllSearchTerms([store.name, store.code, store.address, store.verificationNumber].filter(Boolean).join(' '), storeSearch);
+  });
+  const orderedFilteredStores = [...filteredStores].sort((a, b) => {
+    if (a.type === 'MAIN_WAREHOUSE' && b.type !== 'MAIN_WAREHOUSE') return -1;
+    if (b.type === 'MAIN_WAREHOUSE' && a.type !== 'MAIN_WAREHOUSE') return 1;
+    return a.name.localeCompare(b.name);
   });
 
   const getStoreQuantity = (storeId: string, productId: string) =>
@@ -392,7 +447,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded border border-[#2D2D2D]">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-bold text-white tracking-tight">Inventario</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">Modulo de inventario</h2>
             <span className="px-2.5 py-0.5 bg-[#1E1E1E] text-white border border-[#2D2D2D] text-xs font-bold rounded font-mono">
               {filteredProducts.length} productos
             </span>
@@ -443,6 +498,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
+      {!(inventorySection === 'stores' && selectedStoreId) && (
       <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
         <div className="flex flex-col lg:flex-row gap-3">
           
@@ -455,7 +511,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               value={inventorySection === 'catalog' ? searchTerm : storeSearch}
               onChange={(e) => inventorySection === 'catalog' ? setSearchTerm(e.target.value) : setStoreSearch(e.target.value)}
               placeholder={inventorySection === 'catalog'
-                ? 'Buscar por SKU, nombre, código de barras, marca, categoría o ubicación...'
+                ? 'Buscar por nombre, SKU, código de barras o marca (ej. JBL 770)'
                 : selectedStoreId
                   ? 'Buscar productos por nombre, SKU, código de barras, marca o categoría...'
                   : 'Buscar tiendas por nombre, código, dirección o N° de verificación...'}
@@ -471,6 +527,25 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             )}
           </div>
 
+          {inventorySection === 'stores' && !selectedStoreId && (
+            <div className="lg:w-72">
+              <select
+                id="select-store-list-filter"
+                value={storeListFilter}
+                onChange={(e) => setStoreListFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
+              >
+                <option value="ALL">Todas las tiendas</option>
+                {stores.filter(store => store.status === 'ACTIVE' && store.type === 'MAIN_WAREHOUSE').map(store => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+                {stores.filter(store => store.status === 'ACTIVE' && store.type === 'STORE').map(store => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {inventorySection === 'catalog' && (
           <div className="flex items-center space-x-2">
             <select
@@ -483,19 +558,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {categories.map(cat => (
                 <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
-            </select>
-
-            {/* Status Filter */}
-            <select
-              id="select-inventory-status"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-            >
-              <option value="ALL">Todos los Estados</option>
-              <option value="in_stock">En Stock</option>
-              <option value="low_stock">Stock Bajo (Alerta)</option>
-              <option value="out_of_stock">Agotado (0)</option>
             </select>
 
             {/* View Mode Toggle */}
@@ -522,13 +584,87 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
 
         </div>
+
+        {inventorySection === 'stores' && selectedStoreId && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('ALL')}
+              className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+            >
+              Todas las categorías
+            </button>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setSelectedCategory(category.name)}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === category.name ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {inventorySection === 'catalog' && (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setProductQuickFilter('ALL')}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+              >
+                Todos {products.length}
+              </button>
+              <button
+                type="button"
+                onClick={() => setProductQuickFilter('ALERTS')}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'ALERTS' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+              >
+                Con alertas {products.filter(productHasStockAlert).length}
+              </button>
+              <button
+                type="button"
+                onClick={() => setProductQuickFilter('STORE_OUT')}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'STORE_OUT' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+              >
+                Agotados en alguna tienda {products.filter(productHasStoreStockout).length}
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                id="select-inventory-status"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="min-w-[190px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
+              >
+                <option value="ALL">Todos los estados</option>
+                <option value="in_stock">En stock</option>
+                <option value="low_stock">Stock bajo</option>
+                <option value="out_of_stock">Agotado</option>
+              </select>
+              <select
+                id="select-inventory-brand"
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="min-w-[190px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
+              >
+                <option value="ALL">Todas las marcas</option>
+                {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+              </select>
+            </div>
+          </>
+        )}
       </div>
+      )}
 
       {inventorySection === 'stores' && (
         <div className="space-y-5">
           {!selectedStoreId ? (
             <>
-              {filteredStores.map(store => {
+              {orderedFilteredStores.map(store => {
                 const isWarehouse = store.type === 'MAIN_WAREHOUSE';
                 const quantity = isWarehouse
                   ? products.reduce((sum, product) => sum + product.stock, 0)
@@ -537,7 +673,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   ? products.reduce((sum, product) => sum + product.stock * product.costPrice, 0)
                   : products.reduce((sum, product) => sum + getStoreQuantity(store.id, product.id) * product.costPrice, 0);
                 return (
-                  <button key={store.id} onClick={() => setSelectedStoreId(store.id)} className="w-full text-left bg-[#141414] border border-[#2D2D2D] hover:border-[#4B5563] rounded px-5 py-4 transition-colors">
+                  <button key={store.id} onClick={() => openStoreInventory(store.id)} className="w-full text-left bg-[#141414] border border-[#2D2D2D] hover:border-[#4B5563] rounded px-5 py-4 transition-colors">
                     <div className="flex items-center gap-3">
                       <h3 className="text-lg font-bold text-white">{store.name}</h3>
                       {isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}
@@ -560,7 +696,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             if (!store) return null;
             const isWarehouse = store.type === 'MAIN_WAREHOUSE';
             const locationProducts = (isWarehouse ? products : products.filter(product => getStoreQuantity(store.id, product.id) > 0)).filter(product =>
-              matchesAllSearchTerms([product.name, product.sku, product.barcode, product.brand, product.category].filter(Boolean).join(' '), storeSearch)
+              matchesAllSearchTerms([product.name, product.sku, product.barcode, product.brand, product.category].filter(Boolean).join(' '), storeSearch) &&
+              (selectedCategory === 'ALL' || product.category?.toLowerCase() === selectedCategory.toLowerCase())
             );
             const units = isWarehouse ? products.reduce((sum, product) => sum + product.stock, 0) : locationProducts.reduce((sum, product) => sum + getStoreQuantity(store.id, product.id), 0);
             const cost = locationProducts.reduce((sum, product) => sum + (isWarehouse ? product.stock : getStoreQuantity(store.id, product.id)) * product.costPrice, 0);
@@ -571,14 +708,94 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             }).length;
             return (
               <div className="space-y-4">
-                <button onClick={() => { setSelectedStoreId(null); setIsTransferPanelOpen(false); }} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
+                <button onClick={closeStoreInventory} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div><div className="flex items-center gap-3"><h3 className="text-2xl font-bold text-white">{store.name}</h3>{isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}</div>{store.address && <p className="mt-1 text-xs text-[#9CA3AF]">{store.address}</p>}<p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p></div>
-                  <button onClick={() => { setTransferStore(isWarehouse ? '' : store.id); setIsTransferPanelOpen(true); }} className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-sm font-bold">{isWarehouse ? 'Transferir a tiendas' : 'Recibir stock de la principal'}</button>
+                  <button
+                    onClick={() => {
+                      if (isWarehouse) {
+                        setTransferStore('');
+                        setIsTransferPanelOpen(true);
+                      } else {
+                        const pending = stockTransfers.find(transfer => transfer.toStoreId === store.id && transfer.status !== 'RECEIVED');
+                        if (!pending) {
+                          setShowNoPendingTransfers(true);
+                          return;
+                        }
+                        setReceivingGuide(pending.guideNumber);
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-sm font-bold"
+                  >
+                    {isWarehouse ? 'Transferir a tiendas' : 'Recibir stock de la principal'}
+                  </button>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   {[['SKUs', locationProducts.length], ['Unidades', units], ['Inventario a costo', `${currency} ${formatAmount(cost)}`], ['Inventario a venta', `${currency} ${formatAmount(selling)}`], ['Productos bajo mínimo', lowStock]].map(([label, value]) => <div key={String(label)} className="bg-[#141414] border border-[#2D2D2D] rounded p-4"><div className="text-lg font-mono font-bold text-white">{value}</div><div className="mt-1 text-xs text-[#9CA3AF]">{label}</div></div>)}
                 </div>
+                <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={storeSearch}
+                      onChange={(event) => setStoreSearch(event.target.value)}
+                      placeholder="Buscar productos por nombre, SKU, código de barras, marca o categoría..."
+                      className="w-full pl-9 pr-10 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#C8102E]"
+                    />
+                    {storeSearch && <button onClick={() => setStoreSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-white"><X className="w-3.5 h-3.5" /></button>}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => setSelectedCategory('ALL')} className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}>Todas las categorías</button>
+                    {categories.map(category => <button key={category.id} type="button" onClick={() => setSelectedCategory(category.name)} className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === category.name ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}>{category.name}</button>)}
+                  </div>
+                </div>
+                {showNoPendingTransfers && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowNoPendingTransfers(false)}>
+                    <div className="w-full max-w-md rounded border border-[#3D3D3D] bg-[#161616] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded bg-[#C8102E]/15 text-[#EF4444]">
+                            <AlertTriangle className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-white">Recepción de stock</h3>
+                            <p className="mt-0.5 text-xs text-[#9CA3AF]">Tienda sin transferencias pendientes</p>
+                          </div>
+                        </div>
+                        <button onClick={() => setShowNoPendingTransfers(false)} className="text-[#9CA3AF] hover:text-white" aria-label="Cerrar">
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <div className="px-5 py-5">
+                        <p className="text-sm leading-6 text-[#D1D5DB]">No hay transferencias pendientes para <span className="font-semibold text-white">{store.name}</span>.</p>
+                      </div>
+                      <div className="flex justify-end border-t border-[#303030] px-5 py-4">
+                        <button onClick={() => setShowNoPendingTransfers(false)} className="rounded bg-[#C8102E] px-5 py-2 text-xs font-bold text-white hover:bg-[#A80C25]">Aceptar</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {receivingGuide && (() => {
+                  const receiptItems = stockTransfers.filter(transfer => transfer.guideNumber === receivingGuide && transfer.toStoreId === store.id);
+                  const firstReceipt = receiptItems[0];
+                  return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                      <div className="w-full max-w-lg rounded border border-[#3D3D3D] bg-[#161616] shadow-2xl">
+                        <div className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
+                          <div><h3 className="text-lg font-bold text-white">Confirmar recepción de stock</h3><p className="mt-1 font-mono text-xs text-[#60A5FA]">Guía {receivingGuide}</p></div>
+                          <button onClick={() => setReceivingGuide(null)} className="text-[#9CA3AF] hover:text-white"><X className="h-5 w-5" /></button>
+                        </div>
+                        <div className="space-y-4 px-5 py-5">
+                          <div className="grid grid-cols-2 gap-3 rounded border border-[#303030] bg-[#0E0E0E] p-3 text-xs"><div><span className="text-[#9CA3AF]">Origen</span><p className="mt-1 font-bold text-white">Almacén principal</p></div><div><span className="text-[#9CA3AF]">Destino</span><p className="mt-1 font-bold text-white">{store.name}</p></div></div>
+                          <div className="overflow-hidden rounded border border-[#303030]"><div className="grid grid-cols-[1fr_90px] bg-[#252525] px-3 py-2 text-xs font-bold text-[#9CA3AF]"><span>Producto</span><span className="text-right">Cantidad</span></div>{receiptItems.map(transfer => { const product = products.find(item => item.id === transfer.productId); return <div key={transfer.id} className="grid grid-cols-[1fr_90px] border-t border-[#303030] px-3 py-3 text-xs"><span className="font-bold text-white">{product?.name || transfer.productId}<small className="block text-[#737373]">SKU {product?.sku || '-'}</small></span><span className="text-right font-mono font-bold text-white">{transfer.quantity}</span></div>; })}</div>
+                          {firstReceipt?.transportSupplierName && <p className="text-xs text-[#9CA3AF]">Proveedor de transporte: <b className="text-white">{firstReceipt.transportSupplierName}</b></p>}
+                        </div>
+                        <div className="flex justify-end gap-3 border-t border-[#303030] px-5 py-4"><button onClick={() => setReceivingGuide(null)} className="rounded bg-[#252525] px-4 py-2 text-xs font-bold text-white">Cancelar</button><button onClick={() => handleConfirmReceipt(receivingGuide, store.id)} className="rounded bg-[#C8102E] px-4 py-2 text-xs font-bold text-white">Confirmar recepción</button></div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 {isTransferPanelOpen && (
                   <div className="fixed inset-0 z-50 flex justify-end bg-black/60">
                     <div className="flex h-full w-full max-w-md flex-col bg-[#161616] shadow-2xl">
@@ -1034,7 +1251,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {/* Stock and Thresholds */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Actual *</label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">
+                    {editingProduct ? `Stock Actual - ${selectedMainWarehouse} *` : 'Stock Actual *'}
+                  </label>
                   <input
                     id="input-prod-stock"
                     type="number"
@@ -1064,9 +1283,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <select
                     id="input-prod-location"
                     required
+                    disabled={Boolean(editingProduct)}
                     value={mainWarehouses.some(store => store.name === formData.location) ? formData.location : selectedMainWarehouse}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white disabled:opacity-100 focus:border-[#C8102E]"
                   >
                     {(mainWarehouses.length ? mainWarehouses : [{ id: 'main-warehouse', name: 'Tienda principal' }]).map(store => (
                       <option key={store.id} value={store.name}>{store.name}</option>
@@ -1217,43 +1437,45 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <p className="font-bold text-white">{adjustingProduct.name}</p>
                 <div className="flex items-center justify-between text-[#9CA3AF] font-mono">
                   <span>SKU: {adjustingProduct.sku}</span>
-                  <span className="font-bold text-[#A7F3D0]">Stock Actual: {adjustingProduct.stock} {adjustingProduct.unit}</span>
+                  <span className="font-bold text-[#A7F3D0]">
+                    Stock Actual: {adjustData.locationId === 'main-warehouse'
+                      ? adjustingProduct.stock
+                      : storeStock.find(item => item.storeId === adjustData.locationId && item.productId === adjustingProduct.id)?.quantity || 0} {adjustingProduct.unit}
+                  </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Tipo de Movimiento Kardex *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Ubicación del stock *</label>
                 <select
-                  id="select-adjust-type"
-                  value={adjustData.type}
-                  onChange={e => setAdjustData({ ...adjustData, type: e.target.value as MovementType })}
+                  id="select-adjust-location"
+                  value={adjustData.locationId}
+                  onChange={e => {
+                    const locationId = e.target.value;
+                    const current = locationId === 'main-warehouse'
+                      ? adjustingProduct.stock
+                      : storeStock.find(item => item.storeId === locationId && item.productId === adjustingProduct.id)?.quantity || 0;
+                    setAdjustData({ ...adjustData, locationId, newQuantity: current });
+                  }}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-medium text-white focus:border-[#C8102E]"
                 >
-                  <option value="IN_PURCHASE">Entrada por Compra / Reabastecimiento (+)</option>
-                  <option value="IN_ADJUSTMENT">Ajuste Positivo / Conteo de Inventario (+)</option>
-                  <option value="OUT_ADJUSTMENT">Ajuste Negativo / Descuento Manual (-)</option>
-                  <option value="OUT_DAMAGE">Salida por Merma / Producto Dañado (-)</option>
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Cantidad a Mover *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Nueva cantidad *</label>
                 <input
-                  id="input-adjust-qty"
+                  id="input-adjust-new-qty"
                   type="number"
-                  min="1"
+                  min="0"
                   required
-                  value={adjustData.quantity}
-                  onChange={e => setAdjustData({ ...adjustData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                  value={adjustData.newQuantity}
+                  onChange={e => setAdjustData({ ...adjustData, newQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
                 />
-                <span className="text-[11px] text-[#9CA3AF] mt-1 block font-mono">
-                  Nuevo stock estimado: <strong className="text-white">
-                    {adjustData.type.startsWith('IN_') 
-                      ? adjustingProduct.stock + adjustData.quantity 
-                      : Math.max(0, adjustingProduct.stock - adjustData.quantity)} {adjustingProduct.unit}
-                  </strong>
-                </span>
               </div>
 
               <div>
@@ -1271,13 +1493,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Usuario Responsable</label>
-                <input
-                  id="input-adjust-user"
-                  type="text"
+                <select
+                  id="select-adjust-user"
                   value={adjustData.responsible}
-                  onChange={e => setAdjustData({ ...adjustData, responsible: e.target.value })}
+                  onChange={(e) => setAdjustData({ ...adjustData, responsible: e.target.value })}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
-                />
+                >
+                  <option value="Administrador">Administrador</option>
+                  <option value="Almacenero">Almacenero</option>
+                </select>
               </div>
 
               <div className="pt-3 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">

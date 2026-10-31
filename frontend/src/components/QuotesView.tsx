@@ -298,6 +298,30 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
   };
 
   // Filtered list
+  const today = new Date();
+  const start30Days = new Date(today);
+  start30Days.setDate(today.getDate() - 30);
+  const parseQuoteDate = (quote: Quote) => new Date(`${quote.date}T00:00:00`);
+  const quotedLast30 = quotes.filter(quote => parseQuoteDate(quote) >= start30Days);
+  const quoted30Total = quotedLast30.reduce((sum, quote) => sum + quote.total, 0);
+  const expiringQuotes = quotes.filter(quote => {
+    const expiry = new Date(`${quote.expiryDate}T00:00:00`);
+    const days = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+    return days >= 0 && days <= 7 && !['CONVERTED', 'REJECTED', 'EXPIRED'].includes(quote.status);
+  });
+  const sentQuotes = quotes.filter(quote => quote.status === 'SENT').length;
+  const approvedQuotes = quotes.filter(quote => ['APPROVED', 'CONVERTED'].includes(quote.status)).length;
+  const conversionRate = quotes.length ? Math.round((approvedQuotes / quotes.length) * 100) : 0;
+  const pendingApproval = quotes.filter(quote => quote.status === 'SENT').reduce((sum, quote) => sum + quote.total, 0);
+  const statusCounts = {
+    DRAFT: quotes.filter(quote => quote.status === 'DRAFT').length,
+    SENT: quotes.filter(quote => quote.status === 'SENT').length,
+    APPROVED: quotes.filter(quote => quote.status === 'APPROVED').length,
+    REJECTED: quotes.filter(quote => quote.status === 'REJECTED').length,
+    EXPIRED: quotes.filter(quote => quote.status === 'EXPIRED').length,
+    CONVERTED: quotes.filter(quote => quote.status === 'CONVERTED').length
+  };
+
   const filteredQuotes = quotes.filter(q => {
     const matchesStatus = statusFilter === 'ALL' || q.status === statusFilter;
     const matchesSearch = searchTerm.trim() === '' ||
@@ -352,10 +376,32 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
         </button>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-[#141414] border border-[#2D2D2D] rounded-md px-4 py-3">
+          <p className="text-xs text-[#9CA3AF]">Cotizado en los últimos 30 días</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-white">{currency} {formatAmount(quoted30Total)}</p>
+          <p className="mt-1 text-xs text-[#737373]">{quotedLast30.length} cotizaciones</p>
+        </div>
+        <div className="bg-[#141414] border border-[#2D2D2D] rounded-md px-4 py-3">
+          <p className="text-xs text-[#9CA3AF]">Por vencer (7 días)</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-[#F59E0B]">{expiringQuotes.length}</p>
+          <p className="mt-1 text-xs text-[#737373]">{currency} {formatAmount(expiringQuotes.reduce((sum, quote) => sum + quote.total, 0))} en juego</p>
+        </div>
+        <div className="bg-[#141414] border border-[#2D2D2D] rounded-md px-4 py-3">
+          <p className="text-xs text-[#9CA3AF]">Tasa de conversión</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-white">{conversionRate}%</p>
+          <p className="mt-1 text-xs text-[#737373]">{approvedQuotes} de {quotes.length} cotizadas</p>
+        </div>
+        <div className="bg-[#141414] border border-[#2D2D2D] rounded-md px-4 py-3">
+          <p className="text-xs text-[#9CA3AF]">Pendiente de aprobación</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-white">{currency} {formatAmount(pendingApproval)}</p>
+          <p className="mt-1 text-xs text-[#737373]">{sentQuotes} cotizaciones enviadas</p>
+        </div>
+      </div>
+
       {/* Filter Bar */}
-      <div className="bg-[#141414] p-4 rounded-md border border-[#2D2D2D] flex flex-col md:flex-row gap-3">
-        
-        <div className="relative flex-1">
+      <div className="bg-[#141414] p-4 rounded-md border border-[#2D2D2D] space-y-3">
+        <div className="relative">
           <Search className="w-4 h-4 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             id="input-quotes-search"
@@ -363,27 +409,30 @@ export const QuotesView: React.FC<QuotesViewProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por folio COT, nombre de cliente, RUC/DNI..."
-            className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#C8102E]"
+            className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border-2 border-[#C8102E] rounded-md text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#E11D48]"
           />
         </div>
 
-        <div className="flex items-center space-x-2">
-          <select
-            id="select-quotes-status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-          >
-            <option value="ALL">Todos los Estados</option>
-            <option value="DRAFT">Borrador</option>
-            <option value="SENT">Enviada</option>
-            <option value="APPROVED">Aprobada</option>
-            <option value="CONVERTED">Convertida a Venta</option>
-            <option value="REJECTED">Rechazada</option>
-            <option value="EXPIRED">Vencida</option>
-          </select>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['ALL', `Todas ${quotes.length}`],
+            ['DRAFT', `Borrador ${statusCounts.DRAFT}`],
+            ['SENT', `Enviada ${statusCounts.SENT}`],
+            ['APPROVED', `Aprobada ${statusCounts.APPROVED}`],
+            ['REJECTED', `Rechazada ${statusCounts.REJECTED}`],
+            ['EXPIRED', `Vencida ${statusCounts.EXPIRED}`],
+            ['CONVERTED', `Convertida ${statusCounts.CONVERTED}`]
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatusFilter(value)}
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${statusFilter === value ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-
       </div>
 
       {/* Quotes List Table */}
