@@ -598,6 +598,16 @@
       "contactPerson": "Roberto Salcedo",
       "notes": "Distribuidor gamer con amplia variedad de periféricos y equipos.",
       "createdAt": "2025-01-15T09:00:00.000Z"
+    },
+    {
+      "name": "AGM Server SAC",
+      "taxId": "201453686612",
+      "email": "AldoS@agm.com",
+      "phone": "987358906",
+      "address": "",
+      "contactPerson": "Aldo Soto",
+      "id": "sup-1791417979612",
+      "createdAt": "2026-10-08T00:06:19.612Z"
     }
   ],
   "customers": [
@@ -683,6 +693,18 @@
       "creditLimit": 0,
       "notes": "",
       "createdAt": "2026-09-04T00:00:00.000Z",
+      "totalPurchases": 0
+    },
+    {
+      "name": "Christian Rojas ",
+      "taxId": "72279251",
+      "email": "prueba@gmail.com",
+      "phone": "987305547",
+      "address": "lima",
+      "creditLimit": 2000,
+      "notes": "",
+      "id": "cust-1791418034103",
+      "createdAt": "2026-10-08T00:07:14.103Z",
       "totalPurchases": 0
     }
   ],
@@ -1081,7 +1103,7 @@
       "role": "admin",
       "roleLabel": "Administrador General",
       "avatarColor": "indigo",
-      "password": "admin",
+      "password": "scrypt$0fdfb43c90ea0c9bea425d4485fd6fe5$6b17d3caebdac2a7e313980b243c789568c82c8fa0fae18aecc80ce9a7806f672778cd24c183b1fcc52190f47236782295ea27dd13218582ef9e691365d0cfef",
       "status": "active",
       "permissions": {
         "canViewDashboard": true,
@@ -1095,7 +1117,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-09-18T02:31:47.123Z"
+      "lastLogin": "2026-10-31T00:37:22.814Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -1194,5 +1216,221 @@
       "lastLogin": "2026-06-10T12:00:00.000Z"
     }
   ],
-  "lastUpdated": "2026-10-18T21:08:25.900Z"
+  "stores": [
+    {
+      "id": "main-warehouse",
+      "name": "Tienda principal",
+      "code": "ALM-01",
+      "verificationNumber": "00",
+      "type": "MAIN_WAREHOUSE",
+      "address": "Almacén central - Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-01",
+      "name": "Jockey Plaza",
+      "code": "TDA-01",
+      "verificationNumber": "01",
+      "type": "STORE",
+      "address": "Surco, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-02",
+      "name": "Plaza San Miguel",
+      "code": "TDA-02",
+      "verificationNumber": "02",
+      "type": "STORE",
+      "address": "San Miguel, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-03",
+      "name": "Plaza Norte",
+      "code": "TDA-03",
+      "verificationNumber": "03",
+      "type": "STORE",
+      "address": "Independencia, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-04",
+      "name": "Mall del Sur",
+      "code": "TDA-04",
+      "verificationNumber": "04",
+      "type": "STORE",
+      "address": "SJM, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-05",
+      "name": "Lima Centro",
+      "code": "TDA-05",
+      "verificationNumber": "05",
+      "type": "STORE",
+      "address": "Real Plaza Centro",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-06",
+      "name": "Mega Plaza - Independencia",
+      "code": "TDA-06",
+      "verificationNumber": "06",
+      "type": "STORE",
+      "address": "Independencia, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-07",
+      "name": "Mall Aventura - Comas",
+      "code": "TDA-07",
+      "verificationNumber": "07",
+      "type": "STORE",
+      "address": "Comas, Lima",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "store-08",
+      "name": "Real Plaza Puruchuco",
+      "code": "TDA-08",
+      "verificationNumber": "08",
+      "type": "STORE",
+      "address": "Ate, Lima",
+      "status": "ACTIVE"
+    }
+  ],
+  "storeStock": [
+    {
+      "storeId": "store-01",
+      "productId": "prod-1",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-02",
+      "productId": "prod-1",
+      "quantity": 2
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-2",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-3",
+      "quantity": 3
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-4",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-5",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-6",
+      "quantity": 4
+    },
+    {
+      "storeId": "store-02",
+      "productId": "prod-6",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-7",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-8",
+      "quantity": 2
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-9",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-10",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-11",
+      "quantity": 6
+    },
+    {
+      "storeId": "store-02",
+      "productId": "prod-11",
+      "quantity": 7
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-12",
+      "quantity": 6
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-13",
+      "quantity": 4
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-14",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-15",
+      "quantity": 4
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-16",
+      "quantity": 3
+    },
+    {
+      "storeId": "store-02",
+      "productId": "prod-16",
+      "quantity": 4
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-17",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-18",
+      "quantity": 2
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-19",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-20",
+      "quantity": 1
+    },
+    {
+      "storeId": "store-01",
+      "productId": "prod-21",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-02",
+      "productId": "prod-21",
+      "quantity": 6
+    }
+  ],
+  "stockTransfers": [],
+  "lastUpdated": "2026-10-31T04:37:37.059Z"
 }

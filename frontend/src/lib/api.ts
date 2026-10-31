@@ -12,7 +12,10 @@ import {
   User,
   LoginResponse,
   AuditAction,
-  AuditLogEvent
+  AuditLogEvent,
+  Store,
+  StoreStock,
+  StockTransfer
 } from '../types';
 
 const API_BASE = '/api';
@@ -89,6 +92,11 @@ export const api = {
       body: JSON.stringify(data)
     }),
 
+  getStores: () => fetchJson<Store[]>('/stores'),
+  getStoreStock: () => fetchJson<{ storeStock: StoreStock[]; transfers: StockTransfer[] }>('/store-stock'),
+  transferStock: (data: { productId?: string; items?: Array<{ productId: string; quantity: number }>; toStoreId: string; quantity?: number; transportSupplierId?: string; transportSupplierName?: string; notes?: string; createdBy?: string }) =>
+    fetchJson<StockTransfer>('/stock-transfers', { method: 'POST', body: JSON.stringify(data) }),
+
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),
   createCategory: (data: Partial<Category>) => 
@@ -99,6 +107,12 @@ export const api = {
   deleteCategory: (id: string) => 
     fetchJson<{ success: boolean }>(`/categories/${id}`, {
       method: 'DELETE'
+    }),
+
+  uploadProductImage: (dataUrl: string, fileName: string) =>
+    fetchJson<{ imageUrl: string }>('/uploads/product-image', {
+      method: 'POST',
+      body: JSON.stringify({ dataUrl, fileName })
     }),
 
   // Suppliers

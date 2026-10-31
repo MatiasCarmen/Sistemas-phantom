@@ -14,13 +14,16 @@ import {
   DollarSign, 
   Check, 
   X,
-  UserCheck
+  UserCheck,
+  SlidersHorizontal
 } from 'lucide-react';
-import { Customer, Supplier, CompanySettings } from '../types';
+import { Customer, Supplier, CompanySettings, Category } from '../types';
 
 interface CustomersSuppliersViewProps {
+  mode?: 'customers' | 'suppliers';
   customers: Customer[];
   suppliers: Supplier[];
+  categories: Category[];
   settings: CompanySettings | null;
   onAddCustomer: (c: Partial<Customer>) => Promise<void>;
   onUpdateCustomer: (id: string, c: Partial<Customer>) => Promise<void>;
@@ -31,8 +34,10 @@ interface CustomersSuppliersViewProps {
 }
 
 export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
+  mode,
   customers,
   suppliers,
+  categories,
   settings,
   onAddCustomer,
   onUpdateCustomer,
@@ -42,8 +47,10 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
   onDeleteSupplier
 }) => {
   const currency = settings?.currencySymbol || '$';
-  const [activeTab, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
+  const [activeTab, setActiveTab] = useState<'customers' | 'suppliers'>(mode || 'customers');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'cash' | 'credit'>('all');
+  const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'recent'>('name-asc');
 
   // Customer Modal State
   const [isCustModalOpen, setIsCustModalOpen] = useState(false);
@@ -56,7 +63,8 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     address: '',
     city: '',
     creditLimit: 0,
-    paymentTerms: 'Contado'
+    paymentTerms: 'Contado',
+    status: 'Activo'
   });
 
   // Supplier Modal State
@@ -70,7 +78,8 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     phone: '',
     address: '',
     category: 'Hardware & Equipos',
-    paymentTerms: '30 días crédito'
+    paymentTerms: '30 días crédito',
+    status: 'Activo'
   });
 
   // Open Add Customer
@@ -84,7 +93,8 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       address: '',
       city: '',
       creditLimit: 2000,
-      paymentTerms: 'Contado'
+      paymentTerms: 'Contado',
+      status: 'Activo'
     });
     setIsCustModalOpen(true);
   };
@@ -100,7 +110,12 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       address: c.address || '',
       city: c.city || '',
       creditLimit: c.creditLimit || 0,
-      paymentTerms: c.paymentTerms || 'Contado'
+      paymentTerms: c.paymentTerms && c.paymentTerms !== 'Contado'
+        ? (['Crédito 7 días', 'Crédito 15 días', 'Crédito 30 días', 'Crédito 45 días', 'Crédito 60 días'].includes(c.paymentTerms)
+          ? c.paymentTerms
+          : /30/i.test(c.paymentTerms) ? 'Crédito 30 días' : 'Crédito 30 días')
+        : 'Contado',
+      status: c.status || 'Activo'
     });
     setIsCustModalOpen(true);
   };
@@ -110,16 +125,15 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     e.preventDefault();
     if (!custForm.name.trim()) return;
 
+    const customerData = {
+      ...custForm,
+      creditLimit: custForm.paymentTerms === 'Contado' ? 0 : Number(custForm.creditLimit)
+    };
+
     if (editingCustomer) {
-      await onUpdateCustomer(editingCustomer.id, {
-        ...custForm,
-        creditLimit: Number(custForm.creditLimit)
-      });
+      await onUpdateCustomer(editingCustomer.id, customerData);
     } else {
-      await onAddCustomer({
-        ...custForm,
-        creditLimit: Number(custForm.creditLimit)
-      });
+      await onAddCustomer(customerData);
     }
     setIsCustModalOpen(false);
   };
@@ -134,8 +148,9 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       email: '',
       phone: '',
       address: '',
-      category: 'Hardware & Equipos',
-      paymentTerms: '30 días crédito'
+      category: categories[0]?.name || '',
+      paymentTerms: 'Contado',
+      status: 'Activo'
     });
     setIsSuppModalOpen(true);
   };
@@ -151,7 +166,8 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       phone: s.phone,
       address: s.address || '',
       category: s.category || 'General',
-      paymentTerms: s.paymentTerms || 'Contado'
+      paymentTerms: s.paymentTerms || 'Contado',
+      status: s.status || 'Activo'
     });
     setIsSuppModalOpen(true);
   };
@@ -169,20 +185,54 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     setIsSuppModalOpen(false);
   };
 
-  // Filtered lists
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.taxId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phone.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizeSearch = (value: string) => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  const normalizedSearch = normalizeSearch(searchTerm);
+  const isCashPayment = (paymentTerms?: string) => !paymentTerms || normalizeSearch(paymentTerms).includes('contado');
+  const isActive = (status?: string) => !status || normalizeSearch(status) === 'activo' || normalizeSearch(status) === 'active';
 
-  const filteredSuppliers = suppliers.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.taxId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.contactPerson && s.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCustomers = customers
+    .filter(c => {
+      const searchable = [c.name, c.taxId, c.email, c.phone, c.address, c.city, c.contactPerson, c.paymentTerms]
+        .filter(Boolean)
+        .map(value => normalizeSearch(String(value)))
+        .join(' ');
+      const matchesSearch = !normalizedSearch || searchable.includes(normalizedSearch);
+      const matchesStatus = statusFilter === 'all'
+        || (statusFilter === 'active' && isActive(c.status))
+        || (statusFilter === 'inactive' && !isActive(c.status))
+        || (statusFilter === 'cash' && isCashPayment(c.paymentTerms))
+        || (statusFilter === 'credit' && !isCashPayment(c.paymentTerms));
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => sortOrder === 'recent'
+      ? (b.createdAt || '').localeCompare(a.createdAt || '')
+      : sortOrder === 'name-desc'
+        ? b.name.localeCompare(a.name, 'es')
+        : a.name.localeCompare(b.name, 'es'));
+
+  const filteredSuppliers = suppliers
+    .filter(s => {
+      const searchable = [s.name, s.taxId, s.email, s.phone, s.address, s.contactPerson, s.category, s.paymentTerms]
+        .filter(Boolean)
+        .map(value => normalizeSearch(String(value)))
+        .join(' ');
+      const matchesSearch = !normalizedSearch || searchable.includes(normalizedSearch);
+      const matchesStatus = statusFilter === 'all'
+        || statusFilter === 'active'
+        || (statusFilter === 'inactive' && false)
+        || (statusFilter === 'cash' && isCashPayment(s.paymentTerms))
+        || (statusFilter === 'credit' && !isCashPayment(s.paymentTerms));
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => sortOrder === 'recent'
+      ? (b.createdAt || '').localeCompare(a.createdAt || '')
+      : sortOrder === 'name-desc'
+        ? b.name.localeCompare(a.name, 'es')
+        : a.name.localeCompare(b.name, 'es'));
 
   return (
     <div className="space-y-6 pb-12">
@@ -191,11 +241,14 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded-md border border-[#2D2D2D]">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-bold text-white tracking-tight">Directorio de Contactos Comerciales</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              {mode === 'suppliers' ? 'Gestión de Proveedores' : mode === 'customers' ? 'Gestión de Clientes' : 'Directorio de Contactos Comerciales'}
+            </h2>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {!mode && (
           <div className="flex bg-[#0E0E0E] p-1 rounded-md border border-[#2D2D2D]">
             <button
               id="tab-customers-view"
@@ -222,6 +275,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
               <span>Proveedores ({suppliers.length})</span>
             </button>
           </div>
+          )}
 
           <button
             id="btn-add-contact-action"
@@ -234,18 +288,80 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-[#141414] p-4 rounded-md border border-[#2D2D2D]">
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            id="input-contacts-search"
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder={`Buscar en ${activeTab === 'customers' ? 'clientes por nombre, RUC o email' : 'proveedores por empresa o contacto'}...`}
-            className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#C8102E]"
-          />
+      {/* Search and filters */}
+      <div className="bg-[#141414] p-4 rounded-md border border-[#2D2D2D] space-y-3">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              id="input-contacts-search"
+              type="search"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder={activeTab === 'customers'
+                ? 'Buscar por nombre, RUC/DNI, correo, teléfono o dirección...'
+                : 'Buscar por empresa, RUC, contacto, correo o categoría...'}
+              className="w-full pl-9 pr-4 py-2.5 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs text-white placeholder-[#71717A] focus:outline-none focus:border-[#C8102E]"
+            />
+          </div>
+          <button
+            type="button"
+            aria-label="Filtros de búsqueda"
+            onClick={() => setStatusFilter('all')}
+            className="px-3 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded-md border border-[#C8102E] transition-colors"
+            title="Limpiar filtros"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {([
+            ['all', 'Todos'],
+            ['active', 'Activos'],
+            ['inactive', 'Inactivos'],
+            ['cash', 'Contado'],
+            ['credit', 'Crédito']
+          ] as const).map(([value, label]) => {
+            const currentItems = activeTab === 'customers' ? customers : suppliers;
+            const count = value === 'all'
+              ? currentItems.length
+              : value === 'active'
+                ? currentItems.filter(item => isActive((item as Customer).status)).length
+                : value === 'inactive'
+                  ? currentItems.filter(item => !isActive((item as Customer).status)).length
+                  : currentItems.filter(item => value === 'cash'
+                      ? isCashPayment(item.paymentTerms)
+                      : !isCashPayment(item.paymentTerms)).length;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStatusFilter(value)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors border ${statusFilter === value
+                  ? 'bg-[#C8102E] border-[#C8102E] text-white'
+                  : 'bg-transparent border-[#2D2D2D] text-[#c8c6c6] hover:text-white hover:border-[#71717A]'}`}
+              >
+                {label} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#71717A] border-t border-[#2D2D2D] pt-3">
+          <span>
+            Mostrando {activeTab === 'customers' ? filteredCustomers.length : filteredSuppliers.length} de {(activeTab === 'customers' ? customers : suppliers).length} {activeTab === 'customers' ? 'clientes' : 'proveedores'}
+          </span>
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value as typeof sortOrder)}
+            aria-label="Ordenar resultados"
+            className="bg-transparent text-[#c8c6c6] border-none outline-none cursor-pointer"
+          >
+            <option value="name-asc">Ordenar: Nombre A-Z</option>
+            <option value="name-desc">Ordenar: Nombre Z-A</option>
+            <option value="recent">Ordenar: Más recientes</option>
+          </select>
         </div>
       </div>
 
@@ -285,11 +401,17 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#1E1E1E] flex items-center justify-between text-xs">
-                  <span className="text-[#71717A]">Límite Crédito:</span>
-                  <span className="font-mono tabular-nums font-bold text-white">
-                    {currency} {(cust.creditLimit || 0).toLocaleString()}
-                  </span>
+                <div className="mt-4 pt-3 border-t border-[#1E1E1E] space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#71717A]">Condición de Pago:</span>
+                    <span className="font-semibold text-white">{cust.paymentTerms || 'Contado'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#71717A]">Límite Crédito:</span>
+                    <span className="font-mono tabular-nums font-bold text-white">
+                      {currency} {(cust.creditLimit || 0).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -450,21 +572,48 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Límite de Crédito ({currency})</label>
-                  <input
-                    type="number"
-                    value={custForm.creditLimit}
-                    onChange={e => setCustForm({ ...custForm, creditLimit: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono tabular-nums focus:outline-none focus:border-[#C8102E]"
-                  />
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Estado</label>
+                  <select
+                    value={custForm.status}
+                    onChange={e => setCustForm({ ...custForm, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condición de Pago</label>
-                  <input
-                    type="text"
+                  <select
                     value={custForm.paymentTerms}
-                    onChange={e => setCustForm({ ...custForm, paymentTerms: e.target.value })}
+                    onChange={e => {
+                      const paymentTerms = e.target.value;
+                      setCustForm({
+                        ...custForm,
+                        paymentTerms,
+                        creditLimit: paymentTerms === 'Contado' ? 0 : (custForm.creditLimit || 2000)
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
+                  >
+                    <option value="Contado">Al contado</option>
+                    <option value="Crédito 7 días">Crédito 7 días</option>
+                    <option value="Crédito 15 días">Crédito 15 días</option>
+                    <option value="Crédito 30 días">Crédito 30 días</option>
+                    <option value="Crédito 45 días">Crédito 45 días</option>
+                    <option value="Crédito 60 días">Crédito 60 días</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Límite de Crédito ({currency})</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    disabled={custForm.paymentTerms === 'Contado'}
+                    value={custForm.paymentTerms === 'Contado' ? 0 : custForm.creditLimit}
+                    onChange={e => setCustForm({ ...custForm, creditLimit: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono tabular-nums focus:outline-none focus:border-[#C8102E] disabled:bg-[#141414] disabled:text-[#71717A] disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -561,22 +710,46 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Categoría de Suministros</label>
-                  <input
-                    type="text"
+                  <select
                     value={suppForm.category}
                     onChange={e => setSuppForm({ ...suppForm, category: e.target.value })}
                     className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
-                  />
+                  >
+                    {categories.map(category => (
+                      <option key={category.id} value={category.name}>{category.name}</option>
+                    ))}
+                    {!categories.some(category => category.name === suppForm.category) && suppForm.category && (
+                      <option value={suppForm.category}>{suppForm.category}</option>
+                    )}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condiciones de Pago</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condición de Pago</label>
+                  <select
                     value={suppForm.paymentTerms}
                     onChange={e => setSuppForm({ ...suppForm, paymentTerms: e.target.value })}
                     className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
-                  />
+                  >
+                    <option value="Contado">Al contado</option>
+                    <option value="Crédito 7 días">Crédito 7 días</option>
+                    <option value="Crédito 15 días">Crédito 15 días</option>
+                    <option value="Crédito 30 días">Crédito 30 días</option>
+                    <option value="Crédito 45 días">Crédito 45 días</option>
+                    <option value="Crédito 60 días">Crédito 60 días</option>
+                  </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Estado</label>
+                <select
+                  value={suppForm.status}
+                  onChange={e => setSuppForm({ ...suppForm, status: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
+                >
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
               </div>
 
               <div className="pt-4 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">

@@ -3,8 +3,59 @@ import { db, type DatabaseSchema } from './dataStore';
 import { buildAuditEvents } from './audit';
 import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
 import { signAuthToken, verifyAuthToken } from './security';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { extname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 const router = Router();
+
+router.post('/uploads/product-image', async (req: Request, res: Response) => {
+  try {
+    if (!getAuthenticatedUser(req)) {
+      return res.status(401).json({ success: false, error: 'No autorizado' });
+    }
+    const dataUrl = String(req.body?.dataUrl || '');
+    const originalName = String(req.body?.fileName || 'producto');
+    const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/s);
+    if (!match) return res.status(400).json({ success: false, error: 'Formato de imagen no válido' });
+
+    const mime = match[1];
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedMimeTypes.includes(mime)) return res.status(400).json({ success: false, error: 'Solo se permiten JPG, PNG, WEBP o GIF' });
+
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length || buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ success: false, error: 'La imagen debe pesar 5 MB como máximo' });
+    }
+
+    const extensionByMime: Record<string, string> = {
+      'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif'
+    };
+    const extension = extname(originalName).toLowerCase();
+    const safeExtension = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(extension)
+      ? extension === '.jpeg' ? '.jpg' : extension
+      : extensionByMime[mime];
+    const baseName = originalName
+      .replace(extname(originalName), '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .replace(/^-+|-+$/g, '') || 'producto';
+    const fileName = `${baseName}-${Date.now()}${safeExtension}`;
+
+    const assetsDirCandidates = [
+      resolve(process.cwd(), 'frontend/public/assets'),
+      resolve(process.cwd(), '../frontend/public/assets')
+    ];
+    let assetsDir = assetsDirCandidates.find(candidate => existsSync(candidate))
+      || assetsDirCandidates[1];
+    await mkdir(assetsDir, { recursive: true });
+    await writeFile(resolve(assetsDir, fileName), buffer);
+
+    res.status(201).json({ success: true, data: { imageUrl: `/assets/${fileName}` } });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 function getAuthenticatedUser(req: Request) {
   const verified = verifyAuthToken(req.headers.authorization);
@@ -225,6 +276,41 @@ router.post('/products/adjust-stock', (req: Request, res: Response) => {
   }
 });
 
+// --- STORES & TRANSFERENCES ---
+router.get('/stores', (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getStores() });
+});
+
+router.get('/store-stock', (req: Request, res: Response) => {
+  res.json({ success: true, data: { storeStock: db.getStoreStock(), transfers: db.getStockTransfers() } });
+});
+
+router.post('/stock-transfers', (req: Request, res: Response) => {
+  const items = Array.isArray(req.body.items) && req.body.items.length > 0
+    ? req.body.items
+    : [{ productId: req.body.productId, quantity: Number(req.body.quantity) }];
+  const transfers = [];
+  const guideNumber = db.createNextTransferGuideNumber();
+  for (const item of items) {
+    const quantity = Number(item.quantity);
+    if (!item.productId || quantity <= 0) continue;
+    const transfer = db.transferStock({
+      productId: item.productId,
+      toStoreId: req.body.toStoreId,
+      quantity,
+      guideNumber,
+      notes: req.body.notes,
+      transportSupplierId: req.body.transportSupplierId,
+      transportSupplierName: req.body.transportSupplierName,
+      createdBy: req.body.createdBy
+    });
+    if (!transfer) return res.status(400).json({ success: false, error: 'Una cantidad supera el stock disponible o la tienda destino no es válida' });
+    transfers.push(transfer);
+  }
+  if (transfers.length === 0) return res.status(400).json({ success: false, error: 'Indique al menos un producto y una cantidad válida' });
+  res.status(201).json({ success: true, data: transfers });
+});
+
 // --- CATEGORIES ---
 router.get('/categories', (req: Request, res: Response) => {
   try {
@@ -269,11 +355,11 @@ router.get('/suppliers', (req: Request, res: Response) => {
 
 router.post('/suppliers', (req: Request, res: Response) => {
   try {
-    const { name, taxId, email, phone, address, contactPerson, notes } = req.body;
+    const { name, taxId, email, phone, address, contactPerson, category, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
       return res.status(400).json({ success: false, error: 'Nombre y RUC/Identificación fiscal son obligatorios' });
     }
-    const newSup = db.addSupplier({ name, taxId, email: email || '', phone: phone || '', address, contactPerson, notes });
+    const newSup = db.addSupplier({ name, taxId, email: email || '', phone: phone || '', address, contactPerson, category, paymentTerms, status: status || 'Activo', notes });
     res.status(201).json({ success: true, data: newSup });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -311,7 +397,7 @@ router.get('/customers', (req: Request, res: Response) => {
 
 router.post('/customers', (req: Request, res: Response) => {
   try {
-    const { name, taxId, email, phone, address, creditLimit, notes } = req.body;
+    const { name, taxId, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
       return res.status(400).json({ success: false, error: 'Nombre y Documento de Identidad/RUC son obligatorios' });
     }
@@ -320,8 +406,11 @@ router.post('/customers', (req: Request, res: Response) => {
       taxId, 
       email: email || '', 
       phone: phone || '', 
-      address: address || '', 
-      creditLimit: Number(creditLimit || 0), 
+      address: address || '',
+      city,
+      creditLimit: Number(creditLimit || 0),
+      paymentTerms: paymentTerms || 'Contado',
+      status: status || 'Activo',
       notes: notes || '' 
     });
     res.status(201).json({ success: true, data: newCust });

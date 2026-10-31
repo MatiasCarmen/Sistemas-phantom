@@ -128,6 +128,9 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       quotes,
       sales,
       users,
+      stores,
+      storeStock,
+      stockTransfers,
       settings,
       metadata,
     ] = await Promise.all([
@@ -139,6 +142,9 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       database.collection<MongoRecord>('quotes').find().toArray(),
       database.collection<MongoRecord>('sales').find().toArray(),
       database.collection<MongoRecord>('users').find().toArray(),
+      database.collection<MongoRecord>('stores').find().toArray(),
+      database.collection<MongoRecord>('store_stock').find().toArray(),
+      database.collection<MongoRecord>('stock_transfers').find().toArray(),
       database.collection<MongoRecord>('company_settings').findOne({ _id: 'primary' }),
       database.collection<MongoRecord>('system_state').findOne({ _id: 'primary' }),
     ]);
@@ -158,6 +164,19 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
     }
 
     const removeMongoId = (records: MongoRecord[]) => records.map(({ _id, ...record }) => record);
+    let localStoreData: Partial<DatabaseSchema> = {};
+    if (!stores.length || !storeStock.length) {
+      try {
+        if (fs.existsSync(LOCAL_DB_FILE)) {
+          localStoreData = JSON.parse(fs.readFileSync(LOCAL_DB_FILE, 'utf-8')) as Partial<DatabaseSchema>;
+        }
+      } catch {
+        // Use defaults from DataStore when no local store snapshot is available.
+      }
+    }
+    const resolvedStores = stores.length ? removeMongoId(stores) : (localStoreData.stores || []);
+    const resolvedStoreStock = storeStock.length ? removeMongoId(storeStock) : (localStoreData.storeStock || []);
+    const resolvedStockTransfers = stockTransfers.length ? removeMongoId(stockTransfers) : (localStoreData.stockTransfers || []);
     return {
       products: removeMongoId(products) as unknown as DatabaseSchema['products'],
       categories: removeMongoId(categories) as unknown as DatabaseSchema['categories'],
@@ -167,6 +186,9 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       quotes: removeMongoId(quotes) as unknown as DatabaseSchema['quotes'],
       sales: removeMongoId(sales) as unknown as DatabaseSchema['sales'],
       users: removeMongoId(users) as unknown as DatabaseSchema['users'],
+      stores: resolvedStores as unknown as DatabaseSchema['stores'],
+      storeStock: resolvedStoreStock as unknown as DatabaseSchema['storeStock'],
+      stockTransfers: resolvedStockTransfers as unknown as DatabaseSchema['stockTransfers'],
       settings: settings?.value as DatabaseSchema['settings'],
       lastUpdated: String(metadata?.lastUpdated || new Date().toISOString()),
     };
@@ -207,6 +229,22 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
       await collection.deleteMany({ _id: { $nin: records.map((record) => record.id) } });
     };
 
+    const storeStockCollection = database.collection<MongoRecord>('store_stock');
+    const storeStockRecords = data.storeStock.map((stock) => {
+      const recordId = `${stock.storeId}::${stock.productId}`;
+      return { ...stock, _id: recordId } as unknown as MongoRecord;
+    });
+    if (storeStockRecords.length) {
+      await storeStockCollection.bulkWrite(storeStockRecords.map((record) => ({
+        replaceOne: {
+          filter: { _id: record._id },
+          replacement: record,
+          upsert: true,
+        },
+      })));
+    }
+    await storeStockCollection.deleteMany({ _id: { $nin: storeStockRecords.map((record) => record._id) } });
+
     await Promise.all([
       saveCollection('products', data.products),
       saveCollection('categories', data.categories),
@@ -216,6 +254,8 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
       saveCollection('quotes', data.quotes),
       saveCollection('sales', data.sales),
       saveCollection('users', data.users),
+      saveCollection('stores', data.stores),
+      saveCollection('stock_transfers', data.stockTransfers),
       database
         .collection<MongoRecord>('company_settings')
         .replaceOne({ _id: 'primary' }, { _id: 'primary', value: data.settings }, { upsert: true }),

@@ -29,7 +29,7 @@ import { UsersManagementModal } from './components/UsersManagementModal';
 import { DatabaseExplorerModal } from './components/DatabaseExplorerModal';
 import { AuditLogModal } from './components/AuditLogModal';
 
-type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
+type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
 
 export default function App() {
   // Authentication & Session State
@@ -49,6 +49,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     try {
       const savedTab = sessionStorage.getItem('phantom_active_tab');
+      if (savedTab === 'contacts') return 'customers';
       return savedTab as ActiveTab || 'dashboard';
     } catch {
       return 'dashboard';
@@ -662,10 +663,28 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'contacts' && (
+          {activeTab === 'customers' && (
             <CustomersSuppliersView
+              mode="customers"
               customers={customers}
               suppliers={suppliers}
+              categories={categories}
+              settings={settings}
+              onAddCustomer={handleAddCustomer}
+              onUpdateCustomer={handleUpdateCustomer}
+              onDeleteCustomer={handleDeleteCustomer}
+              onAddSupplier={handleAddSupplier}
+              onUpdateSupplier={handleUpdateSupplier}
+              onDeleteSupplier={handleDeleteSupplier}
+            />
+          )}
+
+          {activeTab === 'suppliers' && (
+            <CustomersSuppliersView
+              mode="suppliers"
+              customers={customers}
+              suppliers={suppliers}
+              categories={categories}
               settings={settings}
               onAddCustomer={handleAddCustomer}
               onUpdateCustomer={handleUpdateCustomer}

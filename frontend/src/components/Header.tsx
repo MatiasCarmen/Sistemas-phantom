@@ -13,6 +13,7 @@ import {
   X,
   LogOut,
   UserCheck,
+  Truck,
   Shield,
   UserCog,
   ChevronDown,
@@ -26,8 +27,8 @@ import {
 import { User, UserRole } from '../types';
 
 export interface SidebarProps {
-  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings') => void;
+  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
+  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings') => void;
   companyName?: string;
   lowStockCount?: number;
   outOfStockCount?: number;
@@ -112,7 +113,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {
           title: 'SISTEMA & DIRECTORIO',
           items: [
-            { id: 'contacts' as const, label: 'Clientes & Proveedores', icon: Users, desc: 'Cartera RUC/DNI y contactos' },
+            { id: 'customers' as const, label: 'Clientes', icon: Users, desc: 'Cartera y cuentas de clientes' },
+            { id: 'suppliers' as const, label: 'Proveedores', icon: Truck, desc: 'Registro y abastecimiento de proveedores' },
             { id: 'settings' as const, label: 'Configuración & Sistema', icon: Settings, desc: 'Parámetros fiscales y base de datos' }
           ]
         }
@@ -139,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {
           title: 'CONTACTOS LOGÍSTICOS',
           items: [
-            { id: 'contacts' as const, label: 'Proveedores & Clientes', icon: Users, desc: 'Directorio de abastecimiento' }
+            { id: 'suppliers' as const, label: 'Proveedores', icon: Truck, desc: 'Directorio de abastecimiento' }
           ]
         }
       ];
@@ -165,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           title: 'CONSULTAS',
           items: [
             { id: 'inventory' as const, label: 'Consulta de Precios', icon: Package, desc: 'Existencias y catálogo' },
-            { id: 'contacts' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Clientes registrados' }
+            { id: 'customers' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Clientes registrados' }
           ]
         }
       ];
@@ -192,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         title: 'CONSULTAS & CLIENTES',
         items: [
           { id: 'inventory' as const, label: 'Catálogo de Stock', icon: Package, desc: 'Precios de venta y unidades' },
-          { id: 'contacts' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Gestión de cuentas RUC/DNI' }
+          { id: 'customers' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Gestión de cuentas RUC/DNI' }
         ]
       }
     ];

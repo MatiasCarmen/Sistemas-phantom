@@ -11,7 +11,10 @@ import {
   CompanySettings, 
   DashboardMetrics,
   MovementType,
-  User
+  User,
+  Store,
+  StoreStock,
+  StockTransfer
 } from './types';
 import { 
   initialProducts, 
@@ -37,6 +40,9 @@ export interface DatabaseSchema {
   sales: Sale[];
   settings: CompanySettings;
   users: User[];
+  stores: Store[];
+  storeStock: StoreStock[];
+  stockTransfers: StockTransfer[];
   lastUpdated: string;
 }
 
@@ -61,6 +67,25 @@ class DataStore {
       sales: JSON.parse(JSON.stringify(initialSales)),
       settings: JSON.parse(JSON.stringify(initialCompanySettings)),
       users: JSON.parse(JSON.stringify(initialUsers)),
+      stores: [
+        { id: 'main-warehouse', name: 'Tienda principal', code: 'ALM-01', verificationNumber: '00', type: 'MAIN_WAREHOUSE', address: 'Almacén central - Lima', status: 'ACTIVE' },
+        { id: 'store-01', name: 'Jockey Plaza', code: 'TDA-01', verificationNumber: '01', type: 'STORE', address: 'Surco, Lima', status: 'ACTIVE' },
+        { id: 'store-02', name: 'Plaza San Miguel', code: 'TDA-02', verificationNumber: '02', type: 'STORE', address: 'San Miguel, Lima', status: 'ACTIVE' },
+        { id: 'store-03', name: 'Plaza Norte', code: 'TDA-03', verificationNumber: '03', type: 'STORE', address: 'Independencia, Lima', status: 'ACTIVE' },
+        { id: 'store-04', name: 'Mall del Sur', code: 'TDA-04', verificationNumber: '04', type: 'STORE', address: 'SJM, Lima', status: 'ACTIVE' },
+        { id: 'store-05', name: 'Lima Centro', code: 'TDA-05', verificationNumber: '05', type: 'STORE', address: 'Real Plaza Centro', status: 'ACTIVE' },
+        { id: 'store-06', name: 'Mega Plaza - Independencia', code: 'TDA-06', verificationNumber: '06', type: 'STORE', address: 'Independencia, Lima', status: 'ACTIVE' },
+        { id: 'store-07', name: 'Mall Aventura - Comas', code: 'TDA-07', verificationNumber: '07', type: 'STORE', address: 'Comas, Lima', status: 'ACTIVE' },
+        { id: 'store-08', name: 'Real Plaza Puruchuco', code: 'TDA-08', verificationNumber: '08', type: 'STORE', address: 'Ate, Lima', status: 'ACTIVE' }
+      ],
+      storeStock: [
+        ...JSON.parse(JSON.stringify(initialProducts)).flatMap((product: Product, productIndex: number) =>
+          ['store-01', 'store-02', 'store-03', 'store-04', 'store-05']
+            .slice(0, productIndex % 5 === 0 ? 2 : 1)
+            .map((storeId, storeIndex) => ({ storeId, productId: product.id, quantity: Math.max(1, (product.stock % 7) + storeIndex) }))
+        )
+      ],
+      stockTransfers: [],
       lastUpdated: new Date().toISOString()
     };
   }
@@ -112,6 +137,20 @@ class DataStore {
       }
     }
 
+    if (!Array.isArray(this.data.stores) || this.data.stores.length < 6) {
+      this.data.stores = this.getDefaultSchema().stores;
+    } else {
+      const existingStoreIds = new Set(this.data.stores.map(store => store.id));
+      const missingStores = this.getDefaultSchema().stores.filter(store => !existingStoreIds.has(store.id));
+      this.data.stores.push(...missingStores);
+    }
+    this.data.stores.forEach((store, index) => {
+      if (!store.verificationNumber) {
+        store.verificationNumber = store.type === 'MAIN_WAREHOUSE' ? '00' : String(index).padStart(2, '0');
+      }
+    });
+    if (!Array.isArray(this.data.storeStock)) this.data.storeStock = [];
+    if (!Array.isArray(this.data.stockTransfers)) this.data.stockTransfers = [];
     this.normalizeProductCodes();
     this.normalizeHistoricalTransactions();
     this.normalizeSaleNumbering();
@@ -440,6 +479,73 @@ class DataStore {
 
     this.saveToFile();
     return { product, movement };
+  }
+
+  getStores(): Store[] {
+    return this.data.stores || [];
+  }
+
+  getStoreStock(): StoreStock[] {
+    return this.data.storeStock || [];
+  }
+
+  transferStock(params: { productId: string; toStoreId: string; quantity: number; guideNumber?: string; notes?: string; transportSupplierId?: string; transportSupplierName?: string; createdBy?: string }): StockTransfer | null {
+    const product = this.getProductById(params.productId);
+    const destination = this.getStores().find(store => store.id === params.toStoreId && store.type === 'STORE' && store.status === 'ACTIVE');
+    const quantity = Math.floor(Number(params.quantity));
+    if (!product || !destination || quantity <= 0 || product.stock < quantity) return null;
+
+    const sourceStock = product.stock;
+    const destinationIndex = this.data.storeStock.findIndex(item => item.storeId === destination.id && item.productId === product.id);
+    if (destinationIndex >= 0) this.data.storeStock[destinationIndex].quantity += quantity;
+    else this.data.storeStock.push({ storeId: destination.id, productId: product.id, quantity });
+
+    const transfer: StockTransfer = {
+      id: `TR-${Date.now()}-${product.id}`,
+      guideNumber: params.guideNumber || this.createNextTransferGuideNumber(),
+      verificationNumber: destination.verificationNumber,
+      productId: product.id,
+      fromStoreId: 'main-warehouse',
+      toStoreId: destination.id,
+      quantity,
+      notes: params.notes,
+      transportSupplierId: params.transportSupplierId,
+      transportSupplierName: params.transportSupplierName,
+      createdBy: params.createdBy || 'Usuario Almacén',
+      createdAt: new Date().toISOString()
+    };
+    this.data.stockTransfers.unshift(transfer);
+
+    product.stock -= quantity;
+    product.updatedAt = new Date().toISOString();
+    product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
+    this.addInventoryMovement({
+      productId: product.id,
+      productSku: product.sku,
+      productName: product.name,
+      type: 'OUT_ADJUSTMENT',
+      quantity,
+      previousStock: sourceStock,
+      newStock: product.stock,
+      unitCost: product.costPrice,
+      referenceId: transfer.id,
+      notes: `Transferencia al almacén ${destination.name}${params.notes ? `: ${params.notes}` : ''}`,
+      createdBy: params.createdBy || 'Usuario Almacén'
+    });
+    this.saveToFile();
+    return transfer;
+  }
+
+  createNextTransferGuideNumber(): string {
+    const maximum = (this.data.stockTransfers || []).reduce((highest, transfer) => {
+      const match = transfer.guideNumber?.match(/(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    return `TRS-${String(maximum + 1).padStart(8, '0')}`;
+  }
+
+  getStockTransfers(): StockTransfer[] {
+    return this.data.stockTransfers || [];
   }
 
   // --- CATEGORIES ---
