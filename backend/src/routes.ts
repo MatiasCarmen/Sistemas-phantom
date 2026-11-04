@@ -1,5 +1,5 @@
 import { Router, Request, Response, type NextFunction } from 'express';
-import { db, type DatabaseSchema } from './dataStore';
+import { db, TransactionValidationError, type DatabaseSchema } from './dataStore';
 import { buildAuditEvents } from './audit';
 import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
 import { signAuthToken, verifyAuthToken } from './security';
@@ -53,6 +53,9 @@ router.post('/uploads/product-image', async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: { imageUrl: `/assets/${fileName}` } });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -61,6 +64,67 @@ function getAuthenticatedUser(req: Request) {
   const verified = verifyAuthToken(req.headers.authorization);
   return verified ? db.getUserById(verified.userId) : undefined;
 }
+
+function authenticate(req: Request, res: Response, next: NextFunction): void {
+  if (!getAuthenticatedUser(req)) {
+    res.status(401).json({ success: false, error: 'Sesión no válida o expirada' });
+    return;
+  }
+  next();
+}
+
+type Permission =
+  | 'canViewDashboard'
+  | 'canManageInventory'
+  | 'canManageQuotes'
+  | 'canManageSales'
+  | 'canManageContacts'
+  | 'canManageSettings'
+  | 'canManageUsers'
+  | 'canDeleteRecords';
+
+function requirePermission(permission: Permission) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = getAuthenticatedUser(req);
+    if (user?.role === 'admin' || user?.permissions?.[permission] === true) {
+      next();
+      return;
+    }
+    res.status(403).json({ success: false, error: `Permiso insuficiente: ${permission}` });
+  };
+}
+
+function requireAnyPermission(...permissions: Permission[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = getAuthenticatedUser(req);
+    if (user?.role === 'admin' || permissions.some(permission => user?.permissions?.[permission] === true)) {
+      next();
+      return;
+    }
+    res.status(403).json({ success: false, error: 'Permisos insuficientes para esta operación' });
+  };
+}
+
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (getAuthenticatedUser(req)?.role !== 'admin') {
+    res.status(403).json({ success: false, error: 'Solo los administradores pueden realizar esta acción' });
+    return;
+  }
+  next();
+}
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  const isPublic =
+    (req.method === 'GET' && req.path === '/health') ||
+    (req.method === 'POST' && req.path === '/auth/login') ||
+    (req.method === 'GET' && req.path === '/settings');
+
+  if (isPublic) {
+    next();
+    return;
+  }
+  authenticate(req, res, next);
+});
 
 router.use((req: Request, res: Response, next: NextFunction) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) || req.path.startsWith('/auth/')) {
@@ -102,6 +166,9 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+router.use('/users', requireAdmin);
+router.use('/system', requireAdmin);
+
 // Health check
 router.get('/health', (req: Request, res: Response) => {
   res.json({
@@ -115,7 +182,7 @@ router.get('/database/status', (req: Request, res: Response) => {
   res.json({ success: true, status: getMongoStatus() });
 });
 
-router.get('/audit/logs', async (req: Request, res: Response) => {
+router.get('/audit/logs', requirePermission('canManageSettings'), async (req: Request, res: Response) => {
   const user = getAuthenticatedUser(req);
   if (user?.role !== 'admin') {
     return res.status(403).json({ success: false, error: 'Solo los administradores pueden consultar la bitácora' });
@@ -138,7 +205,7 @@ router.get('/audit/logs', async (req: Request, res: Response) => {
 });
 
 // Dashboard metrics
-router.get('/dashboard/stats', (req: Request, res: Response) => {
+router.get('/dashboard/stats', requirePermission('canViewDashboard'), (req: Request, res: Response) => {
   try {
     const stats = db.getDashboardMetrics();
     res.json({ success: true, data: stats });
@@ -148,7 +215,7 @@ router.get('/dashboard/stats', (req: Request, res: Response) => {
 });
 
 // --- PRODUCTS ---
-router.get('/products', (req: Request, res: Response) => {
+router.get('/products', requireAnyPermission('canManageInventory', 'canManageSales', 'canManageQuotes'), (req: Request, res: Response) => {
   try {
     const products = db.getProducts();
     const { category, search, status } = req.query;
@@ -179,7 +246,7 @@ router.get('/products', (req: Request, res: Response) => {
   }
 });
 
-router.get('/products/:id', (req: Request, res: Response) => {
+router.get('/products/:id', requireAnyPermission('canManageInventory', 'canManageSales', 'canManageQuotes'), (req: Request, res: Response) => {
   try {
     const product = db.getProductById(req.params.id);
     if (!product) {
@@ -191,7 +258,7 @@ router.get('/products/:id', (req: Request, res: Response) => {
   }
 });
 
-router.post('/products', (req: Request, res: Response) => {
+router.post('/products', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   try {
     const { name, sku, category, costPrice, sellingPrice, stock, minStock, unit } = req.body;
     if (!name || !category || costPrice === undefined || sellingPrice === undefined || stock === undefined) {
@@ -227,7 +294,7 @@ router.post('/products', (req: Request, res: Response) => {
   }
 });
 
-router.put('/products/:id', (req: Request, res: Response) => {
+router.put('/products/:id', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   try {
     const updated = db.updateProduct(req.params.id, req.body);
     if (!updated) {
@@ -239,7 +306,7 @@ router.put('/products/:id', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/products/:id', (req: Request, res: Response) => {
+router.delete('/products/:id', requirePermission('canManageInventory'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteProduct(req.params.id);
     if (!success) {
@@ -251,7 +318,7 @@ router.delete('/products/:id', (req: Request, res: Response) => {
   }
 });
 
-router.post('/products/adjust-stock', (req: Request, res: Response) => {
+router.post('/products/adjust-stock', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   try {
     const { productId, type, quantity, locationId, newQuantity, notes, createdBy } = req.body;
     if (!productId || quantity === undefined) {
@@ -285,15 +352,15 @@ router.post('/products/adjust-stock', (req: Request, res: Response) => {
 });
 
 // --- STORES & TRANSFERENCES ---
-router.get('/stores', (req: Request, res: Response) => {
+router.get('/stores', requireAnyPermission('canManageInventory', 'canManageSales'), (req: Request, res: Response) => {
   res.json({ success: true, data: db.getStores() });
 });
 
-router.get('/store-stock', (req: Request, res: Response) => {
+router.get('/store-stock', requireAnyPermission('canManageInventory', 'canManageSales'), (req: Request, res: Response) => {
   res.json({ success: true, data: { storeStock: db.getStoreStock(), transfers: db.getStockTransfers() } });
 });
 
-router.post('/stock-transfers', (req: Request, res: Response) => {
+router.post('/stock-transfers', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   const items = Array.isArray(req.body.items) && req.body.items.length > 0
     ? req.body.items
     : [{ productId: req.body.productId, quantity: Number(req.body.quantity) }];
@@ -319,7 +386,7 @@ router.post('/stock-transfers', (req: Request, res: Response) => {
   res.status(201).json({ success: true, data: transfers });
 });
 
-router.post('/stock-transfers/receive', (req: Request, res: Response) => {
+router.post('/stock-transfers/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   const { guideNumber, storeId } = req.body;
   if (!guideNumber || !storeId) return res.status(400).json({ success: false, error: 'Guía y tienda de destino son requeridas' });
   const transfers = db.confirmTransferReceipt(guideNumber, storeId);
@@ -328,7 +395,7 @@ router.post('/stock-transfers/receive', (req: Request, res: Response) => {
 });
 
 // --- CATEGORIES ---
-router.get('/categories', (req: Request, res: Response) => {
+router.get('/categories', requireAnyPermission('canManageInventory', 'canManageSales', 'canManageQuotes'), (req: Request, res: Response) => {
   try {
     const categories = db.getCategories();
     res.json({ success: true, data: categories });
@@ -337,7 +404,7 @@ router.get('/categories', (req: Request, res: Response) => {
   }
 });
 
-router.post('/categories', (req: Request, res: Response) => {
+router.post('/categories', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   try {
     const { name, description, color } = req.body;
     if (!name) {
@@ -350,7 +417,7 @@ router.post('/categories', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/categories/:id', (req: Request, res: Response) => {
+router.delete('/categories/:id', requirePermission('canManageInventory'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteCategory(req.params.id);
     res.json({ success });
@@ -360,7 +427,7 @@ router.delete('/categories/:id', (req: Request, res: Response) => {
 });
 
 // --- SUPPLIERS ---
-router.get('/suppliers', (req: Request, res: Response) => {
+router.get('/suppliers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const suppliers = db.getSuppliers();
     res.json({ success: true, data: suppliers });
@@ -369,7 +436,7 @@ router.get('/suppliers', (req: Request, res: Response) => {
   }
 });
 
-router.post('/suppliers', (req: Request, res: Response) => {
+router.post('/suppliers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const { name, taxId, email, phone, address, contactPerson, category, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
@@ -382,7 +449,7 @@ router.post('/suppliers', (req: Request, res: Response) => {
   }
 });
 
-router.put('/suppliers/:id', (req: Request, res: Response) => {
+router.put('/suppliers/:id', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const updated = db.updateSupplier(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, error: 'Proveedor no encontrado' });
@@ -392,7 +459,7 @@ router.put('/suppliers/:id', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/suppliers/:id', (req: Request, res: Response) => {
+router.delete('/suppliers/:id', requirePermission('canManageContacts'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteSupplier(req.params.id);
     res.json({ success });
@@ -402,7 +469,7 @@ router.delete('/suppliers/:id', (req: Request, res: Response) => {
 });
 
 // --- CUSTOMERS ---
-router.get('/customers', (req: Request, res: Response) => {
+router.get('/customers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const customers = db.getCustomers();
     res.json({ success: true, data: customers });
@@ -411,7 +478,7 @@ router.get('/customers', (req: Request, res: Response) => {
   }
 });
 
-router.post('/customers', (req: Request, res: Response) => {
+router.post('/customers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const { name, taxId, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
@@ -435,7 +502,7 @@ router.post('/customers', (req: Request, res: Response) => {
   }
 });
 
-router.put('/customers/:id', (req: Request, res: Response) => {
+router.put('/customers/:id', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
     const updated = db.updateCustomer(req.params.id, req.body);
     if (!updated) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
@@ -445,7 +512,7 @@ router.put('/customers/:id', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/customers/:id', (req: Request, res: Response) => {
+router.delete('/customers/:id', requirePermission('canManageContacts'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteCustomer(req.params.id);
     res.json({ success });
@@ -455,7 +522,7 @@ router.delete('/customers/:id', (req: Request, res: Response) => {
 });
 
 // --- INVENTORY MOVEMENTS (KARDEX) ---
-router.get('/inventory/movements', (req: Request, res: Response) => {
+router.get('/inventory/movements', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   try {
     const { productId } = req.query;
     const movements = db.getInventoryMovements(productId as string);
@@ -466,7 +533,7 @@ router.get('/inventory/movements', (req: Request, res: Response) => {
 });
 
 // --- QUOTES ---
-router.get('/quotes', (req: Request, res: Response) => {
+router.get('/quotes', requirePermission('canManageQuotes'), (req: Request, res: Response) => {
   try {
     const quotes = db.getQuotes();
     const { status, search } = req.query;
@@ -491,7 +558,7 @@ router.get('/quotes', (req: Request, res: Response) => {
   }
 });
 
-router.get('/quotes/:id', (req: Request, res: Response) => {
+router.get('/quotes/:id', requirePermission('canManageQuotes'), (req: Request, res: Response) => {
   try {
     const quote = db.getQuoteById(req.params.id);
     if (!quote) return res.status(404).json({ success: false, error: 'Cotización no encontrada' });
@@ -501,7 +568,7 @@ router.get('/quotes/:id', (req: Request, res: Response) => {
   }
 });
 
-router.post('/quotes', (req: Request, res: Response) => {
+router.post('/quotes', requirePermission('canManageQuotes'), (req: Request, res: Response) => {
   try {
     const { 
       customerId, 
@@ -529,6 +596,16 @@ router.post('/quotes', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Debe ingresar el cliente y al menos un producto a cotizar' });
     }
 
+    let calculation;
+    try {
+      calculation = db.calculateTransaction(items);
+    } catch (error) {
+      if (error instanceof TransactionValidationError) {
+        return res.status(400).json({ success: false, error: error.message });
+      }
+      throw error;
+    }
+
     const newQuote = db.addQuote({
       customerId: customerId || `cust-${Date.now()}`,
       customerName,
@@ -539,11 +616,11 @@ router.post('/quotes', (req: Request, res: Response) => {
       date: date || new Date().toISOString().split('T')[0],
       expiryDate: expiryDate || new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
       status: status || 'SENT',
-      items,
-      subtotal: Number(subtotal || 0),
-      discountTotal: Number(discountTotal || 0),
-      taxTotal: Number(taxTotal || 0),
-      total: Number(total || 0),
+      items: calculation.items,
+      subtotal: calculation.subtotal,
+      discountTotal: calculation.discountTotal,
+      taxTotal: calculation.taxTotal,
+      total: calculation.total,
       currency: currency || db.getSettings().currencySymbol || 'S/.',
       paymentTerms: paymentTerms || 'Contado / Transferencia',
       notes: notes || '',
@@ -553,11 +630,14 @@ router.post('/quotes', (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: newQuote });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.put('/quotes/:id', (req: Request, res: Response) => {
+router.put('/quotes/:id', requirePermission('canManageQuotes'), (req: Request, res: Response) => {
   try {
     if (req.body.status !== undefined) {
       const authenticatedUser = getAuthenticatedUser(req);
@@ -574,7 +654,7 @@ router.put('/quotes/:id', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/quotes/:id', (req: Request, res: Response) => {
+router.delete('/quotes/:id', requirePermission('canManageQuotes'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteQuote(req.params.id);
     if (!success) return res.status(404).json({ success: false, error: 'Cotización no encontrada' });
@@ -584,13 +664,14 @@ router.delete('/quotes/:id', (req: Request, res: Response) => {
   }
 });
 
-router.post('/quotes/:id/convert-to-sale', (req: Request, res: Response) => {
+router.post('/quotes/:id/convert-to-sale', requirePermission('canManageQuotes'), requirePermission('canManageSales'), (req: Request, res: Response) => {
   try {
-    const { voucherType, paymentMethod, sellerName } = req.body;
+    const { voucherType, paymentMethod, sellerName, storeId } = req.body;
     const result = db.convertQuoteToSale(req.params.id, {
       voucherType,
       paymentMethod,
-      sellerName
+      sellerName,
+      storeId
     });
 
     if (!result) {
@@ -599,12 +680,15 @@ router.post('/quotes/:id/convert-to-sale', (req: Request, res: Response) => {
 
     res.json({ success: true, data: result });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // --- SALES ---
-router.get('/sales', (req: Request, res: Response) => {
+router.get('/sales', requirePermission('canManageSales'), (req: Request, res: Response) => {
   try {
     const sales = db.getSales();
     const { status, voucherType, search, startDate, endDate } = req.query;
@@ -641,7 +725,7 @@ router.get('/sales', (req: Request, res: Response) => {
   }
 });
 
-router.get('/sales/:id', (req: Request, res: Response) => {
+router.get('/sales/:id', requirePermission('canManageSales'), (req: Request, res: Response) => {
   try {
     const sale = db.getSaleById(req.params.id);
     if (!sale) return res.status(404).json({ success: false, error: 'Venta no encontrada' });
@@ -651,7 +735,7 @@ router.get('/sales/:id', (req: Request, res: Response) => {
   }
 });
 
-router.post('/sales', (req: Request, res: Response) => {
+router.post('/sales', requirePermission('canManageSales'), (req: Request, res: Response) => {
   try {
     const {
       voucherType,
@@ -662,6 +746,7 @@ router.post('/sales', (req: Request, res: Response) => {
       customerPhone,
       customerAddress,
       date,
+      storeId,
       items,
       subtotal,
       discountTotal,
@@ -682,18 +767,49 @@ router.post('/sales', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Datos de cliente y productos requeridos para registrar la venta' });
     }
 
+    if (storeId) {
+      const store = db.getStores().find(item => item.id === storeId && item.status === 'ACTIVE');
+      if (!store) {
+        return res.status(400).json({ success: false, error: 'La tienda seleccionada no existe o está inactiva' });
+      }
+    }
+
+    let calculation;
+    try {
+      calculation = db.calculateTransaction(items);
+    } catch (error) {
+      if (error instanceof TransactionValidationError) {
+        return res.status(400).json({ success: false, error: error.message });
+      }
+      throw error;
+    }
+
     // Verify stock availability
-    for (const item of items) {
+    for (const item of calculation.items) {
       const prod = db.getProductById(item.productId);
       if (!prod) {
         return res.status(400).json({ success: false, error: `El producto ${item.name} (${item.sku}) no existe en el catálogo.` });
       }
-      if (prod.stock < item.quantity) {
+      const availableStock = storeId && storeId !== 'main-warehouse'
+        ? db.getStoreStock().find(stock => stock.storeId === storeId && stock.productId === item.productId)?.quantity || 0
+        : prod.stock;
+      if (availableStock < item.quantity) {
         return res.status(400).json({ 
           success: false, 
-          error: `Stock insuficiente para ${prod.name}. Stock disponible: ${prod.stock}, Solicitado: ${item.quantity}` 
+          error: `Stock insuficiente para ${prod.name}. Stock disponible: ${availableStock}, Solicitado: ${item.quantity}`
         });
       }
+    }
+
+    const requestedPaymentStatus = paymentStatus || 'PAID';
+    const requestedPaidAmount = paymentStatus === undefined && paidAmount === undefined
+      ? calculation.total
+      : Number(paidAmount ?? 0);
+    if (!['PAID', 'PENDING', 'PARTIAL'].includes(requestedPaymentStatus)) {
+      return res.status(400).json({ success: false, error: 'Estado de pago inválido' });
+    }
+    if (!Number.isFinite(requestedPaidAmount) || requestedPaidAmount < 0 || requestedPaidAmount > calculation.total) {
+      return res.status(400).json({ success: false, error: 'El importe pagado no es válido para el total calculado' });
     }
 
     const newSale = db.addSale({
@@ -705,16 +821,17 @@ router.post('/sales', (req: Request, res: Response) => {
       customerPhone: customerPhone || '',
       customerAddress: customerAddress || '',
       date: date || new Date().toISOString().split('T')[0],
-      items,
-      subtotal: Number(subtotal || 0),
-      discountTotal: Number(discountTotal || 0),
-      taxTotal: Number(taxTotal || 0),
-      total: Number(total || 0),
+      storeId: storeId || undefined,
+      items: calculation.items,
+      subtotal: calculation.subtotal,
+      discountTotal: calculation.discountTotal,
+      taxTotal: calculation.taxTotal,
+      total: calculation.total,
       currency: currency || db.getSettings().currencySymbol || 'S/.',
       paymentMethod: paymentMethod || 'CASH',
-      paymentStatus: paymentStatus || 'PAID',
-      paidAmount: Number(paidAmount !== undefined ? paidAmount : total),
-      dueAmount: Number(dueAmount || 0),
+      paymentStatus: requestedPaymentStatus,
+      paidAmount: requestedPaymentStatus === 'PAID' ? calculation.total : requestedPaidAmount,
+      dueAmount: Number((calculation.total - (requestedPaymentStatus === 'PAID' ? calculation.total : requestedPaidAmount)).toFixed(2)),
       quoteIdReference,
       quoteNumberReference,
       notes: notes || '',
@@ -724,11 +841,14 @@ router.post('/sales', (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: newSale });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.post('/sales/:id/cancel', (req: Request, res: Response) => {
+router.post('/sales/:id/cancel', requirePermission('canManageSales'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const { reason } = req.body;
     if (!reason) {
@@ -756,7 +876,7 @@ router.get('/settings', (req: Request, res: Response) => {
   }
 });
 
-router.put('/settings', (req: Request, res: Response) => {
+router.put('/settings', requirePermission('canManageSettings'), (req: Request, res: Response) => {
   try {
     const updated = db.updateSettings(req.body);
     res.json({ success: true, data: updated });
@@ -812,7 +932,7 @@ router.post('/auth/logout', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Sesión cerrada correctamente' });
 });
 
-router.get('/users', (req: Request, res: Response) => {
+router.get('/users', requirePermission('canManageUsers'), (req: Request, res: Response) => {
   try {
     const users = db.getUsers();
     res.json({ success: true, data: users, count: users.length });
@@ -821,7 +941,7 @@ router.get('/users', (req: Request, res: Response) => {
   }
 });
 
-router.post('/users', (req: Request, res: Response) => {
+router.post('/users', requirePermission('canManageUsers'), (req: Request, res: Response) => {
   try {
     const { username, name, email, role, password, permissions } = req.body;
     if (!username || !name || !email) {
@@ -851,7 +971,7 @@ router.post('/users', (req: Request, res: Response) => {
   }
 });
 
-router.put('/users/:id', (req: Request, res: Response) => {
+router.put('/users/:id', requirePermission('canManageUsers'), (req: Request, res: Response) => {
   try {
     const updated = db.updateUser(req.params.id, req.body);
     if (!updated) {
@@ -863,7 +983,7 @@ router.put('/users/:id', (req: Request, res: Response) => {
   }
 });
 
-router.delete('/users/:id', (req: Request, res: Response) => {
+router.delete('/users/:id', requirePermission('canManageUsers'), requirePermission('canDeleteRecords'), (req: Request, res: Response) => {
   try {
     const success = db.deleteUser(req.params.id);
     if (!success) {

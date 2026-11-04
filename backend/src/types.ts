@@ -116,6 +116,7 @@ export interface InventoryMovement {
   newStock: number;
   unitCost: number;
   referenceId?: string; // Sale number or Purchase order
+  storeId?: string;
   notes?: string;
   createdBy: string;
   createdAt: string;
@@ -205,6 +206,7 @@ export interface Sale {
   customerPhone?: string;
   customerAddress?: string;
   date: string;
+  storeId?: string;
   items: SaleItem[];
   subtotal: number;
   discountTotal: number;
@@ -322,5 +324,4 @@ export interface AuditLogEvent {
   before?: unknown;
   after?: unknown;
 }
-
 

@@ -9,9 +9,9 @@ export function createApp(): Express {
   // Middleware CORS nativo tipado
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestOrigin = req.headers.origin;
-    if (requestOrigin) {
+    if (requestOrigin === allowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-    } else {
+    } else if (!requestOrigin) {
       res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     }
     res.setHeader('Access-Control-Allow-Credentials', 'true');

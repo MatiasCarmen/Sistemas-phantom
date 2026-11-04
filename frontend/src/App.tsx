@@ -12,7 +12,9 @@ import {
   MovementType,
   QuoteStatus,
   User,
-  UserRole
+  UserRole,
+  Store,
+  StoreStock
 } from './types';
 import { api } from './lib/api';
 
@@ -103,6 +105,8 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [storeStock, setStoreStock] = useState<StoreStock[]>([]);
 
   // Filter for Kardex by Product
   const [kardexProductFilter, setKardexProductFilter] = useState<Product | null>(null);
@@ -135,7 +139,9 @@ export default function App() {
         suppsData,
         catsData,
         movsData,
-        settingsData
+        settingsData,
+        storesData,
+        storeStockData
       ] = await Promise.all([
         api.getDashboardStats(),
         api.getProducts(),
@@ -145,7 +151,9 @@ export default function App() {
         api.getSuppliers(),
         api.getCategories(),
         api.getKardex(),
-        api.getSettings()
+        api.getSettings(),
+        api.getStores(),
+        api.getStoreStock()
       ]);
 
       setStats(dashStats);
@@ -157,6 +165,8 @@ export default function App() {
       setCategories(catsData);
       setMovements(movsData);
       setSettings(settingsData);
+      setStores(storesData);
+      setStoreStock(storeStockData.storeStock);
     } catch (err: any) {
       console.error('Error loading initial data:', err);
       showToast(err.message || 'Error al conectar con la API RESTful', 'error');
@@ -654,6 +664,8 @@ export default function App() {
               products={products}
               customers={customers}
               categories={categories}
+              stores={stores}
+              storeStock={storeStock}
               settings={settings}
               onCreateSale={handleCreateSale}
               onCancelSale={handleCancelSale}

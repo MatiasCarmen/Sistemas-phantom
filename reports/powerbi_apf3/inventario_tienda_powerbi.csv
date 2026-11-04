@@ -1,0 +1,27 @@
+id_tienda,tienda,tipo_tienda,id_producto,sku,producto,categoria,stock_actual_tienda,stock_minimo,stock_global_producto,costo_unitario,valor_inventario,fuente,calidad_dato
+store-01,Jockey Plaza,STORE,prod-1,029587,PlayStation 5 Consola Slim Digital,Consolas,1,2,8,2200.00,2200.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-02,Plaza San Miguel,STORE,prod-1,029587,PlayStation 5 Consola Slim Digital,Consolas,2,2,8,2200.00,4400.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-2,256618,Control DualSense PlayStation 5,Perifericos,5,4,12,180.00,900.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-3,592114,Nintendo Switch OLED,Consolas,3,3,10,1500.00,4500.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-4,428196,Xbox Series X,Consolas,1,2,7,2100.00,2100.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-5,910402,Teclado Razer Cynosa Lite,Perifericos,1,6,21,120.00,120.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-6,746979,Mouse Logitech G502,Perifericos,4,5,18,150.00,600.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-02,Plaza San Miguel,STORE,prod-6,746979,Mouse Logitech G502,Perifericos,5,5,18,150.00,750.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-7,233834,Audifonos JBL Tune 770 BT NC,Audio,1,4,14,200.00,200.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-8,143070,Monitor Samsung 24 Pulgadas,Monitores,2,3,9,450.00,900.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-9,257538,Mouse Redragon Cobra,Perifericos,5,7,26,70.00,350.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-10,936784,Laptop ASUS TUF Gaming,Computadoras,5,2,5,2800.00,14000.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-11,825051,Auriculares SteelSeries Arctis 5,Audio,6,4,13,240.00,1440.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-02,Plaza San Miguel,STORE,prod-11,825051,Auriculares SteelSeries Arctis 5,Audio,7,4,13,240.00,1680.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-12,567850,Silla Gamer Thunder X3,Sillas Gamer,6,2,6,420.00,2520.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-13,407984,Figura Coleccionable Zelda,Coleccionables,4,3,11,180.00,720.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-14,346102,Funko Pop MLS: Inter Miami - Lionel Messi (Pink),Coleccionables,1,3,14,35.00,35.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-15,218105,Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark),Coleccionables,4,3,11,38.00,152.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-16,251967,Funko Pop Jujutsu Kaisen - Satoru Gojo (Red Energy),Coleccionables,3,3,10,37.00,111.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-02,Plaza San Miguel,STORE,prod-16,251967,Funko Pop Jujutsu Kaisen - Satoru Gojo (Red Energy),Coleccionables,4,3,10,37.00,148.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-17,390537,Funko Pop One Piece - Tony Tony Chopper with Rumble Ball,Coleccionables,5,3,12,36.00,180.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-18,346627,Funko Pop Pokémon - Charizard (Soft Color),Coleccionables,2,2,9,35.00,70.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-19,229321,Funko Pop Marvel: Marvel Rivals - Venom,Coleccionables,1,2,8,39.00,39.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-20,157843,Funko Pop Marvel: Deadpool (X-Men Trainer),Coleccionables,1,2,7,39.00,39.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-01,Jockey Plaza,STORE,prod-21,431449,Funko Pop Deluxe Marvel: Deadpool On Bridge,Coleccionables,5,1,5,55.00,275.00,backup_json_no_Mongo,stock_por_tienda_resuelto
+store-02,Plaza San Miguel,STORE,prod-21,431449,Funko Pop Deluxe Marvel: Deadpool On Bridge,Coleccionables,6,1,5,55.00,330.00,backup_json_no_Mongo,stock_por_tienda_resuelto

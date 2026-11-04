@@ -80,64 +80,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const criticalProducts = products.filter(p => p.status === 'low_stock' || p.status === 'out_of_stock');
   const maxDaySales = Math.max(...metrics.salesByDay.map(d => d.total), 100);
 
-  // Meta de Ventas por Tienda (Objetivo mensual corporativo)
-  const monthlySalesTarget = 50000; // S/ 50,000.00 Meta Objetivo
-  const targetAchievedPercent = Math.min(100, Math.round((metrics.totalSalesMonth / monthlySalesTarget) * 100));
-  const remainingToTarget = Math.max(0, monthlySalesTarget - metrics.totalSalesMonth);
+  const topProducts = metrics.topSellingProducts?.slice(0, 3) || [];
+  const branchStores: Array<{ id: string; name: string; city: string; sales: number; transactions: number; margin: number }> = [];
 
-  // Top 3 Productos de Alta Rotación (BI)
-  const topProducts = (metrics.topSellingProducts && metrics.topSellingProducts.length > 0)
-    ? metrics.topSellingProducts.slice(0, 3)
-    : [
-        {
-          id: 'top-1',
-          name: 'Consola PlayStation 5 Slim Digital 1TB',
-          sku: 'CON-PS5-SLIM-DIG',
-          soldQuantity: 34,
-          revenue: 64566.00
-        },
-        {
-          id: 'top-2',
-          name: 'Figura Funko Pop! Animation - Charizard #843',
-          sku: 'FNK-POK-CHAR843',
-          soldQuantity: 52,
-          revenue: 4108.00
-        },
-        {
-          id: 'top-3',
-          name: 'Consola Nintendo Switch OLED Neon Blue/Red',
-          sku: 'CON-NSW-OLED-NEO',
-          soldQuantity: 19,
-          revenue: 30381.00
-        }
-      ];
-
-  // Rentabilidad y Ventas por Tienda (8 Sucursales Phantom)
-  const branchStores = [
-    { id: 'jockey', name: 'Jockey Plaza', city: 'Surco, Lima', sales: 28450, transactions: 142, margin: 34.5 },
-    { id: 'san-miguel', name: 'Plaza San Miguel', city: 'San Miguel, Lima', sales: 21890, transactions: 118, margin: 31.8 },
-    { id: 'plaza-norte', name: 'Plaza Norte', city: 'Independencia, Lima', sales: 19420, transactions: 105, margin: 29.4 },
-    { id: 'mall-sur', name: 'Mall del Sur', city: 'SJM, Lima', sales: 16800, transactions: 89, margin: 28.1 },
-    { id: 'lima-centro', name: 'Lima Centro', city: 'Real Plaza Centro', sales: 14350, transactions: 76, margin: 26.5 },
-    { id: 'arequipa', name: 'Mall Aventura', city: 'Arequipa', sales: 12640, transactions: 63, margin: 27.2 },
-    { id: 'trujillo', name: 'Real Plaza', city: 'Trujillo', sales: 9820, transactions: 49, margin: 25.0 },
-    { id: 'huancayo', name: 'Real Plaza', city: 'Huancayo', sales: 5180, transactions: 27, margin: 22.8 },
-  ];
-
-  const maxBranchSales = Math.max(...branchStores.map(b => b.sales));
-  const minBranchSales = Math.min(...branchStores.map(b => b.sales));
+  const maxBranchSales = branchStores.length ? Math.max(...branchStores.map(b => b.sales)) : 0;
+  const minBranchSales = branchStores.length ? Math.min(...branchStores.map(b => b.sales)) : 0;
   const totalNetworkSales = branchStores.reduce((acc, b) => acc + b.sales, 0);
-  const avgStoreSales = Math.round(totalNetworkSales / branchStores.length);
+  const avgStoreSales = branchStores.length ? Math.round(totalNetworkSales / branchStores.length) : 0;
   const topStore = branchStores.find(b => b.sales === maxBranchSales);
   const bottomStore = branchStores.find(b => b.sales === minBranchSales);
 
-  // Distribución de Ventas por Categoría de Producto
-  const categoryDistribution = [
-    { name: 'Consolas', share: 44, amount: 56562, color: '#C8102E', bg: 'bg-[#C8102E]', text: 'text-[#FFDAD8]', desc: 'PS5 Slim, Nintendo Switch OLED, Xbox Series' },
-    { name: 'Videojuegos', share: 26, amount: 33423, color: '#3B82F6', bg: 'bg-[#3B82F6]', text: 'text-[#DBEAFE]', desc: 'Juegos físicos PS5/PS4/Switch y novedades' },
-    { name: 'Coleccionables (Funko / TCG)', share: 18, amount: 23139, color: '#F59E0B', bg: 'bg-[#F59E0B]', text: 'text-[#FDE68A]', desc: 'Funko Pop!, cartas Pokémon TCG y figuras' },
-    { name: 'Periféricos Gamer', share: 12, amount: 15426, color: '#10B981', bg: 'bg-[#10B981]', text: 'text-[#A7F3D0]', desc: 'Headsets Razer/Logitech, mandos DualSense' }
-  ];
+  const categoryDistribution: Array<{ name: string; share: number; amount: number; color: string; bg: string; text: string; desc: string }> = [];
   const totalCategorySales = categoryDistribution.reduce((sum, c) => sum + c.amount, 0);
 
   return (
@@ -270,49 +223,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
 
-        {/* Meta de Ventas por Tienda */}
+        {/* Ventas del periodo; no se muestra una meta fija sin configuración persistida */}
         <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] hover:border-[#C8102E]/60 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <Target className="w-3.5 h-3.5 text-[#C8102E]" />
-                <p className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider font-mono">Meta de Ventas Tienda</p>
+                <p className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider font-mono">Ventas registradas del mes</p>
               </div>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border ${
-                targetAchievedPercent >= 100 
-                  ? 'bg-[rgba(16,185,129,0.14)] text-[#A7F3D0] border-[#10B981]' 
-                  : 'bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border-[#C8102E]'
-              }`}>
-                {targetAchievedPercent}% LOGRADO
+              <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold border bg-[#1E1E1E] text-[#D1D5DB] border-[#2D2D2D]">
+                FUENTE API
               </span>
             </div>
 
             <div className="flex items-baseline justify-between gap-1">
               <div>
-                <span className="text-[10px] text-[#9CA3AF] block font-mono">Monto Logrado:</span>
+                <span className="text-[10px] text-[#9CA3AF] block font-mono">Total completado:</span>
                 <h3 className="text-xl sm:text-2xl font-bold text-white font-mono tabular-nums">
                   {currency} {metrics.totalSalesMonth.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </h3>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-[#9CA3AF] block font-mono">Meta Objetivo:</span>
-                <span className="text-xs font-bold text-[#D1D5DB] font-mono tabular-nums">
-                  {currency} {monthlySalesTarget.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-
-            {/* Visual Progress Bar */}
-            <div className="mt-2.5">
-              <div className="w-full bg-[#1E1E1E] rounded-full h-2 border border-[#2D2D2D] overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    targetAchievedPercent >= 100 
-                      ? 'bg-gradient-to-r from-[#064E3B] to-[#10B981]' 
-                      : 'bg-gradient-to-r from-[#8A091E] to-[#C8102E]'
-                  }`}
-                  style={{ width: `${Math.max(6, targetAchievedPercent)}%` }}
-                />
+                <span className="text-[10px] text-[#9CA3AF] block font-mono">Sin meta configurada</span>
               </div>
             </div>
           </div>
@@ -322,11 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <TrendingUp className="w-3 h-3 text-[#10B981]" />
               <span>{metrics.totalSalesCountMonth} comprobantes</span>
             </span>
-            <span className={targetAchievedPercent >= 100 ? 'text-[#A7F3D0] font-bold' : 'text-[#D1D5DB]'}>
-              {targetAchievedPercent >= 100 
-                ? '¡Meta superada!' 
-                : `Falta: ${currency} ${remainingToTarget.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`}
-            </span>
+            <span className="text-[#D1D5DB]">Sin objetivo persistido</span>
           </div>
         </div>
 
@@ -501,28 +429,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Store className="w-4 h-4 text-[#C8102E]" />
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-white font-mono">
-                  Rendimiento y Ventas por Tienda (8 Sucursales)
+                  Ventas por tienda
                 </h4>
                 <p className="text-[10px] text-[#9CA3AF] mt-0.5">
-                  Comparativa de facturación mensual en la red nacional de tiendas Phantom
+                  Requiere ventas registradas con una tienda asociada
                 </p>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-1.5 font-mono text-[9px] font-bold">
               <span className="px-2 py-0.5 rounded bg-[rgba(16,185,129,0.14)] text-[#A7F3D0] border border-[#10B981] flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                <span>Líder: {topStore?.name}</span>
+                <span>Líder: {topStore?.name || 'Sin datos'}</span>
               </span>
               <span className="px-2 py-0.5 rounded bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border border-[#C8102E] flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#C8102E]" />
-                <span>Menor: {bottomStore?.name}</span>
+                <span>Menor: {bottomStore?.name || 'Sin datos'}</span>
               </span>
             </div>
           </div>
 
           {/* Comparative Horizontal Bars */}
           <div className="p-4 space-y-3">
-            {branchStores.map((branch) => {
+            {branchStores.length === 0 ? (
+              <p className="text-xs text-[#9CA3AF] py-8 text-center">
+                No hay ventas con `storeId`; no se muestran cifras simuladas.
+              </p>
+            ) : branchStores.map((branch) => {
               const isTop = branch.sales === maxBranchSales;
               const isBottom = branch.sales === minBranchSales;
               const percentOfMax = Math.round((branch.sales / maxBranchSales) * 100);
@@ -585,7 +517,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Network Summary Footer */}
           <div className="px-4 py-3 bg-[#0E0E0E] border-t border-[#2D2D2D] grid grid-cols-3 gap-2 text-center text-xs font-mono">
             <div className="border-r border-[#2D2D2D] pr-2">
-              <span className="text-[10px] text-[#9CA3AF] block uppercase">Total Red 8 Tiendas</span>
+              <span className="text-[10px] text-[#9CA3AF] block uppercase">Total tiendas con ventas</span>
               <span className="font-bold text-white tabular-nums">{currency} {formatAmount(totalNetworkSales)}</span>
             </div>
             <div className="border-r border-[#2D2D2D] px-2">
@@ -594,7 +526,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="pl-2">
               <span className="text-[10px] text-[#9CA3AF] block uppercase">Tienda Líder</span>
-              <span className="font-bold text-[#A7F3D0] truncate block">{topStore?.name}</span>
+              <span className="font-bold text-[#A7F3D0] truncate block">{topStore?.name || 'Sin datos'}</span>
             </div>
           </div>
         </div>
@@ -641,6 +573,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   3. Coleccionables: 18% -> 42.98 (offset -167.13)
                   4. Periféricos: 12% -> 28.65 (offset -210.11)
                 */}
+                {categoryDistribution.length > 0 && (<>
                 <circle
                   cx="50"
                   cy="50"
@@ -663,6 +596,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   strokeDashoffset="-105.05"
                   className="transition-all duration-500 hover:opacity-90"
                 />
+                </>)}
                 <circle
                   cx="50"
                   cy="50"
@@ -691,10 +625,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
                 <span className="text-[9px] text-[#9CA3AF] uppercase font-mono tracking-wider">Mix Ventas</span>
                 <span className="text-base font-bold text-white font-mono tabular-nums leading-tight">
-                  100%
+                  {categoryDistribution.length ? '100%' : '-'}
                 </span>
                 <span className="text-[9px] text-[#A7F3D0] font-mono">
-                  4 Categorías
+                  {categoryDistribution.length ? `${categoryDistribution.length} Categorías` : 'Sin datos'}
                 </span>
               </div>
             </div>
@@ -732,7 +666,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Category Total Footer */}
           <div className="px-4 py-3 bg-[#0E0E0E] border-t border-[#2D2D2D] flex items-center justify-between text-xs text-[#9CA3AF] font-mono">
             <span>Volumen catalogado: <strong className="text-white font-mono">{currency} {formatAmount(totalCategorySales)}</strong></span>
-            <span className="text-[#A7F3D0] font-bold">Líder: Consolas (44%)</span>
+            <span className="text-[#D1D5DB] font-bold">{categoryDistribution.length ? 'Datos disponibles en API' : 'Sin ventas con categoría'}</span>
           </div>
         </div>
 
@@ -757,7 +691,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="divide-y divide-[#2D2D2D]">
-            {topProducts.map((p, idx) => {
+            {topProducts.length === 0 ? (
+              <p className="text-xs text-[#9CA3AF] py-8 text-center">
+                No hay ventas completadas suficientes para calcular rotación.
+              </p>
+            ) : topProducts.map((p, idx) => {
               const medalStyles = [
                 { badge: '1° ORO', bg: 'bg-[#F59E0B]/20 text-[#FDE68A] border-[#F59E0B]' },
                 { badge: '2° PLATA', bg: 'bg-slate-700/40 text-slate-200 border-slate-400' },

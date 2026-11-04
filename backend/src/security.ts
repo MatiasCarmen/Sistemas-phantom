@@ -1,7 +1,19 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'phantom_erp_hmac_secret_key_2026_secure';
 const TOKEN_TTL_SECONDS = 8 * 60 * 60; // 8 horas
+const MIN_SECRET_LENGTH = 32;
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < MIN_SECRET_LENGTH) {
+    throw new Error(`JWT_SECRET debe estar configurado y tener al menos ${MIN_SECRET_LENGTH} caracteres`);
+  }
+  return secret;
+}
+
+export function assertSecurityConfig(): void {
+  getJwtSecret();
+}
 
 export interface AuthTokenPayload {
   sub: string;
@@ -75,7 +87,7 @@ export function signAuthToken(user: { id: string; username: string; role: string
     } satisfies AuthTokenPayload)
   );
   const signature = base64UrlEncode(
-    createHmac('sha256', JWT_SECRET).update(`${header}.${payload}`).digest()
+    createHmac('sha256', getJwtSecret()).update(`${header}.${payload}`).digest()
   );
   return `${header}.${payload}.${signature}`;
 }
@@ -93,15 +105,6 @@ export function verifyAuthToken(authHeader?: string): { userId: string; role?: s
     return null;
   }
 
-  // Compatibilidad con formato legacy token_<userId>_<timestamp> si existiera en localStorage
-  if (rawToken.startsWith('token_')) {
-    const parts = rawToken.replace('token_', '').split('_');
-    if (parts[0]) {
-      return { userId: parts[0] };
-    }
-    return null;
-  }
-
   const segments = rawToken.split('.');
   if (segments.length !== 3) {
     return null;
@@ -109,7 +112,7 @@ export function verifyAuthToken(authHeader?: string): { userId: string; role?: s
 
   const [headerB64, payloadB64, signatureB64] = segments;
   const expectedSignature = base64UrlEncode(
-    createHmac('sha256', JWT_SECRET).update(`${headerB64}.${payloadB64}`).digest()
+    createHmac('sha256', getJwtSecret()).update(`${headerB64}.${payloadB64}`).digest()
   );
 
   const sigBuffer = Buffer.from(signatureB64);
@@ -119,9 +122,13 @@ export function verifyAuthToken(authHeader?: string): { userId: string; role?: s
   }
 
   try {
+    const header = JSON.parse(base64UrlDecode(headerB64)) as { alg?: string };
+    if (header.alg !== 'HS256') {
+      return null;
+    }
     const payload = JSON.parse(base64UrlDecode(payloadB64)) as AuthTokenPayload;
     const now = Math.floor(Date.now() / 1000);
-    if (!payload.sub || (payload.exp && payload.exp < now)) {
+    if (!payload.sub || typeof payload.exp !== 'number' || payload.exp < now) {
       return null;
     }
     return { userId: payload.sub, role: payload.role };

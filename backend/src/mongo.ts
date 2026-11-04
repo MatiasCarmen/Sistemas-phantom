@@ -7,7 +7,9 @@ import type { AuditLogEvent } from './types';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '..', 'data');
+const DATA_DIR = process.env.PHANTOM_DATA_DIR
+  ? path.resolve(process.env.PHANTOM_DATA_DIR)
+  : path.resolve(__dirname, '..', 'data');
 const LOCAL_DB_FILE = path.join(DATA_DIR, 'db.json');
 const LOCAL_AUDIT_FILE = path.join(DATA_DIR, 'audit.json');
 
