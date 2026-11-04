@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 import { hashPassword, verifyPassword, signAuthToken, verifyAuthToken } from './security.ts';
 
 test('hashPassword y verifyPassword validan contraseñas con scrypt y mantienen compatibilidad', () => {

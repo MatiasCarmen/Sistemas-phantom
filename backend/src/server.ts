@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import { createApp } from './app';
 import { db } from './dataStore';
+import { assertSecurityConfig } from './security';
 
 async function startServer() {
+  assertSecurityConfig();
   await db.initialize();
 
   const app = createApp();

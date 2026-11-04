@@ -22,7 +22,7 @@ import {
   Calendar,
   X
 } from 'lucide-react';
-import { Sale, SaleItem, Product, Customer, CompanySettings, VoucherType, PaymentMethod, Category } from '../types';
+import { Sale, SaleItem, Product, Customer, CompanySettings, VoucherType, PaymentMethod, Category, Store, StoreStock } from '../types';
 import { generateSaleInvoicePDF } from '../lib/pdfGenerator';
 import { formatAmount } from '../lib/formatters';
 
@@ -31,6 +31,8 @@ interface SalesViewProps {
   products: Product[];
   customers: Customer[];
   categories: Category[];
+  stores: Store[];
+  storeStock: StoreStock[];
   settings: CompanySettings | null;
   onCreateSale: (sale: Partial<Sale>) => Promise<void>;
   onCancelSale: (id: string, reason: string) => Promise<void>;
@@ -44,6 +46,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
   products,
   customers,
   categories,
+  stores,
+  storeStock,
   settings,
   onCreateSale,
   onCancelSale,
@@ -78,6 +82,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [customerTaxId, setCustomerTaxId] = useState(customers[0]?.taxId || '99999999');
   const [customerEmail, setCustomerEmail] = useState(customers[0]?.email || '');
   const [sellerName, setSellerName] = useState('Cajero Principal');
+  const [selectedStoreId, setSelectedStoreId] = useState('main-warehouse');
+  const getAvailableStock = (productId: string) => selectedStoreId === 'main-warehouse'
+    ? products.find(product => product.id === productId)?.stock || 0
+    : storeStock.find(stock => stock.storeId === selectedStoreId && stock.productId === productId)?.quantity || 0;
   const [notes, setNotes] = useState('');
   
   // Cash Tendered & Change
@@ -121,7 +129,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
   // Add Product to POS Cart
   const handleAddToCart = (product: Product) => {
-    if (product.stock <= 0) {
+    if (getAvailableStock(product.id) <= 0) {
       alert(`El producto "${product.name}" está agotado en inventario.`);
       return;
     }
@@ -129,8 +137,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
     const existingIndex = cartItems.findIndex(item => item.productId === product.id);
     if (existingIndex > -1) {
       const currentQty = cartItems[existingIndex].quantity;
-      if (currentQty + 1 > product.stock) {
-        alert(`No puedes agregar más unidades. Stock disponible: ${product.stock}`);
+      if (currentQty + 1 > getAvailableStock(product.id)) {
+        alert(`No puedes agregar más unidades. Stock disponible: ${getAvailableStock(product.id)}`);
         return;
       }
       const updated = [...cartItems];
@@ -180,8 +188,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
       return;
     }
 
-    if (newQty > product.stock) {
-      alert(`Stock insuficiente. Máximo disponible: ${product.stock} ${product.unit}`);
+    if (newQty > getAvailableStock(product.id)) {
+      alert(`Stock insuficiente. Máximo disponible: ${getAvailableStock(product.id)} ${product.unit}`);
       return;
     }
 
@@ -239,6 +247,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       customerTaxId,
       customerEmail,
       date: new Date().toISOString().split('T')[0],
+      storeId: selectedStoreId,
       items: cartItems,
       subtotal: cartSubtotal,
       discountTotal: cartDiscount,
@@ -294,6 +303,21 @@ export const SalesView: React.FC<SalesViewProps> = ({
       
       {/* Top Header & Tab Toggle */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded-md border border-[#2D2D2D]">
+        <div>
+          <label className="block text-[11px] font-semibold text-[#c8c6c6] mb-1">Ubicación de venta</label>
+          <select
+            id="select-pos-store"
+            value={selectedStoreId}
+            onChange={e => setSelectedStoreId(e.target.value)}
+            className="w-full px-2.5 py-1.5 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs focus:outline-none focus:border-[#C8102E]"
+          >
+            {stores.filter(store => store.status === 'ACTIVE').map(store => (
+              <option key={store.id} value={store.id}>{store.name}</option>
+            ))}
+          </select>
+          <p className="text-[10px] text-[#71717A] mt-1">El stock se descuenta de la ubicación seleccionada.</p>
+        </div>
+
         <div>
           <div className="flex items-center space-x-2">
             <h2 className="text-xl font-bold text-white tracking-tight">Control de Ventas & Punto de Venta (POS)</h2>

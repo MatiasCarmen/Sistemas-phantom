@@ -8,6 +8,7 @@ import {
   InventoryMovement, 
   Quote, 
   Sale, 
+  SaleItem,
   CompanySettings, 
   DashboardMetrics,
   MovementType,
@@ -29,6 +30,13 @@ import {
 } from './initialData';
 import { closeMongoConnection, getLocalDbFilePath, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
 import { hashPassword, verifyPassword } from './security';
+
+export class TransactionValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TransactionValidationError';
+  }
+}
 
 export interface DatabaseSchema {
   products: Product[];
@@ -202,7 +210,7 @@ class DataStore {
         item.taxAmount = Number(lineTax.toFixed(2));
         item.total = Number(lineTotal.toFixed(2));
         subtotal += lineSubtotal;
-        discountTotal += grossLine - lineSubtotal;
+        discountTotal += grossLine - lineTotal;
         taxTotal += lineTax;
       }
 
@@ -811,12 +819,34 @@ class DataStore {
     voucherType?: 'FACTURA' | 'BOLETA' | 'TICKET';
     paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER' | 'CREDIT' | 'MIXED';
     sellerName?: string;
+    storeId?: string;
   }): { sale: Sale; quote: Quote } | null {
     const quote = this.getQuoteById(quoteId);
     if (!quote) return null;
+    if (quote.status === 'CONVERTED') return null;
 
-    // Create sale items from quote items
-    const saleItems = quote.items.map(item => ({
+    if (options?.storeId) {
+      const store = this.data.stores.find(item => item.id === options.storeId && item.status === 'ACTIVE');
+      if (!store) {
+        throw new TransactionValidationError('La tienda seleccionada no existe o está inactiva');
+      }
+    }
+
+    const calculation = this.calculateTransaction(quote.items);
+    for (const item of calculation.items) {
+      const product = this.getProductById(item.productId);
+      if (!product) {
+        throw new TransactionValidationError(`Producto no encontrado: ${item.productId}`);
+      }
+      const availableStock = options?.storeId && options.storeId !== 'main-warehouse'
+        ? this.data.storeStock.find(entry => entry.storeId === options.storeId && entry.productId === item.productId)?.quantity || 0
+        : product.stock;
+      if (availableStock < item.quantity) {
+        throw new TransactionValidationError(`Stock insuficiente para ${product.name}. Stock disponible: ${availableStock}, solicitado: ${item.quantity}`);
+      }
+    }
+
+    const saleItems = calculation.items.map(item => ({
       ...item,
       id: `sitem-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     }));
@@ -830,15 +860,16 @@ class DataStore {
       customerPhone: quote.customerPhone,
       customerAddress: quote.customerAddress,
       date: new Date().toISOString().split('T')[0],
+      storeId: options?.storeId,
       items: saleItems,
-      subtotal: quote.subtotal,
-      discountTotal: quote.discountTotal,
-      taxTotal: quote.taxTotal,
-      total: quote.total,
+      subtotal: calculation.subtotal,
+      discountTotal: calculation.discountTotal,
+      taxTotal: calculation.taxTotal,
+      total: calculation.total,
       currency: quote.currency,
       paymentMethod: options?.paymentMethod || 'TRANSFER',
       paymentStatus: 'PAID',
-      paidAmount: quote.total,
+      paidAmount: calculation.total,
       dueAmount: 0,
       quoteIdReference: quote.id,
       quoteNumberReference: quote.quoteNumber,
@@ -855,6 +886,79 @@ class DataStore {
 
     this.saveToFile();
     return { sale, quote };
+  }
+
+  calculateTransaction(items: unknown): {
+    items: SaleItem[];
+    subtotal: number;
+    discountTotal: number;
+    taxTotal: number;
+    total: number;
+  } {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new TransactionValidationError('Debe ingresar al menos un producto');
+    }
+
+    let subtotal = 0;
+    let discountTotal = 0;
+    let taxTotal = 0;
+    const normalizedItems: SaleItem[] = [];
+
+    for (const rawItem of items) {
+      if (!rawItem || typeof rawItem !== 'object') {
+        throw new TransactionValidationError('Cada producto debe ser un objeto válido');
+      }
+
+      const item = rawItem as Partial<SaleItem>;
+      const product = this.getProductById(String(item.productId || ''));
+      if (!product) {
+        throw new TransactionValidationError(`Producto no encontrado: ${String(item.productId || '')}`);
+      }
+
+      const quantity = Number(item.quantity);
+      const discountPercent = Number(item.discountPercent ?? 0);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        throw new TransactionValidationError(`Cantidad inválida para ${product.name}`);
+      }
+      if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+        throw new TransactionValidationError(`Descuento inválido para ${product.name}`);
+      }
+
+      const grossLine = product.sellingPrice * quantity;
+      const lineTotal = grossLine * (1 - discountPercent / 100);
+      const lineSubtotal = lineTotal / (1 + product.taxRate / 100);
+      const lineTax = lineTotal - lineSubtotal;
+      const normalizedSubtotal = Number(lineSubtotal.toFixed(2));
+      const normalizedTax = Number(lineTax.toFixed(2));
+      const normalizedTotal = Number(lineTotal.toFixed(2));
+
+      normalizedItems.push({
+        id: typeof item.id === 'string' && item.id ? item.id : `item-${Date.now()}-${normalizedItems.length}`,
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        unit: product.unit,
+        unitPrice: product.sellingPrice,
+        costPrice: product.costPrice,
+        quantity,
+        discountPercent,
+        taxRate: product.taxRate,
+        subtotal: normalizedSubtotal,
+        taxAmount: normalizedTax,
+        total: normalizedTotal
+      });
+      subtotal += lineSubtotal;
+      discountTotal += grossLine - lineTotal;
+      taxTotal += lineTax;
+    }
+
+    return {
+      items: normalizedItems,
+      subtotal: Number(subtotal.toFixed(2)),
+      discountTotal: Number(discountTotal.toFixed(2)),
+      taxTotal: Number(taxTotal.toFixed(2)),
+      total: Number((subtotal + taxTotal).toFixed(2))
+    };
   }
 
   // --- SALES ---
@@ -891,15 +995,20 @@ class DataStore {
     for (const item of newSale.items) {
       const product = this.getProductById(item.productId);
       if (product) {
-        const prevStock = product.stock;
+        const stockEntry = newSale.storeId && newSale.storeId !== 'main-warehouse'
+          ? this.data.storeStock.find(entry => entry.storeId === newSale.storeId && entry.productId === product.id)
+          : undefined;
+        const prevStock = stockEntry?.quantity ?? product.stock;
         const newStock = Math.max(0, prevStock - item.quantity);
-        
-        product.stock = newStock;
-        if (newStock <= 0) {
-          product.status = 'out_of_stock';
-        } else if (newStock <= product.minStock) {
-          product.status = 'low_stock';
+
+        if (stockEntry) {
+          stockEntry.quantity = newStock;
         }
+        else product.stock = newStock;
+
+        if (newStock <= 0) product.status = 'out_of_stock';
+        else if (newStock <= product.minStock) product.status = 'low_stock';
+        else product.status = 'in_stock';
         product.updatedAt = now;
 
         this.addInventoryMovement({
@@ -912,6 +1021,7 @@ class DataStore {
           newStock: newStock,
           unitCost: product.costPrice,
           referenceId: newSale.saleNumber,
+          storeId: newSale.storeId,
           notes: `Venta comprobante ${newSale.saleNumber} - Cliente: ${newSale.customerName}`,
           createdBy: newSale.sellerName || 'Cajero / Ventas'
         });
@@ -935,10 +1045,14 @@ class DataStore {
     for (const item of sale.items) {
       const product = this.getProductById(item.productId);
       if (product) {
-        const prevStock = product.stock;
+        const stockEntry = sale.storeId && sale.storeId !== 'main-warehouse'
+          ? this.data.storeStock.find(entry => entry.storeId === sale.storeId && entry.productId === product.id)
+          : undefined;
+        const prevStock = stockEntry?.quantity ?? product.stock;
         const newStock = prevStock + item.quantity;
 
-        product.stock = newStock;
+        if (stockEntry) stockEntry.quantity = newStock;
+        else product.stock = newStock;
         if (newStock <= 0) {
           product.status = 'out_of_stock';
         } else if (newStock <= product.minStock) {
@@ -958,6 +1072,7 @@ class DataStore {
           newStock: newStock,
           unitCost: product.costPrice,
           referenceId: sale.saleNumber,
+          storeId: sale.storeId,
           notes: `Anulación de venta ${sale.saleNumber}. Motivo: ${reason}`,
           createdBy: 'Sistema de Reversión'
         });

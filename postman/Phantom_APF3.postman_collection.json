@@ -1,0 +1,176 @@
+{
+  "info": {
+    "_postman_id": "d44af3f8-0c1a-4b2b-a8c0-phantom-apf3",
+    "name": "PHANTOM - Evidencias APF3",
+    "description": "Colección basada únicamente en endpoints reales de backend/src/routes.ts. Ejecutar contra una instancia local aislada y con un entorno Postman configurado sin credenciales en el archivo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "testProductName", "value": "Producto Postman APF3" },
+    { "key": "testCustomerName", "value": "Cliente Postman APF3" },
+    { "key": "testTaxId", "value": "APF3-{{$timestamp}}" },
+    { "key": "testQuantity", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "00 - Health público",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Health responde 200', () => pm.response.to.have.status(200));", "pm.test('API activa', () => pm.expect(pm.response.json().status).to.eql('ok'));"] } }]
+    },
+    {
+      "name": "01 - Login inválido (401)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"{{$randomUserName}}\",\"password\":\"credencial-invalida\"}" },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Credenciales inválidas devuelven 401', () => pm.response.to.have.status(401));", "pm.test('No se entrega token', () => pm.expect(pm.response.json().token).to.be.undefined);"] } }]
+    },
+    {
+      "name": "02 - Acceso sin token (401)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": { "type": "noauth" },
+        "url": { "raw": "{{baseUrl}}/sales", "host": ["{{baseUrl}}"], "path": ["sales"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Sin token devuelve 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "03 - Login admin válido",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"{{adminUsername}}\",\"password\":\"{{adminPassword}}\"}" },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Login admin 200', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "pm.expect(body.token).to.be.a('string').and.not.empty;", "pm.environment.set('adminToken', body.token);"] } }]
+    },
+    {
+      "name": "04 - Login usuario ventas",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"{{sellerUsername}}\",\"password\":\"{{sellerPassword}}\"}" },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Login ventas 200', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "pm.expect(body.token).to.be.a('string').and.not.empty;", "pm.environment.set('sellerToken', body.token);"] } }]
+    },
+    {
+      "name": "05 - Permiso insuficiente (403)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{sellerToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"productId\":\"no-existe\",\"type\":\"IN_ADJUSTMENT\",\"quantity\":1}" },
+        "url": { "raw": "{{baseUrl}}/products/adjust-stock", "host": ["{{baseUrl}}"], "path": ["products", "adjust-stock"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Permiso insuficiente devuelve 403', () => pm.response.to.have.status(403));"] } }]
+    },
+    {
+      "name": "06 - Consultar productos",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Consulta de productos 200', () => pm.response.to.have.status(200));", "pm.test('La respuesta contiene una lista', () => pm.expect(pm.response.json().data).to.be.an('array'));"] } }]
+    },
+    {
+      "name": "07 - Crear producto de prueba",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"name\":\"{{testProductName}}\",\"sku\":\"POSTMAN-{{$timestamp}}\",\"category\":\"Pruebas APF3\",\"costPrice\":10,\"sellingPrice\":20,\"taxRate\":18,\"stock\":5,\"minStock\":1,\"unit\":\"UND\"}" },
+        "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Producto creado 201', () => pm.response.to.have.status(201));", "const body = pm.response.json();", "pm.environment.set('productId', body.data.id);", "pm.environment.set('productSku', body.data.sku);", "pm.environment.set('initialStock', String(body.data.stock));", "pm.expect(body.data.id).to.be.a('string');"] } }]
+    },
+    {
+      "name": "08 - Ajustar entrada de inventario",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"productId\":\"{{productId}}\",\"type\":\"IN_ADJUSTMENT\",\"quantity\":2,\"notes\":\"Entrada de evidencia APF3\",\"createdBy\":\"Postman APF3\"}" },
+        "url": { "raw": "{{baseUrl}}/products/adjust-stock", "host": ["{{baseUrl}}"], "path": ["products", "adjust-stock"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Ajuste de stock 200', () => pm.response.to.have.status(200));", "pm.test('Producto actualizado', () => pm.expect(pm.response.json().data).to.exist);"] } }]
+    },
+    {
+      "name": "09 - Verificar stock después del ajuste",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Producto consultado 200', () => pm.response.to.have.status(200));", "const stock = pm.response.json().data.stock;", "pm.test('Stock aumentó en 2', () => pm.expect(stock).to.eql(Number(pm.environment.get('initialStock')) + 2));"] } }]
+    },
+    {
+      "name": "10 - Registrar cliente",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"name\":\"{{testCustomerName}}\",\"taxId\":\"APF3-{{$timestamp}}\",\"email\":\"\",\"phone\":\"\"}" },
+        "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Cliente creado 201', () => pm.response.to.have.status(201));", "pm.environment.set('customerId', pm.response.json().data.id);"] } }]
+    },
+    {
+      "name": "11 - Crear cotización",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{sellerToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"customerId\":\"{{customerId}}\",\"customerName\":\"{{testCustomerName}}\",\"items\":[{\"productId\":\"{{productId}}\",\"quantity\":1,\"unitPrice\":9999,\"subtotal\":9999,\"taxAmount\":9999,\"total\":99999,\"discountPercent\":0}],\"subtotal\":9999,\"taxTotal\":9999,\"total\":99999}" },
+        "url": { "raw": "{{baseUrl}}/quotes", "host": ["{{baseUrl}}"], "path": ["quotes"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Cotización creada 201', () => pm.response.to.have.status(201));", "const body = pm.response.json();", "pm.environment.set('quoteId', body.data.id);", "pm.test('Cotización recalculada', () => pm.expect(body.data.total).to.eql(20));"] } }]
+    },
+    {
+      "name": "12 - Venta manipulada: backend recalcula",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{sellerToken}}", "type": "string" }] },
+        "body": { "mode": "raw", "raw": "{\"customerId\":\"{{customerId}}\",\"customerName\":\"{{testCustomerName}}\",\"items\":[{\"productId\":\"{{productId}}\",\"quantity\":1,\"unitPrice\":9999,\"subtotal\":9999,\"taxAmount\":9999,\"total\":99999,\"discountPercent\":0}],\"subtotal\":9999,\"taxTotal\":9999,\"total\":99999}" },
+        "url": { "raw": "{{baseUrl}}/sales", "host": ["{{baseUrl}}"], "path": ["sales"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Venta aceptada con cálculo autoritativo', () => pm.response.to.have.status(201));", "const body = pm.response.json();", "pm.environment.set('saleId', body.data.id);", "pm.test('Precio real del catálogo', () => pm.expect(body.data.items[0].unitPrice).to.eql(20));", "pm.test('Total no manipulado', () => pm.expect(body.data.total).to.eql(20));"] } }]
+    },
+    {
+      "name": "13 - Verificar descuento después de venta",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Stock posterior consultado 200', () => pm.response.to.have.status(200));", "pm.test('Stock refleja ajuste menos venta', () => pm.expect(pm.response.json().data.stock).to.eql(Number(pm.environment.get('initialStock')) + 1));"] } }]
+    },
+    {
+      "name": "14 - Estado MongoDB configurado",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "url": { "raw": "{{baseUrl}}/database/status", "host": ["{{baseUrl}}"], "path": ["database", "status"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Estado de base responde 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta contiene status', () => pm.expect(pm.response.json().status).to.exist);"] } }]
+    },
+    {
+      "name": "15 - Recuperación después de reiniciar backend",
+      "request": {
+        "method": "GET",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+        "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Producto recuperado tras reinicio', () => pm.response.to.have.status(200));", "pm.test('ID persistido', () => pm.expect(pm.response.json().data.id).to.eql(pm.environment.get('productId')));"] } }]
+    }
+  ]
+}

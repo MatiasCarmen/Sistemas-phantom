@@ -1,0 +1,4 @@
+id_venta,fecha,tienda,id_producto,sku,producto,categoria,cantidad,importe,fuente,calidad_dato
+sale-201,2025-01-18,,prod-1,029587,PlayStation 5 Consola Slim Digital,Consolas,2,5319.81,backup_json_no_Mongo,tienda_no_registrada
+sale-202,2025-01-22,,prod-6,746979,Mouse Logitech G502,Perifericos,3,899.70,backup_json_no_Mongo,tienda_no_registrada
+sale-203,2025-01-25,,prod-4,428196,Xbox Series X,Consolas,1,2699.90,backup_json_no_Mongo,tienda_no_registrada
