@@ -1015,7 +1015,7 @@ export const initialUsers: User[] = [
     role: 'admin',
     roleLabel: 'Administrador General',
     avatarColor: 'indigo',
-    password: 'admin',
+    password: 'Admin.Phantom2026',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1039,7 +1039,7 @@ export const initialUsers: User[] = [
     role: 'collaborator',
     roleLabel: 'Ejecutiva de Ventas',
     avatarColor: 'emerald',
-    password: 'carlos123',
+    password: 'Ventas.Phantom2026',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1063,7 +1063,7 @@ export const initialUsers: User[] = [
     role: 'warehouse',
     roleLabel: 'Encargado de Almacén',
     avatarColor: 'amber',
-    password: 'rosa123',
+    password: 'Almacen.Phantom2026',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1087,7 +1087,7 @@ export const initialUsers: User[] = [
     role: 'cashier',
     roleLabel: 'Supervisora de Operaciones',
     avatarColor: 'blue',
-    password: 'ana123',
+    password: 'Caja.Phantom2026',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1111,7 +1111,7 @@ export const initialUsers: User[] = [
     role: 'collaborator',
     roleLabel: 'Ejecutivo de Ventas',
     avatarColor: 'red',
-    password: '123456',
+    password: 'Asesor.Phantom2026',
     status: 'inactive',
     permissions: {
       canViewDashboard: true,

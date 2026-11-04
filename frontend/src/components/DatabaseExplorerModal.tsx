@@ -135,24 +135,24 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            <a
+            <button
+              type="button"
               id="btn-download-sql-export"
-              href={api.exportSqlUrl()}
-              download
-              className="px-3 py-1.5 rounded bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+              onClick={() => { api.downloadSqlExport().catch((err) => console.error('SQL export failed:', err)); }}
+              className="px-3 py-1.5 rounded bg-[#C8102E] hover:bg-[#A80C25] text-white text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Exportar SQL</span>
-            </a>
-            <a
+            </button>
+            <button
+              type="button"
               id="btn-download-json-export"
-              href={api.exportBackupUrl()}
-              download
-              className="px-3 py-1.5 rounded bg-[#1E1E1E] hover:bg-[#2D2D2D] text-zinc-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-[#2D2D2D]"
+              onClick={() => { api.downloadBackup().catch((err) => console.error('Backup download failed:', err)); }}
+              className="px-3 py-1.5 rounded bg-[#1E1E1E] hover:bg-[#2D2D2D] text-zinc-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-[#2D2D2D] cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Descargar JSON</span>
-            </a>
+            </button>
             <button
               id="btn-close-db-modal"
               onClick={onClose}

@@ -4,10 +4,14 @@ import { fileURLToPath } from 'url';
 import { MongoClient, type Document } from 'mongodb';
 import type { DatabaseSchema } from './dataStore';
 import type { AuditLogEvent } from './types';
+import { chainAuditEvents, verifyAuditChain } from './audit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '..', 'data');
+// PHANTOM_DATA_DIR permite aislar los datos (p. ej. en las pruebas automatizadas)
+const DATA_DIR = process.env.PHANTOM_DATA_DIR
+  ? path.resolve(process.env.PHANTOM_DATA_DIR)
+  : path.resolve(__dirname, '..', 'data');
 const LOCAL_DB_FILE = path.join(DATA_DIR, 'db.json');
 const LOCAL_AUDIT_FILE = path.join(DATA_DIR, 'audit.json');
 
@@ -38,6 +42,27 @@ export function saveLocalSnapshot(data: DatabaseSchema): void {
   } catch (error) {
     console.error('[DataStore] No se pudo escribir respaldo local en data/db.json:', error);
   }
+}
+
+const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+const MAX_LOCAL_BACKUPS = 10;
+
+/**
+ * Guarda una copia del estado actual antes de una operación destructiva (restaurar o reiniciar).
+ * Conserva las últimas MAX_LOCAL_BACKUPS copias, legibles solo por el usuario del servidor.
+ */
+export function saveLocalBackup(data: DatabaseSchema, label: string): string {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  const fileName = `${label}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  fs.writeFileSync(path.join(BACKUP_DIR, fileName), JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 });
+
+  const backups = fs.readdirSync(BACKUP_DIR)
+    .filter((name) => name.endsWith('.json'))
+    .sort((a, b) => fs.statSync(path.join(BACKUP_DIR, a)).mtimeMs - fs.statSync(path.join(BACKUP_DIR, b)).mtimeMs);
+  for (const oldBackup of backups.slice(0, Math.max(0, backups.length - MAX_LOCAL_BACKUPS))) {
+    fs.unlinkSync(path.join(BACKUP_DIR, oldBackup));
+  }
+  return fileName;
 }
 
 function getLocalAuditStore(): AuditLogEvent[] {
@@ -128,9 +153,6 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       quotes,
       sales,
       users,
-      stores,
-      storeStock,
-      stockTransfers,
       settings,
       metadata,
     ] = await Promise.all([
@@ -142,9 +164,6 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       database.collection<MongoRecord>('quotes').find().toArray(),
       database.collection<MongoRecord>('sales').find().toArray(),
       database.collection<MongoRecord>('users').find().toArray(),
-      database.collection<MongoRecord>('stores').find().toArray(),
-      database.collection<MongoRecord>('store_stock').find().toArray(),
-      database.collection<MongoRecord>('stock_transfers').find().toArray(),
       database.collection<MongoRecord>('company_settings').findOne({ _id: 'primary' }),
       database.collection<MongoRecord>('system_state').findOne({ _id: 'primary' }),
     ]);
@@ -164,19 +183,6 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
     }
 
     const removeMongoId = (records: MongoRecord[]) => records.map(({ _id, ...record }) => record);
-    let localStoreData: Partial<DatabaseSchema> = {};
-    if (!stores.length || !storeStock.length) {
-      try {
-        if (fs.existsSync(LOCAL_DB_FILE)) {
-          localStoreData = JSON.parse(fs.readFileSync(LOCAL_DB_FILE, 'utf-8')) as Partial<DatabaseSchema>;
-        }
-      } catch {
-        // Use defaults from DataStore when no local store snapshot is available.
-      }
-    }
-    const resolvedStores = stores.length ? removeMongoId(stores) : (localStoreData.stores || []);
-    const resolvedStoreStock = storeStock.length ? removeMongoId(storeStock) : (localStoreData.storeStock || []);
-    const resolvedStockTransfers = stockTransfers.length ? removeMongoId(stockTransfers) : (localStoreData.stockTransfers || []);
     return {
       products: removeMongoId(products) as unknown as DatabaseSchema['products'],
       categories: removeMongoId(categories) as unknown as DatabaseSchema['categories'],
@@ -186,9 +192,6 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       quotes: removeMongoId(quotes) as unknown as DatabaseSchema['quotes'],
       sales: removeMongoId(sales) as unknown as DatabaseSchema['sales'],
       users: removeMongoId(users) as unknown as DatabaseSchema['users'],
-      stores: resolvedStores as unknown as DatabaseSchema['stores'],
-      storeStock: resolvedStoreStock as unknown as DatabaseSchema['storeStock'],
-      stockTransfers: resolvedStockTransfers as unknown as DatabaseSchema['stockTransfers'],
       settings: settings?.value as DatabaseSchema['settings'],
       lastUpdated: String(metadata?.lastUpdated || new Date().toISOString()),
     };
@@ -229,22 +232,6 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
       await collection.deleteMany({ _id: { $nin: records.map((record) => record.id) } });
     };
 
-    const storeStockCollection = database.collection<MongoRecord>('store_stock');
-    const storeStockRecords = data.storeStock.map((stock) => {
-      const recordId = `${stock.storeId}::${stock.productId}`;
-      return { ...stock, _id: recordId } as unknown as MongoRecord;
-    });
-    if (storeStockRecords.length) {
-      await storeStockCollection.bulkWrite(storeStockRecords.map((record) => ({
-        replaceOne: {
-          filter: { _id: record._id },
-          replacement: record,
-          upsert: true,
-        },
-      })));
-    }
-    await storeStockCollection.deleteMany({ _id: { $nin: storeStockRecords.map((record) => record._id) } });
-
     await Promise.all([
       saveCollection('products', data.products),
       saveCollection('categories', data.categories),
@@ -254,8 +241,6 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
       saveCollection('quotes', data.quotes),
       saveCollection('sales', data.sales),
       saveCollection('users', data.users),
-      saveCollection('stores', data.stores),
-      saveCollection('stock_transfers', data.stockTransfers),
       database
         .collection<MongoRecord>('company_settings')
         .replaceOne({ _id: 'primary' }, { _id: 'primary', value: data.settings }, { upsert: true }),
@@ -278,9 +263,12 @@ export async function saveAuditEvents(events: AuditLogEvent[]): Promise<void> {
     return;
   }
 
-  // Guardar siempre en store local para disponibilidad inmediata
+  // Guardar siempre en store local para disponibilidad inmediata.
+  // El store está ordenado del más reciente al más antiguo; la cadena se arma en orden cronológico.
   const store = getLocalAuditStore();
-  store.unshift(...events);
+  const chronological = [...events].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+  chainAuditEvents(chronological, store.find((event) => event.hash)?.hash);
+  store.unshift(...chronological.reverse());
   saveLocalAuditStore(store);
 
   if (!connected && mongoWarnedOffline) {
@@ -306,6 +294,12 @@ export async function saveAuditEvents(events: AuditLogEvent[]): Promise<void> {
   } catch {
     // Fallback local ya completado
   }
+}
+
+/** OWASP A09: comprueba que la bitácora local no haya sido editada ni recortada por el medio. */
+export function verifyLocalAuditChain(): { valid: boolean; checked: number; brokenAt?: string } {
+  const chained = getLocalAuditStore().filter((event) => event.hash);
+  return verifyAuditChain([...chained].reverse());
 }
 
 export async function loadAuditEvents(options: {

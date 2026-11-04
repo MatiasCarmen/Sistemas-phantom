@@ -98,18 +98,7 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
   // Download Full DB Backup
   const handleDownloadBackup = async () => {
     try {
-      const response = await fetch('/api/backup/export');
-      const data = await response.json();
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nexus_database_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await api.downloadBackup();
     } catch (err) {
       console.error('Backup download failed:', err);
     }
@@ -453,15 +442,15 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
               <span>Descargar Copia JSON</span>
             </button>
 
-            <a
+            <button
+              type="button"
               id="btn-download-db-sql"
-              href={api.exportSqlUrl()}
-              download
+              onClick={() => { api.downloadSqlExport().catch((err) => console.error('SQL export failed:', err)); }}
               className="w-full py-2.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white rounded text-xs font-bold transition-colors flex items-center justify-center space-x-2 border border-[#2D2D2D]"
             >
               <FileText className="w-4 h-4 text-[#c8c6c6]" />
               <span>Descargar Script SQL</span>
-            </a>
+            </button>
 
             <div className="p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-[#c8c6c6] space-y-1">
               <div className="flex items-center space-x-1 font-bold text-white">

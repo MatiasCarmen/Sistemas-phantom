@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   Search, 
@@ -22,8 +22,7 @@ import {
   Percent, 
   Barcode
 } from 'lucide-react';
-import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock } from '../types';
-import { api } from '../lib/api';
+import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings } from '../types';
 
 const createFormCode = (prefix: string, usedCodes: Set<string>): string => {
   let code = '';
@@ -51,7 +50,7 @@ interface InventoryViewProps {
   onAddProduct: (product: Partial<Product>) => Promise<void>;
   onUpdateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
-  onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => Promise<void>;
+  onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) => Promise<void>;
   onOpenKardex: (product?: Product) => void;
   isLoading: boolean;
 }
@@ -72,62 +71,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   // Filters & View State
   const [searchTerm, setSearchTerm] = useState('');
-  const [storeSearch, setStoreSearch] = useState('');
-  const [storeListFilter, setStoreListFilter] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
-  const [productQuickFilter, setProductQuickFilter] = useState<'ALL' | 'ALERTS' | 'STORE_OUT'>('ALL');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [sortField, setSortField] = useState<'name' | 'stock' | 'sellingPrice' | 'sku'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [inventorySection, setInventorySection] = useState<'catalog' | 'stores'>('catalog');
-  const [stores, setStores] = useState<Store[]>([]);
-  const mainWarehouses = stores.filter(store => store.type === 'MAIN_WAREHOUSE');
-  const selectedMainWarehouse = mainWarehouses[0]?.name || 'Tienda principal';
-  const [storeStock, setStoreStock] = useState<StoreStock[]>([]);
-  const [stockTransfers, setStockTransfers] = useState<any[]>([]);
-  const [transferProduct, setTransferProduct] = useState('');
-  const [transferStore, setTransferStore] = useState('');
-  const [transferQuantity, setTransferQuantity] = useState(1);
-  const [transferError, setTransferError] = useState('');
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  const [isTransferPanelOpen, setIsTransferPanelOpen] = useState(false);
-  const [transferQuantities, setTransferQuantities] = useState<Record<string, number>>({});
-  const [transportSupplierId, setTransportSupplierId] = useState('');
-  const [stockMatrixProduct, setStockMatrixProduct] = useState<Product | null>(null);
-  const [receivingGuide, setReceivingGuide] = useState<string | null>(null);
-  const [showNoPendingTransfers, setShowNoPendingTransfers] = useState(false);
-
-  const openStoreInventory = (storeId: string) => {
-    setSelectedCategory('ALL');
-    setStoreSearch('');
-    setSelectedStoreId(storeId);
-  };
-
-  const closeStoreInventory = () => {
-    setSelectedCategory('ALL');
-    setStoreSearch('');
-    setSelectedStoreId(null);
-    setIsTransferPanelOpen(false);
-  };
-
-  const loadStockLocations = async () => {
-    try {
-      const [loadedStores, stockData] = await Promise.all([api.getStores(), api.getStoreStock()]);
-      setStores(loadedStores);
-      setStoreStock(stockData.storeStock);
-      setStockTransfers(stockData.transfers || []);
-    } catch (error) {
-      console.error('No se pudo cargar el stock por tiendas', error);
-    }
-  };
-
-  useEffect(() => { loadStockLocations(); }, []);
 
   // Modals state
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
@@ -147,7 +98,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     minStock: 5,
     maxStock: 100,
     unit: 'UND',
-    location: 'Tienda principal',
+    location: 'Almacén Principal',
     supplierId: suppliers[0]?.id || '',
     supplierName: suppliers[0]?.name || '',
     imageUrl: ''
@@ -159,15 +110,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     quantity: number;
     notes: string;
     responsible: string;
-    locationId: string;
-    newQuantity: number;
   }>({
-    type: 'IN_ADJUSTMENT',
+    type: 'IN_PURCHASE',
     quantity: 1,
     notes: '',
-    responsible: 'Administrador',
-    locationId: 'main-warehouse',
-    newQuantity: 1
+    responsible: 'Administrador Almacén'
   });
 
   // Open Add Product
@@ -189,7 +136,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       minStock: 5,
       maxStock: 100,
       unit: 'UND',
-      location: 'Tienda principal',
+      location: 'Almacén Principal - Estante A-01',
       supplierId: suppliers[0]?.id || '',
       supplierName: suppliers[0]?.name || '',
       imageUrl: ''
@@ -214,7 +161,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       minStock: prod.minStock,
       maxStock: prod.maxStock || 100,
       unit: prod.unit,
-      location: selectedMainWarehouse,
+      location: prod.location || '',
       supplierId: prod.supplierId || '',
       supplierName: prod.supplierName || '',
       imageUrl: prod.imageUrl || ''
@@ -222,48 +169,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     setIsProductModalOpen(true);
   };
 
-  const handleProductImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      alert('Seleccione una imagen JPG, PNG, WEBP o GIF.');
-      event.target.value = '';
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede superar los 5 MB.');
-      event.target.value = '';
-      return;
-    }
-
-    setIsUploadingImage(true);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-      const result = await api.uploadProductImage(dataUrl, file.name);
-      setFormData(current => ({ ...current, imageUrl: result.imageUrl }));
-    } catch (error: any) {
-      alert(error?.message || 'No se pudo subir la imagen');
-    } finally {
-      setIsUploadingImage(false);
-      event.target.value = '';
-    }
-  };
-
   // Submit Product Form
   const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.sku.trim()) return;
-    const normalizedLocation = selectedMainWarehouse;
 
     if (editingProduct) {
       await onUpdateProduct(editingProduct.id, {
         ...formData,
-        location: normalizedLocation,
         costPrice: Number(formData.costPrice),
         sellingPrice: Number(formData.sellingPrice),
         stock: Number(formData.stock),
@@ -274,7 +187,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     } else {
       await onAddProduct({
         ...formData,
-        location: normalizedLocation,
         costPrice: Number(formData.costPrice),
         sellingPrice: Number(formData.sellingPrice),
         stock: Number(formData.stock),
@@ -290,12 +202,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const handleOpenAdjust = (prod: Product) => {
     setAdjustingProduct(prod);
     setAdjustData({
-      type: 'IN_ADJUSTMENT',
-      quantity: prod.stock,
+      type: 'IN_PURCHASE',
+      quantity: 5,
       notes: '',
-      responsible: 'Administrador',
-      locationId: 'main-warehouse',
-      newQuantity: prod.stock
+      responsible: 'Almacén Central'
     });
     setIsAdjustModalOpen(true);
   };
@@ -303,20 +213,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Submit Stock Adjust
   const handleSubmitAdjust = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adjustingProduct || adjustData.newQuantity < 0 || !adjustData.locationId) return;
+    if (!adjustingProduct || adjustData.quantity <= 0) return;
 
     await onAdjustStock({
       productId: adjustingProduct.id,
       type: adjustData.type,
-      quantity: Number(adjustData.newQuantity),
-      locationId: adjustData.locationId,
-      newQuantity: Number(adjustData.newQuantity),
-      notes: adjustData.notes || 'Ajuste manual de existencias',
+      quantity: Number(adjustData.quantity),
+      notes: adjustData.notes || `Ajuste manual de stock tipo ${adjustData.type}`,
       createdBy: adjustData.responsible
     });
 
-    const stockData = await api.getStoreStock();
-    setStoreStock(stockData.storeStock);
     setIsAdjustModalOpen(false);
   };
 
@@ -348,39 +254,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     document.body.removeChild(link);
   };
 
-  const normalizeSearchText = (value: string) => value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-  const matchesAllSearchTerms = (value: string, query: string) => {
-    const normalizedQuery = normalizeSearchText(query);
-    return normalizedQuery === '' || normalizedQuery.split(/\s+/).every(term => normalizeSearchText(value).includes(term));
-  };
-
-  const activeStores = stores.filter(store => store.status === 'ACTIVE' && store.type === 'STORE');
-  const brands = Array.from(new Set(products.map(product => product.brand).filter((brand): brand is string => Boolean(brand)))).sort((a, b) => a.localeCompare(b));
-  const productHasStockAlert = (product: Product) => product.stock <= product.minStock || activeStores.some(store => {
-    const quantity = storeStock.find(item => item.storeId === store.id && item.productId === product.id)?.quantity || 0;
-    return quantity <= product.minStock;
-  });
-  const productHasStoreStockout = (product: Product) => activeStores.some(store =>
-    (storeStock.find(item => item.storeId === store.id && item.productId === product.id)?.quantity || 0) <= 0
-  );
-
   // Filtering & Sorting
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === 'ALL' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesBrand = selectedBrand === 'ALL' || (p.brand || '').toLowerCase() === selectedBrand.toLowerCase();
     const matchesStatus = selectedStatus === 'ALL' || p.status === selectedStatus;
-    const matchesQuickFilter = productQuickFilter === 'ALL'
-      || (productQuickFilter === 'ALERTS' && productHasStockAlert(p))
-      || (productQuickFilter === 'STORE_OUT' && productHasStoreStockout(p));
-    const productSearchText = [p.name, p.sku, p.barcode, p.brand, p.category, p.location]
-      .filter(Boolean)
-      .join(' ');
-    const matchesSearch = matchesAllSearchTerms(productSearchText, searchTerm);
-    return matchesCategory && matchesBrand && matchesStatus && matchesQuickFilter && matchesSearch;
+    const matchesSearch = searchTerm.trim() === '' || 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesStatus && matchesSearch;
   }).sort((a, b) => {
     let comp = 0;
     if (sortField === 'name') comp = a.name.localeCompare(b.name);
@@ -389,52 +272,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     if (sortField === 'sellingPrice') comp = a.sellingPrice - b.sellingPrice;
     return sortOrder === 'asc' ? comp : -comp;
   });
-
-  const handleConfirmReceipt = async (guideNumber: string, storeId: string) => {
-    await api.confirmTransferReceipt(guideNumber, storeId);
-    await loadStockLocations();
-    setReceivingGuide(null);
-  };
-
-  const handleTransfer = async () => {
-    setTransferError('');
-    const items = Object.entries(transferQuantities).filter(([, quantity]) => quantity > 0).map(([productId, quantity]) => ({ productId, quantity }));
-    if (!transferStore || items.length === 0) {
-      setTransferError('Seleccione una tienda y indique al menos una cantidad.');
-      return;
-    }
-    const transportSupplier = suppliers.find(supplier => supplier.id === transportSupplierId);
-    try {
-      await api.transferStock({ items, toStoreId: transferStore, transportSupplierId, transportSupplierName: transportSupplier?.name });
-      await loadStockLocations();
-      setIsTransferPanelOpen(false);
-      setTransferQuantities({});
-      setTransportSupplierId('');
-      window.location.reload();
-    } catch (error: any) {
-      setTransferError(error.message || 'No se pudo realizar la transferencia');
-    }
-  };
-
-  const filteredStores = stores.filter(store => {
-    if (store.status !== 'ACTIVE') return false;
-    if (storeListFilter !== 'ALL' && store.id !== storeListFilter) return false;
-    if (storeListFilter === 'ALL' && store.type === 'MAIN_WAREHOUSE') return true;
-    return matchesAllSearchTerms([store.name, store.code, store.address, store.verificationNumber].filter(Boolean).join(' '), storeSearch);
-  });
-  const orderedFilteredStores = [...filteredStores].sort((a, b) => {
-    if (a.type === 'MAIN_WAREHOUSE' && b.type !== 'MAIN_WAREHOUSE') return -1;
-    if (b.type === 'MAIN_WAREHOUSE' && a.type !== 'MAIN_WAREHOUSE') return 1;
-    return a.name.localeCompare(b.name);
-  });
-
-  const getStoreQuantity = (storeId: string, productId: string) =>
-    storeStock.find(item => item.storeId === storeId && item.productId === productId)?.quantity || 0;
-  const totalStoreStock = (productId: string) => storeStock.filter(item => item.productId === productId).reduce((sum, item) => sum + item.quantity, 0);
-  const nextTransferGuide = `TRS-${String(stockTransfers.reduce((maximum, transfer) => {
-    const number = Number(transfer.guideNumber?.match(/(\d+)$/)?.[1] || 0);
-    return Math.max(maximum, number);
-  }, 0) + 1).padStart(8, '0')}`;
 
   const marginPercent = formData.sellingPrice > 0 && formData.costPrice > 0
     ? (((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100).toFixed(1)
@@ -447,7 +284,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded border border-[#2D2D2D]">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-bold text-white tracking-tight">Modulo de inventario</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">Catálogo & Control de Inventario</h2>
             <span className="px-2.5 py-0.5 bg-[#1E1E1E] text-white border border-[#2D2D2D] text-xs font-bold rounded font-mono">
               {filteredProducts.length} productos
             </span>
@@ -486,19 +323,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-[#2D2D2D]">
-        {([
-          ['catalog', 'Listado de productos'],
-          ['stores', 'Tiendas']
-        ] as const).map(([key, label]) => (
-          <button key={key} onClick={() => setInventorySection(key)} className={`px-4 py-2.5 text-xs font-bold border-b-2 -mb-px ${inventorySection === key ? 'text-white border-[#C8102E]' : 'text-[#9CA3AF] border-transparent hover:text-white'}`}>
-            {label}
-          </button>
-        ))}
-      </div>
-
       {/* Filter and Search Bar */}
-      {!(inventorySection === 'stores' && selectedStoreId) && (
       <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
         <div className="flex flex-col lg:flex-row gap-3">
           
@@ -508,18 +333,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <input
               id="input-inventory-search"
               type="text"
-              value={inventorySection === 'catalog' ? searchTerm : storeSearch}
-              onChange={(e) => inventorySection === 'catalog' ? setSearchTerm(e.target.value) : setStoreSearch(e.target.value)}
-              placeholder={inventorySection === 'catalog'
-                ? 'Buscar por nombre, SKU, código de barras o marca (ej. JBL 770)'
-                : selectedStoreId
-                  ? 'Buscar productos por nombre, SKU, código de barras, marca o categoría...'
-                  : 'Buscar tiendas por nombre, código, dirección o N° de verificación...'}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por SKU, nombre de producto, código de barras o marca..."
               className="w-full pl-9 pr-4 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#C8102E] transition-colors"
             />
-            {(inventorySection === 'catalog' ? searchTerm : storeSearch) && (
+            {searchTerm && (
               <button 
-                onClick={() => inventorySection === 'catalog' ? setSearchTerm('') : setStoreSearch('')} 
+                onClick={() => setSearchTerm('')} 
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-white"
               >
                 <X className="w-3.5 h-3.5" />
@@ -527,26 +348,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             )}
           </div>
 
-          {inventorySection === 'stores' && !selectedStoreId && (
-            <div className="lg:w-72">
-              <select
-                id="select-store-list-filter"
-                value={storeListFilter}
-                onChange={(e) => setStoreListFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:outline-none focus:border-[#C8102E]"
-              >
-                <option value="ALL">Todas las tiendas</option>
-                {stores.filter(store => store.status === 'ACTIVE' && store.type === 'MAIN_WAREHOUSE').map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-                {stores.filter(store => store.status === 'ACTIVE' && store.type === 'STORE').map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {inventorySection === 'catalog' && (
+          {/* Category Filter */}
           <div className="flex items-center space-x-2">
             <select
               id="select-inventory-category"
@@ -558,6 +360,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {categories.map(cat => (
                 <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
+            </select>
+
+            {/* Status Filter */}
+            <select
+              id="select-inventory-status"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
+            >
+              <option value="ALL">Todos los Estados</option>
+              <option value="in_stock">En Stock</option>
+              <option value="low_stock">Stock Bajo (Alerta)</option>
+              <option value="out_of_stock">Agotado (0)</option>
             </select>
 
             {/* View Mode Toggle */}
@@ -581,273 +396,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </div>
 
           </div>
-          )}
 
         </div>
-
-        {inventorySection === 'stores' && selectedStoreId && (
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('ALL')}
-              className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
-            >
-              Todas las categorías
-            </button>
-            {categories.map(category => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => setSelectedCategory(category.name)}
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === category.name ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {inventorySection === 'catalog' && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setProductQuickFilter('ALL')}
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
-              >
-                Todos {products.length}
-              </button>
-              <button
-                type="button"
-                onClick={() => setProductQuickFilter('ALERTS')}
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'ALERTS' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
-              >
-                Con alertas {products.filter(productHasStockAlert).length}
-              </button>
-              <button
-                type="button"
-                onClick={() => setProductQuickFilter('STORE_OUT')}
-                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${productQuickFilter === 'STORE_OUT' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
-              >
-                Agotados en alguna tienda {products.filter(productHasStoreStockout).length}
-              </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                id="select-inventory-status"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="min-w-[190px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-              >
-                <option value="ALL">Todos los estados</option>
-                <option value="in_stock">En stock</option>
-                <option value="low_stock">Stock bajo</option>
-                <option value="out_of_stock">Agotado</option>
-              </select>
-              <select
-                id="select-inventory-brand"
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="min-w-[190px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-              >
-                <option value="ALL">Todas las marcas</option>
-                {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-              </select>
-            </div>
-          </>
-        )}
       </div>
-      )}
-
-      {inventorySection === 'stores' && (
-        <div className="space-y-5">
-          {!selectedStoreId ? (
-            <>
-              {orderedFilteredStores.map(store => {
-                const isWarehouse = store.type === 'MAIN_WAREHOUSE';
-                const quantity = isWarehouse
-                  ? products.reduce((sum, product) => sum + product.stock, 0)
-                  : storeStock.filter(item => item.storeId === store.id).reduce((sum, item) => sum + item.quantity, 0);
-                const cost = isWarehouse
-                  ? products.reduce((sum, product) => sum + product.stock * product.costPrice, 0)
-                  : products.reduce((sum, product) => sum + getStoreQuantity(store.id, product.id) * product.costPrice, 0);
-                return (
-                  <button key={store.id} onClick={() => openStoreInventory(store.id)} className="w-full text-left bg-[#141414] border border-[#2D2D2D] hover:border-[#4B5563] rounded px-5 py-4 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-bold text-white">{store.name}</h3>
-                      {isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}
-                    </div>
-                    {store.address && <p className="text-xs text-[#9CA3AF] mt-1">{store.address}</p>}
-                    <p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p>
-                    <div className="mt-4 h-1.5 overflow-hidden rounded bg-[#262626]">
-                      <div className="h-full bg-[#10B981]" style={{ width: `${Math.min(100, quantity > 0 ? 62 + quantity / 20 : 0)}%` }} />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
-                      <span className="text-[#9CA3AF]">Inventario a costo <b className="text-[#D1D5DB] font-mono">{currency} {formatAmount(cost)}</b></span>
-                      <span className="text-[#9CA3AF]">Unidades <b className="text-[#D1D5DB] font-mono">{quantity}</b></span>
-                    </div>
-                  </button>
-                );
-              })}
-            </>
-          ) : (() => {
-            const store = stores.find(item => item.id === selectedStoreId);
-            if (!store) return null;
-            const isWarehouse = store.type === 'MAIN_WAREHOUSE';
-            const locationProducts = (isWarehouse ? products : products.filter(product => getStoreQuantity(store.id, product.id) > 0)).filter(product =>
-              matchesAllSearchTerms([product.name, product.sku, product.barcode, product.brand, product.category].filter(Boolean).join(' '), storeSearch) &&
-              (selectedCategory === 'ALL' || product.category?.toLowerCase() === selectedCategory.toLowerCase())
-            );
-            const units = isWarehouse ? products.reduce((sum, product) => sum + product.stock, 0) : locationProducts.reduce((sum, product) => sum + getStoreQuantity(store.id, product.id), 0);
-            const cost = locationProducts.reduce((sum, product) => sum + (isWarehouse ? product.stock : getStoreQuantity(store.id, product.id)) * product.costPrice, 0);
-            const selling = locationProducts.reduce((sum, product) => sum + (isWarehouse ? product.stock : getStoreQuantity(store.id, product.id)) * product.sellingPrice, 0);
-            const lowStock = locationProducts.filter(product => {
-              const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id);
-              return quantity <= product.minStock;
-            }).length;
-            return (
-              <div className="space-y-4">
-                <button onClick={closeStoreInventory} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div><div className="flex items-center gap-3"><h3 className="text-2xl font-bold text-white">{store.name}</h3>{isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}</div>{store.address && <p className="mt-1 text-xs text-[#9CA3AF]">{store.address}</p>}<p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p></div>
-                  <button
-                    onClick={() => {
-                      if (isWarehouse) {
-                        setTransferStore('');
-                        setIsTransferPanelOpen(true);
-                      } else {
-                        const pending = stockTransfers.find(transfer => transfer.toStoreId === store.id && transfer.status !== 'RECEIVED');
-                        if (!pending) {
-                          setShowNoPendingTransfers(true);
-                          return;
-                        }
-                        setReceivingGuide(pending.guideNumber);
-                      }
-                    }}
-                    className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-sm font-bold"
-                  >
-                    {isWarehouse ? 'Transferir a tiendas' : 'Recibir stock de la principal'}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                  {[['SKUs', locationProducts.length], ['Unidades', units], ['Inventario a costo', `${currency} ${formatAmount(cost)}`], ['Inventario a venta', `${currency} ${formatAmount(selling)}`], ['Productos bajo mínimo', lowStock]].map(([label, value]) => <div key={String(label)} className="bg-[#141414] border border-[#2D2D2D] rounded p-4"><div className="text-lg font-mono font-bold text-white">{value}</div><div className="mt-1 text-xs text-[#9CA3AF]">{label}</div></div>)}
-                </div>
-                <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={storeSearch}
-                      onChange={(event) => setStoreSearch(event.target.value)}
-                      placeholder="Buscar productos por nombre, SKU, código de barras, marca o categoría..."
-                      className="w-full pl-9 pr-10 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white placeholder-[#9CA3AF] focus:outline-none focus:border-[#C8102E]"
-                    />
-                    {storeSearch && <button onClick={() => setStoreSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-white"><X className="w-3.5 h-3.5" /></button>}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => setSelectedCategory('ALL')} className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === 'ALL' ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}>Todas las categorías</button>
-                    {categories.map(category => <button key={category.id} type="button" onClick={() => setSelectedCategory(category.name)} className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${selectedCategory === category.name ? 'bg-[#C8102E] text-white' : 'bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}>{category.name}</button>)}
-                  </div>
-                </div>
-                {showNoPendingTransfers && (
-                  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowNoPendingTransfers(false)}>
-                    <div className="w-full max-w-md rounded border border-[#3D3D3D] bg-[#161616] shadow-2xl" onClick={(event) => event.stopPropagation()}>
-                      <div className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded bg-[#C8102E]/15 text-[#EF4444]">
-                            <AlertTriangle className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <h3 className="text-base font-bold text-white">Recepción de stock</h3>
-                            <p className="mt-0.5 text-xs text-[#9CA3AF]">Tienda sin transferencias pendientes</p>
-                          </div>
-                        </div>
-                        <button onClick={() => setShowNoPendingTransfers(false)} className="text-[#9CA3AF] hover:text-white" aria-label="Cerrar">
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                      <div className="px-5 py-5">
-                        <p className="text-sm leading-6 text-[#D1D5DB]">No hay transferencias pendientes para <span className="font-semibold text-white">{store.name}</span>.</p>
-                      </div>
-                      <div className="flex justify-end border-t border-[#303030] px-5 py-4">
-                        <button onClick={() => setShowNoPendingTransfers(false)} className="rounded bg-[#C8102E] px-5 py-2 text-xs font-bold text-white hover:bg-[#A80C25]">Aceptar</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {receivingGuide && (() => {
-                  const receiptItems = stockTransfers.filter(transfer => transfer.guideNumber === receivingGuide && transfer.toStoreId === store.id);
-                  const firstReceipt = receiptItems[0];
-                  return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-                      <div className="w-full max-w-lg rounded border border-[#3D3D3D] bg-[#161616] shadow-2xl">
-                        <div className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
-                          <div><h3 className="text-lg font-bold text-white">Confirmar recepción de stock</h3><p className="mt-1 font-mono text-xs text-[#60A5FA]">Guía {receivingGuide}</p></div>
-                          <button onClick={() => setReceivingGuide(null)} className="text-[#9CA3AF] hover:text-white"><X className="h-5 w-5" /></button>
-                        </div>
-                        <div className="space-y-4 px-5 py-5">
-                          <div className="grid grid-cols-2 gap-3 rounded border border-[#303030] bg-[#0E0E0E] p-3 text-xs"><div><span className="text-[#9CA3AF]">Origen</span><p className="mt-1 font-bold text-white">Almacén principal</p></div><div><span className="text-[#9CA3AF]">Destino</span><p className="mt-1 font-bold text-white">{store.name}</p></div></div>
-                          <div className="overflow-hidden rounded border border-[#303030]"><div className="grid grid-cols-[1fr_90px] bg-[#252525] px-3 py-2 text-xs font-bold text-[#9CA3AF]"><span>Producto</span><span className="text-right">Cantidad</span></div>{receiptItems.map(transfer => { const product = products.find(item => item.id === transfer.productId); return <div key={transfer.id} className="grid grid-cols-[1fr_90px] border-t border-[#303030] px-3 py-3 text-xs"><span className="font-bold text-white">{product?.name || transfer.productId}<small className="block text-[#737373]">SKU {product?.sku || '-'}</small></span><span className="text-right font-mono font-bold text-white">{transfer.quantity}</span></div>; })}</div>
-                          {firstReceipt?.transportSupplierName && <p className="text-xs text-[#9CA3AF]">Proveedor de transporte: <b className="text-white">{firstReceipt.transportSupplierName}</b></p>}
-                        </div>
-                        <div className="flex justify-end gap-3 border-t border-[#303030] px-5 py-4"><button onClick={() => setReceivingGuide(null)} className="rounded bg-[#252525] px-4 py-2 text-xs font-bold text-white">Cancelar</button><button onClick={() => handleConfirmReceipt(receivingGuide, store.id)} className="rounded bg-[#C8102E] px-4 py-2 text-xs font-bold text-white">Confirmar recepción</button></div>
-                      </div>
-                    </div>
-                  );
-                })()}
-                {isTransferPanelOpen && (
-                  <div className="fixed inset-0 z-50 flex justify-end bg-black/60">
-                    <div className="flex h-full w-full max-w-md flex-col bg-[#161616] shadow-2xl">
-                      <div className="border-b border-[#303030] px-8 py-6">
-                        <h3 className="text-xl font-bold text-white">Transferir stock</h3>
-                        <p className="mt-1 text-xs text-[#9CA3AF]">Desde el almacén principal hacia una tienda</p>
-                        <p className="mt-3 font-mono text-xs font-bold text-[#60A5FA]">Guía {nextTransferGuide}</p>
-                      </div>
-                      <div className="flex-1 overflow-y-auto px-8 py-5 space-y-5">
-                        <div>
-                          <label className="mb-2 block text-sm text-white">Tienda destino</label>
-                          <select value={transferStore} onChange={e => setTransferStore(e.target.value)} className="w-full rounded border border-[#C8102E] px-3 py-3 text-sm text-white bg-[#0E0E0E] focus:outline-none"><option value="">Seleccione una tienda</option>{stores.filter(item => item.type === 'STORE').map(item => <option key={item.id} value={item.id}>{item.verificationNumber} - {item.name}</option>)}</select>
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-sm text-white">Proveedor de transporte</label>
-                          <select value={transportSupplierId} onChange={e => setTransportSupplierId(e.target.value)} className="w-full rounded border border-[#303030] px-3 py-3 text-sm text-white bg-[#0E0E0E] focus:outline-none"><option value="">Seleccione un proveedor</option>{suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select>
-                        </div>
-                        <div className="divide-y divide-[#303030]">
-                          {products.map(product => {
-                            const quantity = transferQuantities[product.id] || 0;
-                            return (
-                              <div key={product.id} className="flex items-center gap-4 py-4">
-                                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-white">{product.name}</p><p className="mt-1 text-xs text-[#9CA3AF]">En principal: {product.stock} unid.</p></div>
-                                <input type="number" min="0" max={product.stock} value={quantity} onChange={e => setTransferQuantities(prev => ({ ...prev, [product.id]: Math.min(product.stock, Math.max(0, Number(e.target.value) || 0)) }))} className="w-20 rounded border border-[#303030] bg-[#0E0E0E] px-2 py-2 text-right text-sm text-white" />
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <p className="text-sm text-[#9CA3AF]">Indica cuántas unidades enviar de cada producto.</p>
-                        {transferError && <p className="text-xs text-red-400">{transferError}</p>}
-                      </div>
-                      <div className="flex gap-3 border-t border-[#303030] px-8 py-5">
-                        <button onClick={() => setIsTransferPanelOpen(false)} className="flex-1 rounded bg-[#252525] px-4 py-3 text-sm font-bold text-white">Cancelar</button>
-                        <button onClick={handleTransfer} disabled={!transferStore || !transportSupplierId || !Object.values(transferQuantities).some(quantity => quantity > 0)} className="flex-1 rounded bg-[#C8102E] px-4 py-3 text-sm font-bold text-white disabled:opacity-40">Confirmar transferencia</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="overflow-x-auto bg-[#141414] border border-[#2D2D2D] rounded">
-                  <table className="w-full text-left text-xs min-w-[760px]"><thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase"><tr><th className="p-3">Producto</th><th className="p-3">Existencia</th><th className="p-3">Valor costo</th><th className="p-3">Estado</th><th className="p-3">Acciones</th></tr></thead>
-                    <tbody>{locationProducts.map(product => { const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id); return <tr key={product.id} className="border-t border-[#2D2D2D]"><td className="p-3"><div className="font-bold text-white">{product.name}</div><div className="text-[#9CA3AF]">SKU {product.sku}</div></td><td className="p-3 font-mono font-bold text-white">{quantity} <span className="text-[#9CA3AF] font-normal">de mín. {product.minStock}</span></td><td className="p-3 font-mono">{currency} {formatAmount(quantity * product.costPrice)}</td><td className="p-3"><span className={`px-2 py-1 rounded border text-[10px] font-bold ${quantity <= product.minStock ? 'text-[#FBBF24] border-[#F59E0B]/50' : 'text-[#31D0AA] border-[#10B981]/50'}`}>{quantity <= product.minStock ? 'Bajo mínimo' : 'OK'}</span></td><td className="p-3"><button onClick={() => onOpenKardex(product)} className="px-2 py-1 border border-[#2563EB]/50 rounded text-[#60A5FA]">Kárdex</button></td></tr>; })}</tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
 
       {/* Products Content: Table or Grid */}
-      {inventorySection === 'catalog' && (<>
-      {filteredProducts.length === 0 ? ( 
+      {filteredProducts.length === 0 ? (
         <div className="bg-[#141414] rounded border border-[#2D2D2D] p-12 text-center">
           <Package className="w-12 h-12 text-[#9CA3AF] mx-auto mb-3" />
           <h3 className="text-sm font-bold text-white">No se encontraron productos</h3>
@@ -946,16 +500,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       </td>
 
                       {/* Stock Level */}
-                      <td
-                        className="py-3.5 px-4 whitespace-nowrap cursor-pointer hover:bg-[#1E1E1E] rounded transition-colors"
-                        onClick={() => setStockMatrixProduct(prod)}
-                        title="Abrir matriz de stock de este producto"
-                      >
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center space-x-1.5">
-                          <span className="font-bold text-white font-mono text-sm tabular-nums">{prod.stock + totalStoreStock(prod.id)}</span>
+                          <span className="font-bold text-white font-mono text-sm tabular-nums">{prod.stock}</span>
                           <span className="text-[10px] text-[#9CA3AF] font-medium">{prod.unit}</span>
                         </div>
-                        <p className="text-[10px] text-[#9CA3AF] font-mono tabular-nums">Almacén: {prod.stock} · Tiendas: {totalStoreStock(prod.id)}</p>
+                        <p className="text-[10px] text-[#9CA3AF] font-mono tabular-nums">Mín: {prod.minStock}</p>
                       </td>
 
                       {/* Status Badge - Critical differentiation rule */}
@@ -1097,8 +647,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       )}
 
       {/* Modal: Create / Edit Product */}
-      </>)}
-
       {isProductModalOpen && (
         <div id="modal-product" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <div className="bg-[#141414] rounded border border-[#2D2D2D] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden text-white">
@@ -1251,9 +799,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {/* Stock and Thresholds */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">
-                    {editingProduct ? `Stock Actual - ${selectedMainWarehouse} *` : 'Stock Actual *'}
-                  </label>
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Actual *</label>
                   <input
                     id="input-prod-stock"
                     type="number"
@@ -1279,20 +825,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Ubicación en Almacén *</label>
-                  <select
+                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Ubicación en Almacén</label>
+                  <input
                     id="input-prod-location"
-                    required
-                    disabled={Boolean(editingProduct)}
-                    value={mainWarehouses.some(store => store.name === formData.location) ? formData.location : selectedMainWarehouse}
+                    type="text"
+                    value={formData.location}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white disabled:opacity-100 focus:border-[#C8102E]"
-                  >
-                    {(mainWarehouses.length ? mainWarehouses : [{ id: 'main-warehouse', name: 'Tienda principal' }]).map(store => (
-                      <option key={store.id} value={store.name}>{store.name}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[10px] text-[#6B7280]">Los productos nuevos se registran únicamente en el almacén principal.</p>
+                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
+                    placeholder="e.g. CDL-A04-R12-S02"
+                  />
                 </div>
               </div>
 
@@ -1309,29 +850,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Imagen del Producto</label>
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 shrink-0 rounded border border-[#2D2D2D] bg-[#0E0E0E] overflow-hidden flex items-center justify-center">
-                    {formData.imageUrl ? (
-                      <img src={formData.imageUrl} alt="Vista previa del producto" className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-6 h-6 text-[#71717A]" />
-                    )}
-                  </div>
-                  <label className="cursor-pointer px-4 py-2 bg-[#1E1E1E] hover:bg-[#2D2D2D] border border-[#2D2D2D] rounded text-xs font-semibold text-white flex items-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    {isUploadingImage ? 'Subiendo...' : formData.imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
-                    <input
-                      id="input-prod-image"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      disabled={isUploadingImage}
-                      onChange={handleProductImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-                <p className="text-[10px] text-[#71717A] mt-2">JPG, PNG, WEBP o GIF. Tamaño máximo: 5 MB.</p>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">URL de Imagen (Opcional)</label>
+                <input
+                  id="input-prod-image"
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
+                  placeholder="https://images.unsplash.com/..."
+                />
               </div>
 
               <div className="pt-4 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">
@@ -1352,62 +879,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </div>
 
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Matriz de stock por producto */}
-      {stockMatrixProduct && (
-        <div id="modal-product-stock-matrix" className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="bg-[#141414] border border-[#2D2D2D] rounded-lg shadow-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden text-white">
-            <div className="px-5 py-4 bg-[#0E0E0E] border-b border-[#2D2D2D] flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                {stockMatrixProduct.imageUrl ? (
-                  <img src={stockMatrixProduct.imageUrl} alt={stockMatrixProduct.name} className="w-12 h-12 rounded object-cover border border-[#2D2D2D]" />
-                ) : (
-                  <div className="w-12 h-12 rounded bg-[#1E1E1E] flex items-center justify-center"><Package className="w-6 h-6 text-[#9CA3AF]" /></div>
-                )}
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold truncate">Matriz de stock</h3>
-                  <p className="text-xs text-[#9CA3AF] truncate">{stockMatrixProduct.name} · SKU {stockMatrixProduct.sku}</p>
-                </div>
-              </div>
-              <button type="button" onClick={() => setStockMatrixProduct(null)} className="p-2 text-[#9CA3AF] hover:text-white hover:bg-[#2D2D2D] rounded" aria-label="Cerrar matriz de stock">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 overflow-auto">
-              <table className="w-full min-w-[850px] text-left text-xs border-collapse">
-                <thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase font-mono text-[10px]">
-                  <tr>
-                    <th className="p-3 border border-[#2D2D2D]">Ubicación</th>
-                    <th className="p-3 border border-[#2D2D2D] text-center">Almacén principal</th>
-                    {stores.filter(store => store.type === 'STORE').map(store => <th key={store.id} className="p-3 border border-[#2D2D2D] text-center">{store.name}</th>)}
-                    <th className="p-3 border border-[#2D2D2D] text-center">Existencia total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border border-[#2D2D2D]">
-                    <td className="p-3 bg-[#1E1E1E] font-bold text-white border border-[#2D2D2D]">{stockMatrixProduct.name}</td>
-                    <td className="p-3 font-mono text-center font-bold text-white border border-[#2D2D2D]">{stockMatrixProduct.stock}</td>
-                    {stores.filter(store => store.type === 'STORE').map(store => (
-                      <td key={store.id} className="p-3 font-mono text-center text-white border border-[#2D2D2D]">
-                        {getStoreQuantity(store.id, stockMatrixProduct.id)}
-                      </td>
-                    ))}
-                    <td className="p-3 font-mono text-center font-bold text-[#31D0AA] border border-[#2D2D2D]">
-                      {stockMatrixProduct.stock + totalStoreStock(stockMatrixProduct.id)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded"><p className="text-[10px] text-[#9CA3AF]">Almacén</p><p className="mt-1 font-mono font-bold text-white">{stockMatrixProduct.stock} {stockMatrixProduct.unit}</p></div>
-                <div className="p-3 bg-[#0E0E0E] border border-[#2D2D5A] rounded"><p className="text-[10px] text-[#9CA3AF]">Tiendas</p><p className="mt-1 font-mono font-bold text-white">{totalStoreStock(stockMatrixProduct.id)} {stockMatrixProduct.unit}</p></div>
-                <div className="p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded"><p className="text-[10px] text-[#9CA3AF]">Existencia total</p><p className="mt-1 font-mono font-bold text-[#31D0AA]">{stockMatrixProduct.stock + totalStoreStock(stockMatrixProduct.id)} {stockMatrixProduct.unit}</p></div>
-                <div className="p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded"><p className="text-[10px] text-[#9CA3AF]">Stock mínimo</p><p className="mt-1 font-mono font-bold text-white">{stockMatrixProduct.minStock} {stockMatrixProduct.unit}</p></div>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -1437,45 +908,43 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <p className="font-bold text-white">{adjustingProduct.name}</p>
                 <div className="flex items-center justify-between text-[#9CA3AF] font-mono">
                   <span>SKU: {adjustingProduct.sku}</span>
-                  <span className="font-bold text-[#A7F3D0]">
-                    Stock Actual: {adjustData.locationId === 'main-warehouse'
-                      ? adjustingProduct.stock
-                      : storeStock.find(item => item.storeId === adjustData.locationId && item.productId === adjustingProduct.id)?.quantity || 0} {adjustingProduct.unit}
-                  </span>
+                  <span className="font-bold text-[#A7F3D0]">Stock Actual: {adjustingProduct.stock} {adjustingProduct.unit}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Ubicación del stock *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Tipo de Movimiento Kardex *</label>
                 <select
-                  id="select-adjust-location"
-                  value={adjustData.locationId}
-                  onChange={e => {
-                    const locationId = e.target.value;
-                    const current = locationId === 'main-warehouse'
-                      ? adjustingProduct.stock
-                      : storeStock.find(item => item.storeId === locationId && item.productId === adjustingProduct.id)?.quantity || 0;
-                    setAdjustData({ ...adjustData, locationId, newQuantity: current });
-                  }}
+                  id="select-adjust-type"
+                  value={adjustData.type}
+                  onChange={e => setAdjustData({ ...adjustData, type: e.target.value as MovementType })}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-medium text-white focus:border-[#C8102E]"
                 >
-                  {stores.map(store => (
-                    <option key={store.id} value={store.id}>{store.name}</option>
-                  ))}
+                  <option value="IN_PURCHASE">Entrada por Compra / Reabastecimiento (+)</option>
+                  <option value="IN_ADJUSTMENT">Ajuste Positivo / Conteo de Inventario (+)</option>
+                  <option value="OUT_ADJUSTMENT">Ajuste Negativo / Descuento Manual (-)</option>
+                  <option value="OUT_DAMAGE">Salida por Merma / Producto Dañado (-)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Nueva cantidad *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Cantidad a Mover *</label>
                 <input
-                  id="input-adjust-new-qty"
+                  id="input-adjust-qty"
                   type="number"
-                  min="0"
+                  min="1"
                   required
-                  value={adjustData.newQuantity}
-                  onChange={e => setAdjustData({ ...adjustData, newQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
+                  value={adjustData.quantity}
+                  onChange={e => setAdjustData({ ...adjustData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
                 />
+                <span className="text-[11px] text-[#9CA3AF] mt-1 block font-mono">
+                  Nuevo stock estimado: <strong className="text-white">
+                    {adjustData.type.startsWith('IN_') 
+                      ? adjustingProduct.stock + adjustData.quantity 
+                      : Math.max(0, adjustingProduct.stock - adjustData.quantity)} {adjustingProduct.unit}
+                  </strong>
+                </span>
               </div>
 
               <div>
@@ -1493,15 +962,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Usuario Responsable</label>
-                <select
-                  id="select-adjust-user"
+                <input
+                  id="input-adjust-user"
+                  type="text"
                   value={adjustData.responsible}
-                  onChange={(e) => setAdjustData({ ...adjustData, responsible: e.target.value })}
+                  onChange={e => setAdjustData({ ...adjustData, responsible: e.target.value })}
                   className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]"
-                >
-                  <option value="Administrador">Administrador</option>
-                  <option value="Almacenero">Almacenero</option>
-                </select>
+                />
               </div>
 
               <div className="pt-3 border-t border-[#2D2D2D] flex items-center justify-end space-x-3">

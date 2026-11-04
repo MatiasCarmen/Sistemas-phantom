@@ -11,10 +11,7 @@ import {
   CompanySettings, 
   DashboardMetrics,
   MovementType,
-  User,
-  Store,
-  StoreStock,
-  StockTransfer
+  User
 } from './types';
 import { 
   initialProducts, 
@@ -40,13 +37,13 @@ export interface DatabaseSchema {
   sales: Sale[];
   settings: CompanySettings;
   users: User[];
-  stores: Store[];
-  storeStock: StoreStock[];
-  stockTransfers: StockTransfer[];
   lastUpdated: string;
 }
 
 const DB_FILE = getLocalDbFilePath();
+export const INVALID_CREDENTIALS_MESSAGE = 'Usuario o contraseña incorrectos';
+// Hash de una contraseña aleatoria: se verifica contra él cuando el usuario no existe (tiempo constante)
+const DUMMY_PASSWORD_HASH = hashPassword(randomBytes(32).toString('hex'));
 
 class DataStore {
   private data: DatabaseSchema;
@@ -66,28 +63,20 @@ class DataStore {
       quotes: JSON.parse(JSON.stringify(initialQuotes)),
       sales: JSON.parse(JSON.stringify(initialSales)),
       settings: JSON.parse(JSON.stringify(initialCompanySettings)),
-      users: JSON.parse(JSON.stringify(initialUsers)),
-      stores: [
-        { id: 'main-warehouse', name: 'Tienda principal', code: 'ALM-01', verificationNumber: '00', type: 'MAIN_WAREHOUSE', address: 'Almacén central - Lima', status: 'ACTIVE' },
-        { id: 'store-01', name: 'Jockey Plaza', code: 'TDA-01', verificationNumber: '01', type: 'STORE', address: 'Surco, Lima', status: 'ACTIVE' },
-        { id: 'store-02', name: 'Plaza San Miguel', code: 'TDA-02', verificationNumber: '02', type: 'STORE', address: 'San Miguel, Lima', status: 'ACTIVE' },
-        { id: 'store-03', name: 'Plaza Norte', code: 'TDA-03', verificationNumber: '03', type: 'STORE', address: 'Independencia, Lima', status: 'ACTIVE' },
-        { id: 'store-04', name: 'Mall del Sur', code: 'TDA-04', verificationNumber: '04', type: 'STORE', address: 'SJM, Lima', status: 'ACTIVE' },
-        { id: 'store-05', name: 'Lima Centro', code: 'TDA-05', verificationNumber: '05', type: 'STORE', address: 'Real Plaza Centro', status: 'ACTIVE' },
-        { id: 'store-06', name: 'Mega Plaza - Independencia', code: 'TDA-06', verificationNumber: '06', type: 'STORE', address: 'Independencia, Lima', status: 'ACTIVE' },
-        { id: 'store-07', name: 'Mall Aventura - Comas', code: 'TDA-07', verificationNumber: '07', type: 'STORE', address: 'Comas, Lima', status: 'ACTIVE' },
-        { id: 'store-08', name: 'Real Plaza Puruchuco', code: 'TDA-08', verificationNumber: '08', type: 'STORE', address: 'Ate, Lima', status: 'ACTIVE' }
-      ],
-      storeStock: [
-        ...JSON.parse(JSON.stringify(initialProducts)).flatMap((product: Product, productIndex: number) =>
-          ['store-01', 'store-02', 'store-03', 'store-04', 'store-05']
-            .slice(0, productIndex % 5 === 0 ? 2 : 1)
-            .map((storeId, storeIndex) => ({ storeId, productId: product.id, quantity: Math.max(1, (product.stock % 7) + storeIndex) }))
-        )
-      ],
-      stockTransfers: [],
+      users: this.withHashedPasswords(JSON.parse(JSON.stringify(initialUsers))),
       lastUpdated: new Date().toISOString()
     };
+  }
+
+  /**
+   * OWASP A04: ninguna contraseña se almacena en texto plano (semillas demo, db.json heredado o respaldos importados).
+   */
+  private withHashedPasswords(users: User[]): User[] {
+    return users.map((user) => (
+      user.password && !user.password.startsWith('scrypt$')
+        ? { ...user, password: hashPassword(user.password) }
+        : user
+    ));
   }
 
   private normalizeQuoteNumbering(): void {
@@ -137,20 +126,8 @@ class DataStore {
       }
     }
 
-    if (!Array.isArray(this.data.stores) || this.data.stores.length < 6) {
-      this.data.stores = this.getDefaultSchema().stores;
-    } else {
-      const existingStoreIds = new Set(this.data.stores.map(store => store.id));
-      const missingStores = this.getDefaultSchema().stores.filter(store => !existingStoreIds.has(store.id));
-      this.data.stores.push(...missingStores);
-    }
-    this.data.stores.forEach((store, index) => {
-      if (!store.verificationNumber) {
-        store.verificationNumber = store.type === 'MAIN_WAREHOUSE' ? '00' : String(index).padStart(2, '0');
-      }
-    });
-    if (!Array.isArray(this.data.storeStock)) this.data.storeStock = [];
-    if (!Array.isArray(this.data.stockTransfers)) this.data.stockTransfers = [];
+    this.data.users = this.withHashedPasswords(this.data.users);
+
     this.normalizeProductCodes();
     this.normalizeHistoricalTransactions();
     this.normalizeSaleNumbering();
@@ -351,10 +328,8 @@ class DataStore {
       status = 'low_stock';
     }
 
-    const mainWarehouse = this.data.stores.find(store => store.type === 'MAIN_WAREHOUSE' && store.status === 'ACTIVE');
     const newProduct: Product = {
       ...productData,
-      location: mainWarehouse?.name || 'Tienda principal',
       sku,
       barcode,
       id,
@@ -408,36 +383,18 @@ class DataStore {
       status = 'low_stock';
     }
 
-    const mainWarehouse = this.data.stores.find(store => store.type === 'MAIN_WAREHOUSE' && store.status === 'ACTIVE');
     const updated: Product = {
       ...existing,
       ...updates,
-      stock: newStock,
-      location: mainWarehouse?.name || 'Tienda principal',
       sku,
       barcode,
-      id,
+      id, // protect ID
       status,
       updatedAt: new Date().toISOString()
     };
 
     this.data.products[index] = updated;
-    if (newStock !== existing.stock) {
-      this.addInventoryMovement({
-        productId: existing.id,
-        productSku: updated.sku,
-        productName: updated.name,
-        type: newStock > existing.stock ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT',
-        quantity: Math.abs(newStock - existing.stock),
-        previousStock: existing.stock,
-        newStock,
-        unitCost: updated.costPrice,
-        notes: 'Stock del almacén principal editado desde el producto',
-        createdBy: 'Administrador'
-      });
-    } else {
-      this.saveToFile();
-    }
+    this.saveToFile();
     return updated;
   }
 
@@ -499,136 +456,6 @@ class DataStore {
 
     this.saveToFile();
     return { product, movement };
-  }
-
-  adjustStockByLocation(params: {
-    productId: string;
-    locationId: string;
-    newQuantity: number;
-    notes?: string;
-    createdBy?: string;
-  }): { product: Product; movement: InventoryMovement } | null {
-    const product = this.getProductById(params.productId);
-    if (!product) return null;
-
-    const locationId = params.locationId || 'main-warehouse';
-    const newQuantity = Math.max(0, Math.floor(Number(params.newQuantity)));
-
-    if (locationId === 'main-warehouse') {
-      const movementType = newQuantity >= product.stock ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT';
-      return this.adjustStock({
-        productId: product.id,
-        type: movementType,
-        quantity: Math.abs(newQuantity - product.stock),
-        notes: params.notes,
-        createdBy: params.createdBy
-      });
-    }
-
-    const location = this.getStores().find(store => store.id === locationId && store.status === 'ACTIVE');
-    if (!location) return null;
-
-    const stockIndex = this.data.storeStock.findIndex(item => item.storeId === locationId && item.productId === product.id);
-    const previousStock = stockIndex >= 0 ? this.data.storeStock[stockIndex].quantity : 0;
-    if (stockIndex >= 0) this.data.storeStock[stockIndex].quantity = newQuantity;
-    else this.data.storeStock.push({ storeId: locationId, productId: product.id, quantity: newQuantity });
-
-    const difference = newQuantity - previousStock;
-    const movement = this.addInventoryMovement({
-      productId: product.id,
-      productSku: product.sku,
-      productName: product.name,
-      type: difference >= 0 ? 'IN_ADJUSTMENT' : 'OUT_ADJUSTMENT',
-      quantity: Math.abs(difference),
-      previousStock,
-      newStock: newQuantity,
-      unitCost: product.costPrice,
-      notes: `${params.notes || 'Ajuste manual de existencias'} · ${location.name}`,
-      createdBy: params.createdBy || 'Administrador'
-    });
-
-    this.saveToFile();
-    return { product, movement };
-  }
-
-  getStores(): Store[] {
-    return this.data.stores || [];
-  }
-
-  getStoreStock(): StoreStock[] {
-    return this.data.storeStock || [];
-  }
-
-  transferStock(params: { productId: string; toStoreId: string; quantity: number; guideNumber?: string; notes?: string; transportSupplierId?: string; transportSupplierName?: string; createdBy?: string }): StockTransfer | null {
-    const product = this.getProductById(params.productId);
-    const destination = this.getStores().find(store => store.id === params.toStoreId && store.type === 'STORE' && store.status === 'ACTIVE');
-    const quantity = Math.floor(Number(params.quantity));
-    if (!product || !destination || quantity <= 0 || product.stock < quantity) return null;
-
-    const sourceStock = product.stock;
-    const transfer: StockTransfer = {
-      id: `TR-${Date.now()}-${product.id}`,
-      guideNumber: params.guideNumber || this.createNextTransferGuideNumber(),
-      verificationNumber: destination.verificationNumber,
-      productId: product.id,
-      fromStoreId: 'main-warehouse',
-      toStoreId: destination.id,
-      quantity,
-      notes: params.notes,
-      transportSupplierId: params.transportSupplierId,
-      transportSupplierName: params.transportSupplierName,
-      createdBy: params.createdBy || 'Usuario Almacén',
-      status: 'IN_TRANSIT',
-      createdAt: new Date().toISOString()
-    };
-    this.data.stockTransfers.unshift(transfer);
-
-    product.stock -= quantity;
-    product.updatedAt = new Date().toISOString();
-    product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
-    this.addInventoryMovement({
-      productId: product.id,
-      productSku: product.sku,
-      productName: product.name,
-      type: 'OUT_ADJUSTMENT',
-      quantity,
-      previousStock: sourceStock,
-      newStock: product.stock,
-      unitCost: product.costPrice,
-      referenceId: transfer.id,
-      notes: `Transferencia al almacén ${destination.name}${params.notes ? `: ${params.notes}` : ''}`,
-      createdBy: params.createdBy || 'Usuario Almacén'
-    });
-    this.saveToFile();
-    return transfer;
-  }
-
-  createNextTransferGuideNumber(): string {
-    const maximum = (this.data.stockTransfers || []).reduce((highest, transfer) => {
-      const match = transfer.guideNumber?.match(/(\d+)$/);
-      return match ? Math.max(highest, Number(match[1])) : highest;
-    }, 0);
-    return `TRS-${String(maximum + 1).padStart(8, '0')}`;
-  }
-
-  confirmTransferReceipt(guideNumber: string, storeId: string): StockTransfer[] | null {
-    const transfers = this.data.stockTransfers.filter(transfer => transfer.guideNumber === guideNumber && transfer.toStoreId === storeId && transfer.status !== 'RECEIVED');
-    if (!transfers.length) return null;
-
-    transfers.forEach(transfer => {
-      const stockIndex = this.data.storeStock.findIndex(item => item.storeId === storeId && item.productId === transfer.productId);
-      if (stockIndex >= 0) this.data.storeStock[stockIndex].quantity += transfer.quantity;
-      else this.data.storeStock.push({ storeId, productId: transfer.productId, quantity: transfer.quantity });
-      transfer.status = 'RECEIVED';
-      transfer.receivedAt = new Date().toISOString();
-    });
-
-    this.saveToFile();
-    return transfers;
-  }
-
-  getStockTransfers(): StockTransfer[] {
-    return this.data.stockTransfers || [];
   }
 
   // --- CATEGORIES ---
@@ -1106,21 +933,15 @@ class DataStore {
 
   authenticateUser(identifier: string, passwordAttempt: string): { user?: User; error?: string } {
     const user = this.getUserByUsernameOrEmail(identifier);
-    if (!user) {
-      return { error: 'Usuario o correo no encontrado' };
+    // OWASP A07: mismo mensaje y mismo costo (scrypt) exista o no el usuario, para no permitir enumerarlos
+    const passwordOk = verifyPassword(passwordAttempt, user?.password || DUMMY_PASSWORD_HASH);
+    if (!user || !passwordOk) {
+      return { error: INVALID_CREDENTIALS_MESSAGE };
     }
 
+    // El estado inactivo solo se informa a quien ya demostró conocer la contraseña
     if (user.status === 'inactive') {
       return { error: 'Este usuario se encuentra inactivo. Contacte al administrador.' };
-    }
-
-    if (user.password && !verifyPassword(passwordAttempt, user.password)) {
-      return { error: 'Contraseña incorrecta' };
-    }
-
-    // Upgrade legacy plaintext password to scrypt hash transparently on login
-    if (user.password && !user.password.startsWith('scrypt$')) {
-      user.password = hashPassword(user.password);
     }
 
     // Update lastLogin
@@ -1132,6 +953,9 @@ class DataStore {
   }
 
   addUser(userData: Omit<User, 'id' | 'createdAt'> & { id?: string }): User {
+    if (!userData.password) {
+      throw new Error('La contraseña es obligatoria');
+    }
     const id = userData.id || `usr-${Date.now()}`;
     const now = new Date().toISOString();
 
@@ -1145,7 +969,7 @@ class DataStore {
     const newUser: User = {
       ...userData,
       id,
-      password: hashPassword(userData.password || '123456'),
+      password: hashPassword(userData.password),
       roleLabel: userData.roleLabel || roleLabels[userData.role] || 'Colaborador',
       status: userData.status || 'active',
       avatarColor: userData.avatarColor || (userData.role === 'admin' ? 'indigo' : 'emerald'),
@@ -1175,11 +999,19 @@ class DataStore {
     if (index === -1) return null;
 
     const existing = this.data.users[index];
+    const losesAdminAccess = existing.role === 'admin' && existing.status === 'active' &&
+      ((updates.role !== undefined && updates.role !== 'admin') || updates.status === 'inactive');
+    if (losesAdminAccess && this.countActiveAdmins() <= 1) {
+      throw Object.assign(new Error('No se puede quitar el rol ni desactivar al último administrador activo'), { statusCode: 400 });
+    }
+
     const resolvedPassword = updates.password ? hashPassword(updates.password) : existing.password;
     this.data.users[index] = {
       ...existing,
       ...updates,
       password: resolvedPassword,
+      // Cambiar la contraseña cierra todas las sesiones abiertas de ese usuario
+      sessionVersion: updates.password ? (existing.sessionVersion ?? 0) + 1 : existing.sessionVersion,
       id: existing.id,
       createdAt: existing.createdAt
     };
@@ -1187,6 +1019,18 @@ class DataStore {
     this.saveToFile();
     const { password, ...safeUser } = this.data.users[index];
     return safeUser as User;
+  }
+
+  revokeUserSessions(id: string): void {
+    const user = this.data.users.find(u => u.id === id);
+    if (user) {
+      user.sessionVersion = (user.sessionVersion ?? 0) + 1;
+      this.saveToFile();
+    }
+  }
+
+  countActiveAdmins(): number {
+    return this.data.users.filter(u => u.role === 'admin' && u.status === 'active').length;
   }
 
   deleteUser(id: string): boolean {
@@ -1215,7 +1059,7 @@ class DataStore {
 
   importDatabase(schema: DatabaseSchema): boolean {
     if (!schema || !Array.isArray(schema.products)) return false;
-    this.data = schema;
+    this.data = { ...schema, users: this.withHashedPasswords(schema.users || []) };
     this.saveToFile();
     return true;
   }

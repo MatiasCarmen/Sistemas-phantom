@@ -1,0 +1,29 @@
+== PoC OWASP Top 10 contra http://localhost:3000/api ==
+-- A01 Control de acceso (peticiones SIN token) --
+  [PROTEGIDO]  A01  GET /system/raw-db sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /system/export sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /system/sql-export sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /users sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /products sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /sales sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  GET /settings sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  POST /system/import sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  PUT /users/:id (escalar a admin) sin autenticación (HTTP 401)
+  [PROTEGIDO]  A01  PUT /settings sin autenticación (HTTP 401)
+-- A07 Fallos de autenticación --
+  [PROTEGIDO]  A07  Token legacy sin firma (token_usr-admin_1) rechazado (HTTP 401)
+  [PROTEGIDO]  A04  JWT falsificado con el secreto publicado en el README (HTTP 401)
+  [PROTEGIDO]  A01  Colaborador NO puede listar usuarios (GET /users) (HTTP 403)
+  [PROTEGIDO]  A01  Colaborador NO puede volcar la BD (GET /system/raw-db) (HTTP 403)
+  [PROTEGIDO]  A01  Colaborador NO puede modificar usuarios (PUT /users/:id) (HTTP 403)
+  [PROTEGIDO]  A07  Login no revela si el usuario existe (mensajes iguales)
+  [PROTEGIDO]  A07  Rate limiting en /auth/login (15 intentos) (último HTTP 429)
+-- A02 Configuración de seguridad --
+  [PROTEGIDO]  A02  CORS no refleja orígenes arbitrarios (ACAO=ninguno)
+  [PROTEGIDO]  A02  Cabecera X-Content-Type-Options: nosniff ()
+  [PROTEGIDO]  A02  Sin cabecera X-Powered-By ()
+  [PROTEGIDO]  A02  Rechaza cuerpos de 2 MB (límite de tamaño) (HTTP 413)
+-- A10 Manejo de condiciones excepcionales --
+  [PROTEGIDO]  A10  JSON malformado no filtra detalles internos ({"success":false,"error":"El cuerpo de la petición no es un JSON válido"})
+
+Resultado: 22 protegidos, 0 vulnerables

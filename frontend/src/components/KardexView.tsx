@@ -46,30 +46,39 @@ export const KardexView: React.FC<KardexViewProps> = ({
     return matchesProduct && matchesType && matchesSearch;
   });
 
+  // OWASP A05 (inyección CSV): las celdas que empiezan con = + - @ se neutralizan con un apóstrofo
+  // para que Excel/LibreOffice no las interpreten como fórmulas.
+  const csvCell = (value: string | number | undefined) => {
+    const text = String(value ?? '');
+    const neutralized = /^[=+\-@\t\r]/.test(text) && typeof value !== 'number' ? `'${text}` : text;
+    return `"${neutralized.replace(/"/g, '""')}"`;
+  };
+
   const handleExportCSV = () => {
     const headers = ['Fecha_Hora', 'SKU', 'Producto', 'Tipo_Movimiento', 'Cantidad', 'Stock_Anterior', 'Stock_Nuevo', 'Costo_Unitario', 'Referencia', 'Notas', 'Usuario'];
     const rows = filteredMovements.map(m => [
-      `"${m.createdAt}"`,
-      `"${m.productSku}"`,
-      `"${m.productName.replace(/"/g, '""')}"`,
-      `"${m.type}"`,
+      m.createdAt,
+      m.productSku,
+      m.productName,
+      m.type,
       m.quantity,
       m.previousStock,
       m.newStock,
       m.unitCost,
-      `"${m.referenceId || ''}"`,
-      `"${(m.notes || '').replace(/"/g, '""')}"`,
-      `"${m.createdBy}"`
-    ]);
+      m.referenceId,
+      m.notes,
+      m.createdBy
+    ].map(csvCell));
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const url = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `kardex_movimientos_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getMovementBadge = (type: string) => {

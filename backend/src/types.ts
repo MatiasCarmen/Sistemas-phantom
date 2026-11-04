@@ -24,39 +24,6 @@ export interface Product {
   updatedAt: string;
 }
 
-export interface Store {
-  id: string;
-  name: string;
-  code: string;
-  verificationNumber: string;
-  type: 'MAIN_WAREHOUSE' | 'STORE';
-  address?: string;
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface StoreStock {
-  storeId: string;
-  productId: string;
-  quantity: number;
-}
-
-export interface StockTransfer {
-  id: string;
-  guideNumber: string;
-  verificationNumber: string;
-  productId: string;
-  fromStoreId: string;
-  toStoreId: string;
-  quantity: number;
-  notes?: string;
-  transportSupplierId?: string;
-  transportSupplierName?: string;
-  createdBy: string;
-  status?: 'IN_TRANSIT' | 'RECEIVED';
-  receivedAt?: string;
-  createdAt: string;
-}
-
 export interface Category {
   id: string;
   name: string;
@@ -75,7 +42,6 @@ export interface Supplier {
   contactPerson?: string;
   category?: string;
   paymentTerms?: string;
-  status?: string;
   notes?: string;
   createdAt: string;
 }
@@ -297,6 +263,8 @@ export interface User {
   permissions: UserPermissions;
   createdAt: string;
   lastLogin?: string;
+  /** Versión de sesión: al incrementarse (logout / cambio de contraseña) los JWT anteriores quedan revocados. */
+  sessionVersion?: number;
 }
 
 export interface LoginResponse {
@@ -306,7 +274,16 @@ export interface LoginResponse {
   message?: string;
 }
 
-export type AuditAction = 'create' | 'update' | 'delete';
+export type AuditAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  // Eventos de seguridad (OWASP A09)
+  | 'login'
+  | 'login_failed'
+  | 'account_locked'
+  | 'logout'
+  | 'access_denied';
 
 export interface AuditLogEvent {
   id: string;
@@ -321,6 +298,9 @@ export interface AuditLogEvent {
   ipAddress: string;
   before?: unknown;
   after?: unknown;
+  /** Encadenamiento HMAC: cada evento firma el hash del anterior para detectar alteraciones */
+  prevHash?: string;
+  hash?: string;
 }
 
 

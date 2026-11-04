@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuditAction, AuditLogEvent } from '../types';
 import { api } from '../lib/api';
-import { ChevronLeft, ChevronRight, History, RefreshCw, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, History, RefreshCw, Search, ShieldCheck, ShieldAlert, X } from 'lucide-react';
 
 interface AuditLogModalProps {
   isOpen: boolean;
@@ -11,7 +11,12 @@ interface AuditLogModalProps {
 const actionLabels: Record<AuditAction, string> = {
   create: 'Creación',
   update: 'Modificación',
-  delete: 'Eliminación'
+  delete: 'Eliminación',
+  login: 'Inicio de sesión',
+  login_failed: 'Login fallido',
+  account_locked: 'Cuenta bloqueada',
+  logout: 'Cierre de sesión',
+  access_denied: 'Acceso denegado'
 };
 
 export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose }) => {
@@ -23,7 +28,17 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [integrity, setIntegrity] = useState<{ valid: boolean; checked: number } | null>(null);
   const pageSize = 25;
+
+  // OWASP A09: comprueba la cadena HMAC de la bitácora (detecta registros editados o eliminados)
+  const verifyIntegrity = async () => {
+    try {
+      setIntegrity(await api.verifyAuditLog());
+    } catch (verifyError) {
+      setError(verifyError instanceof Error ? verifyError.message : 'No se pudo verificar la bitácora.');
+    }
+  };
 
   const loadEvents = async (nextPage = page) => {
     setLoading(true);
@@ -58,9 +73,20 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
               <p className="text-xs text-zinc-400">{total} cambios registrados</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} title="Cerrar bitácora" className="rounded border border-[#2D2D2D] p-2 text-zinc-300 hover:bg-[#1E1E1E]">
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {integrity && (
+              <span className={`flex items-center gap-1 text-xs font-semibold ${integrity.valid ? 'text-[#A7F3D0]' : 'text-[#ffb3b1]'}`}>
+                {integrity.valid ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+                {integrity.valid ? `Íntegra (${integrity.checked} eventos)` : 'Bitácora alterada'}
+              </span>
+            )}
+            <button type="button" onClick={() => { void verifyIntegrity(); }} title="Verificar integridad" className="rounded border border-[#2D2D2D] px-2.5 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-[#1E1E1E]">
+              Verificar integridad
+            </button>
+            <button type="button" onClick={onClose} title="Cerrar bitácora" className="rounded border border-[#2D2D2D] p-2 text-zinc-300 hover:bg-[#1E1E1E]">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </header>
 
         <form
@@ -73,7 +99,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
           </label>
           <select value={entity} onChange={(event) => setEntity(event.target.value)} className="rounded border border-[#383838] bg-[#0E0E0E] px-3 py-2 text-xs text-white">
             <option value="">Todas las entidades</option>
-            {['Producto', 'Categoría', 'Proveedor', 'Cliente', 'Movimiento de inventario', 'Cotización', 'Venta', 'Usuario', 'Configuración'].map((item) => <option key={item} value={item}>{item}</option>)}
+            {['Seguridad', 'Producto', 'Categoría', 'Proveedor', 'Cliente', 'Movimiento de inventario', 'Cotización', 'Venta', 'Usuario', 'Configuración'].map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
           <select value={action} onChange={(event) => setAction(event.target.value as AuditAction | '')} className="rounded border border-[#383838] bg-[#0E0E0E] px-3 py-2 text-xs text-white">
             <option value="">Todas las acciones</option>

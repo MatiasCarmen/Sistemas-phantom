@@ -17,10 +17,11 @@
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "npm run build --prefix backend",
     "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",
-    "test": "npm test --prefix backend"
+    "test": "npm test --prefix backend",
+    "audit:security": "npm audit --audit-level=high",
+    "sbom": "npm sbom --sbom-format cyclonedx --omit dev > docs/seguridad/sbom.cdx.json"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",

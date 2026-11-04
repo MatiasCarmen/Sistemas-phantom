@@ -13,7 +13,6 @@ import {
   X,
   LogOut,
   UserCheck,
-  Truck,
   Shield,
   UserCog,
   ChevronDown,
@@ -27,8 +26,8 @@ import {
 import { User, UserRole } from '../types';
 
 export interface SidebarProps {
-  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings') => void;
+  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
+  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings') => void;
   companyName?: string;
   lowStockCount?: number;
   outOfStockCount?: number;
@@ -87,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'dashboard' as const, label: 'Panel Ejecutivo', icon: BarChart3, desc: 'Métricas generales, ventas y utilidades' },
             { 
               id: 'inventory' as const, 
-              label: 'Modulo de inventario', 
+              label: 'Inventario & Catálogo', 
               icon: Package, 
               desc: 'Control de stock, precios y costos',
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
@@ -113,8 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {
           title: 'SISTEMA & DIRECTORIO',
           items: [
-            { id: 'customers' as const, label: 'Clientes', icon: Users, desc: 'Cartera y cuentas de clientes' },
-            { id: 'suppliers' as const, label: 'Proveedores', icon: Truck, desc: 'Registro y abastecimiento de proveedores' },
+            { id: 'contacts' as const, label: 'Clientes & Proveedores', icon: Users, desc: 'Cartera RUC/DNI y contactos' },
             { id: 'settings' as const, label: 'Configuración & Sistema', icon: Settings, desc: 'Parámetros fiscales y base de datos' }
           ]
         }
@@ -129,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'dashboard' as const, label: 'Panel de Almacén', icon: BarChart3, desc: 'Resumen de stock y alertas' },
             { 
               id: 'inventory' as const, 
-              label: 'Modulo de inventario', 
+              label: 'Inventario & Stock', 
               icon: Package, 
               desc: 'Control de existencias físicas',
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
@@ -141,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {
           title: 'CONTACTOS LOGÍSTICOS',
           items: [
-            { id: 'suppliers' as const, label: 'Proveedores', icon: Truck, desc: 'Directorio de abastecimiento' }
+            { id: 'contacts' as const, label: 'Proveedores & Clientes', icon: Users, desc: 'Directorio de abastecimiento' }
           ]
         }
       ];
@@ -167,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           title: 'CONSULTAS',
           items: [
             { id: 'inventory' as const, label: 'Consulta de Precios', icon: Package, desc: 'Existencias y catálogo' },
-            { id: 'customers' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Clientes registrados' }
+            { id: 'contacts' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Clientes registrados' }
           ]
         }
       ];
@@ -194,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         title: 'CONSULTAS & CLIENTES',
         items: [
           { id: 'inventory' as const, label: 'Catálogo de Stock', icon: Package, desc: 'Precios de venta y unidades' },
-          { id: 'customers' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Gestión de cuentas RUC/DNI' }
+          { id: 'contacts' as const, label: 'Directorio de Clientes', icon: Users, desc: 'Gestión de cuentas RUC/DNI' }
         ]
       }
     ];
@@ -657,7 +655,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   {/* Quick Role Switcher inside Dropdown */}
                   {onRoleChange && (
                     <div className="px-3.5 py-2.5 border-b border-[#2D2D2D] bg-[#0E0E0E]">
-                      <span className="text-[10px] text-[#9CA3AF] uppercase font-mono font-bold block mb-1.5">Cambiar Rol en Caliente:</span>
+                      <span className="text-[10px] text-[#9CA3AF] uppercase font-mono font-bold block mb-1.5">Vista previa por rol (admin):</span>
                       <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
                         <button
                           type="button"

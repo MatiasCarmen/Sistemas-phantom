@@ -1,0 +1,29 @@
+== PoC OWASP Top 10 contra http://localhost:3000/api ==
+-- A01 Control de acceso (peticiones SIN token) --
+  [VULNERABLE] A01  GET /system/raw-db sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /system/export sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /system/sql-export sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /users sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /products sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /sales sin autenticación (HTTP 200)
+  [VULNERABLE] A01  GET /settings sin autenticación (HTTP 200)
+  [VULNERABLE] A01  POST /system/import sin autenticación (HTTP 400)
+  [VULNERABLE] A01  PUT /users/:id (escalar a admin) sin autenticación (HTTP 404)
+  [VULNERABLE] A01  PUT /settings sin autenticación (HTTP 200)
+-- A07 Fallos de autenticación --
+  [VULNERABLE] A07  Token legacy sin firma (token_usr-admin_1) rechazado (HTTP 200)
+  [VULNERABLE] A04  JWT falsificado con el secreto publicado en el README (HTTP 200)
+  [VULNERABLE] A01  Colaborador NO puede listar usuarios (GET /users) (HTTP 200)
+  [VULNERABLE] A01  Colaborador NO puede volcar la BD (GET /system/raw-db) (HTTP 200)
+  [VULNERABLE] A01  Colaborador NO puede modificar usuarios (PUT /users/:id) (HTTP 200)
+  [VULNERABLE] A07  Login no revela si el usuario existe (mensajes distintos)
+  [VULNERABLE] A07  Rate limiting en /auth/login (15 intentos) (último HTTP 401)
+-- A02 Configuración de seguridad --
+  [VULNERABLE] A02  CORS no refleja orígenes arbitrarios (ACAO=https://atacante.example)
+  [VULNERABLE] A02  Cabecera X-Content-Type-Options: nosniff ()
+  [VULNERABLE] A02  Sin cabecera X-Powered-By ()
+  [VULNERABLE] A02  Rechaza cuerpos de 2 MB (límite de tamaño) (HTTP 400)
+-- A10 Manejo de condiciones excepcionales --
+  [VULNERABLE] A10  JSON malformado no filtra detalles internos ({"success":false,"error":"Unexpected end of JSON input"})
+
+Resultado: 0 protegidos, 22 vulnerables

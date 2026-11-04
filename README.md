@@ -38,7 +38,10 @@ sistema-de-inventario-cotización-y-ventas/
         ├── app.ts                # Fábrica Express (CORS, JSON parser, errorHandler)
         ├── server.ts             # Punto de entrada del servidor (puerto 3000)
         ├── routes.ts             # Endpoints RESTful montados bajo /api
-        ├── security.ts           # Firma/verificación JWT (HMAC-SHA256) y hash scrypt
+        ├── security.ts           # Firma/verificación JWT (HMAC-SHA256), hash scrypt y política de contraseñas
+        ├── validation.ts         # Esquemas zod (lista blanca de campos) para cada endpoint de escritura
+        ├── pricing.ts            # Recalcula precios y totales desde el catálogo (no confía en el navegador)
+        ├── sqlEscape.ts          # Escape de valores en los scripts SQL exportados
         ├── dataStore.ts          # Lógica transaccional de inventario, Kardex y ventas
         ├── mongo.ts              # Persistencia en MongoDB con fallback automático a JSON
         ├── audit.ts              # Bitácora de auditoría con redacción de credenciales
@@ -46,7 +49,9 @@ sistema-de-inventario-cotización-y-ventas/
         ├── initialData.ts        # Semilla de datos iniciales
         ├── types.ts              # Modelos e interfaces de dominio
         └── middlewares/
-            └── errorHandler.ts   # Manejo centralizado de errores HTTP y 404
+            ├── auth.ts           # authenticate / requirePermission / requireAdmin
+            ├── loginProtection.ts # Rate limiting y bloqueo de cuenta del login
+            └── errorHandler.ts   # Manejo centralizado de errores HTTP y 404 (sin filtrar detalles)
 ```
 
 ---
@@ -64,8 +69,10 @@ PORT=3000
 MONGODB_URI=mongodb://127.0.0.1:27017
 MONGODB_DATABASE=phantom_erp
 FRONTEND_URL=http://localhost:5173
-JWT_SECRET=phantom_erp_hmac_secret_key_2026_secure
+JWT_SECRET=<genera uno propio, ver abajo>
 ```
+> **Seguridad:** `JWT_SECRET` es obligatorio y debe tener al menos 32 caracteres. Genera uno con
+> `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` y nunca lo subas al repositorio.
 > **Nota:** Si MongoDB no está activo localmente en `127.0.0.1:27017`, el backend inicia automáticamente en modo de persistencia local usando `backend/data/db.json` sin interrumpir el desarrollo.
 
 ### 3. Ejecución en Desarrollo (1 solo comando)
@@ -75,12 +82,31 @@ npm run dev
 * **Frontend (Vite):** `http://localhost:5173`
 * **Backend (API REST):** `http://localhost:3000/api/health`
 
-### 4. Verificación de Tipado, Build y Tests
+### 4. Verificación de Tipado, Build, Tests y Dependencias
 ```bash
 npm run lint
-npm test
+npm test                 # pruebas unitarias + integración HTTP de seguridad
 npm run build
+npm run audit:security   # falla si hay vulnerabilidades altas/críticas
 ```
+
+### 5. Usuarios de demostración
+Al iniciar sin `backend/data/db.json` se cargan los usuarios de ejemplo. Las contraseñas están en
+[`docs/seguridad/INFORME-OWASP.md`](docs/seguridad/INFORME-OWASP.md#credenciales-de-demostración-solo-entorno-académico)
+(administrador: `jperez` / `Admin.Phantom2026`).
+
+---
+
+## 🔐 Seguridad (OWASP Top 10)
+
+El proyecto aplica los controles del OWASP Top 10 (2025): autenticación obligatoria y permisos verificados en el servidor,
+validación de entradas con `zod`, rate limiting y bloqueo de cuentas, revocación de sesiones, cabeceras de seguridad,
+bitácora de auditoría encadenada con HMAC y dependencias sin vulnerabilidades conocidas.
+
+* Informe completo (SGSI, riesgos, controles y evidencias): [`docs/seguridad/INFORME-OWASP.md`](docs/seguridad/INFORME-OWASP.md)
+* Pruebas de concepto y escaneo ZAP: [`docs/seguridad/pruebas/`](docs/seguridad/pruebas/)
+* El selector "Vista previa por rol" solo aparece para administradores y únicamente cambia la interfaz;
+  el backend siempre autoriza con el rol real del usuario.
 
 ---
 

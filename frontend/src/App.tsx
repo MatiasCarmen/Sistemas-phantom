@@ -14,7 +14,7 @@ import {
   User,
   UserRole
 } from './types';
-import { api } from './lib/api';
+import { api, SESSION_EXPIRED_EVENT } from './lib/api';
 
 import { Sidebar, TopBar } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -29,7 +29,7 @@ import { UsersManagementModal } from './components/UsersManagementModal';
 import { DatabaseExplorerModal } from './components/DatabaseExplorerModal';
 import { AuditLogModal } from './components/AuditLogModal';
 
-type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
+type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'contacts' | 'settings';
 
 export default function App() {
   // Authentication & Session State
@@ -41,6 +41,10 @@ export default function App() {
       return null;
     }
   });
+  // Rol real validado por el backend (/auth/login o /auth/me). Nunca se toma de localStorage,
+  // así la vista previa por rol solo se ofrece a administradores reales.
+  const [authenticatedRole, setAuthenticatedRole] = useState<UserRole | null>(null);
+  const [loginCompanyName, setLoginCompanyName] = useState<string | undefined>(undefined);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
@@ -49,7 +53,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     try {
       const savedTab = sessionStorage.getItem('phantom_active_tab');
-      if (savedTab === 'contacts') return 'customers';
       return savedTab as ActiveTab || 'dashboard';
     } catch {
       return 'dashboard';
@@ -173,6 +176,7 @@ export default function App() {
         try {
           const user = await api.getMe();
           setCurrentUser(user);
+          setAuthenticatedRole(user.role);
           localStorage.setItem('nexus_auth_user', JSON.stringify(user));
           fetchAllData();
           return;
@@ -183,10 +187,10 @@ export default function App() {
           setCurrentUser(null);
         }
       }
-      // If we don't have user, try to load settings for company branding in login view
+      // If we don't have user, load only the public branding for the login view
       try {
-        const settingsData = await api.getSettings();
-        setSettings(settingsData);
+        const publicSettings = await api.getPublicSettings();
+        setLoginCompanyName(publicSettings.companyName);
       } catch {}
       setIsLoading(false);
     };
@@ -196,6 +200,7 @@ export default function App() {
 
   const handleLoginSuccess = (user: User, _token: string) => {
     setCurrentUser(user);
+    setAuthenticatedRole(user.role);
     showToast(`¡Bienvenido(a), ${user.name}!`);
     fetchAllData();
   };
@@ -207,12 +212,27 @@ export default function App() {
     localStorage.removeItem('nexus_auth_token');
     localStorage.removeItem('nexus_auth_user');
     setCurrentUser(null);
+    setAuthenticatedRole(null);
     showToast('Sesión finalizada correctamente.');
   };
 
-  // Quick Role Switcher for instant testing (APF1)
+  // El backend respondió 401 a una petición autenticada: token vencido, revocado o usuario desactivado
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      localStorage.removeItem('nexus_auth_token');
+      localStorage.removeItem('nexus_auth_user');
+      setCurrentUser(null);
+      setAuthenticatedRole(null);
+      showToast('Su sesión expiró. Inicie sesión nuevamente.', 'error');
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
+
+  // Vista previa por rol (solo administradores). Cambia únicamente la interfaz:
+  // el backend sigue autorizando cada petición con el rol real del token.
   const handleRoleChange = (newRole: UserRole) => {
-    if (!currentUser) return;
+    if (!currentUser || authenticatedRole !== 'admin') return;
     const roleLabels: Record<UserRole, string> = {
       admin: 'Administrador',
       collaborator: 'Asesor Comercial',
@@ -283,7 +303,7 @@ export default function App() {
     }
   };
 
-  const handleAdjustStock = async (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => {
+  const handleAdjustStock = async (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) => {
     try {
       const result = await api.adjustStock(data);
       setProducts(products.map(p => p.id === result.product.id ? result.product : p));
@@ -512,7 +532,7 @@ export default function App() {
     return (
       <LoginView
         onLoginSuccess={handleLoginSuccess}
-        companyName={settings?.companyName}
+        companyName={settings?.companyName ?? loginCompanyName}
       />
     );
   }
@@ -572,7 +592,7 @@ export default function App() {
           onOpenUsersModal={() => setIsUsersModalOpen(true)}
           theme={theme}
           toggleTheme={toggleTheme}
-          onRoleChange={handleRoleChange}
+          onRoleChange={authenticatedRole === 'admin' ? handleRoleChange : undefined}
         />
 
         {/* Scrollable View Area */}
@@ -663,28 +683,10 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'customers' && (
+          {activeTab === 'contacts' && (
             <CustomersSuppliersView
-              mode="customers"
               customers={customers}
               suppliers={suppliers}
-              categories={categories}
-              settings={settings}
-              onAddCustomer={handleAddCustomer}
-              onUpdateCustomer={handleUpdateCustomer}
-              onDeleteCustomer={handleDeleteCustomer}
-              onAddSupplier={handleAddSupplier}
-              onUpdateSupplier={handleUpdateSupplier}
-              onDeleteSupplier={handleDeleteSupplier}
-            />
-          )}
-
-          {activeTab === 'suppliers' && (
-            <CustomersSuppliersView
-              mode="suppliers"
-              customers={customers}
-              suppliers={suppliers}
-              categories={categories}
               settings={settings}
               onAddCustomer={handleAddCustomer}
               onUpdateCustomer={handleUpdateCustomer}

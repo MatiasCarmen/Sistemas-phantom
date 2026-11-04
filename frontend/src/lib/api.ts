@@ -12,13 +12,11 @@ import {
   User,
   LoginResponse,
   AuditAction,
-  AuditLogEvent,
-  Store,
-  StoreStock,
-  StockTransfer
+  AuditLogEvent
 } from '../types';
 
 const API_BASE = '/api';
+export const SESSION_EXPIRED_EVENT = 'phantom:session-expired';
 
 function getAuthToken(): string | null {
   try {
@@ -42,12 +40,40 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && token && url !== '/auth/login') {
+      // Token vencido o revocado: App cierra la sesión local
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `Error en la petición: ${response.status} ${response.statusText}`);
   }
 
   const json = await response.json();
   return json.data !== undefined ? json.data : json;
+}
+
+/**
+ * Descarga un archivo protegido enviando el token Bearer (un <a href> no puede adjuntar cabeceras).
+ */
+async function downloadFile(url: string, fallbackName: string): Promise<void> {
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE}${url}`, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Error en la descarga: ${response.status}`);
+  }
+  const disposition = response.headers.get('Content-Disposition') || '';
+  const fileName = /filename=([^;]+)/.exec(disposition)?.[1]?.trim() || fallbackName;
+  const blobUrl = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement('a');
+  anchor.href = blobUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(blobUrl);
 }
 
 export const api = {
@@ -86,18 +112,11 @@ export const api = {
       method: 'DELETE'
     }),
 
-  adjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) =>
+  adjustStock: (data: { productId: string; type: MovementType; quantity: number; notes?: string; createdBy?: string }) =>
     fetchJson<{ product: Product; movement: InventoryMovement }>('/products/adjust-stock', {
       method: 'POST',
       body: JSON.stringify(data)
     }),
-
-  getStores: () => fetchJson<Store[]>('/stores'),
-  getStoreStock: () => fetchJson<{ storeStock: StoreStock[]; transfers: StockTransfer[] }>('/store-stock'),
-  transferStock: (data: { productId?: string; items?: Array<{ productId: string; quantity: number }>; toStoreId: string; quantity?: number; transportSupplierId?: string; transportSupplierName?: string; notes?: string; createdBy?: string }) =>
-    fetchJson<StockTransfer>('/stock-transfers', { method: 'POST', body: JSON.stringify(data) }),
-  confirmTransferReceipt: (guideNumber: string, storeId: string) =>
-    fetchJson<StockTransfer[]>('/stock-transfers/receive', { method: 'POST', body: JSON.stringify({ guideNumber, storeId }) }),
 
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),
@@ -109,12 +128,6 @@ export const api = {
   deleteCategory: (id: string) => 
     fetchJson<{ success: boolean }>(`/categories/${id}`, {
       method: 'DELETE'
-    }),
-
-  uploadProductImage: (dataUrl: string, fileName: string) =>
-    fetchJson<{ imageUrl: string }>('/uploads/product-image', {
-      method: 'POST',
-      body: JSON.stringify({ dataUrl, fileName })
     }),
 
   // Suppliers
@@ -223,6 +236,7 @@ export const api = {
 
   // Settings
   getSettings: () => fetchJson<CompanySettings>('/settings'),
+  getPublicSettings: () => fetchJson<Pick<CompanySettings, 'companyName'>>('/settings/public'),
   updateSettings: (settings: Partial<CompanySettings>) => 
     fetchJson<CompanySettings>('/settings', {
       method: 'PUT',
@@ -267,6 +281,7 @@ export const api = {
 
   // Database status
   getDatabaseStatus: () => fetchJson<{ success: boolean; status: { connected: boolean; database: string } }>('/database/status'),
+  verifyAuditLog: () => fetchJson<{ valid: boolean; checked: number; brokenAt?: string }>('/audit/verify'),
   getAuditLogs: (params: { page?: number; limit?: number; entity?: string; action?: AuditAction | ''; search?: string } = {}) => {
     const query = new URLSearchParams();
     if (params.page) query.set('page', String(params.page));
@@ -279,8 +294,8 @@ export const api = {
   },
 
   // System
-  exportBackupUrl: () => `${API_BASE}/system/export`,
-  exportSqlUrl: () => `${API_BASE}/system/sql-export`,
+  downloadBackup: () => downloadFile('/system/export', 'inventario_db_backup.json'),
+  downloadSqlExport: () => downloadFile('/system/sql-export', 'nexus_erp_mysql_schema.sql'),
   getRawDatabase: () => fetchJson<{ success: boolean; data: any }>('/system/raw-db'),
   importBackup: (backupData: any) => 
     fetchJson<{ success: boolean; message: string }>('/system/import', {

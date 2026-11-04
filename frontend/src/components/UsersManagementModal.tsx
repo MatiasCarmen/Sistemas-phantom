@@ -494,9 +494,12 @@ export const UsersManagementModal: React.FC<UsersManagementModalProps> = ({
                     <input
                       type="password"
                       required={!isEditing}
+                      minLength={8}
+                      maxLength={128}
+                      autoComplete="new-password"
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Mín. 8 caracteres con letras y números"
                       className="w-full pl-8 pr-3 py-1.5 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C8102E]"
                     />
                   </div>
