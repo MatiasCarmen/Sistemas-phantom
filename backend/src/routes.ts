@@ -386,6 +386,83 @@ router.post('/stock-transfers', requirePermission('canManageInventory'), (req: R
   res.status(201).json({ success: true, data: transfers });
 });
 
+router.get('/purchase-orders', requireAnyPermission('canManageInventory', 'canManageContacts'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getPurchaseOrders() });
+});
+
+router.post('/purchase-orders', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  try {
+    const supplier = db.getSuppliers().find(item => item.id === req.body.supplierId);
+    if (!supplier) return res.status(400).json({ success: false, error: 'Proveedor no válido' });
+    const items = Array.isArray(req.body.items) ? req.body.items : [];
+    if (!items.length) return res.status(400).json({ success: false, error: 'Agregue al menos un producto' });
+
+    let subtotal = 0;
+    let taxTotal = 0;
+    const normalizedItems = items.map((item: any) => {
+      const product = db.getProductById(item.productId);
+      if (!product) throw new Error('Uno de los productos seleccionados no existe');
+      const quantity = Number(item.quantity);
+      const unitCost = Number(item.unitCost ?? product.costPrice);
+      const taxRate = Number(item.taxRate ?? product.taxRate ?? 18);
+      if (quantity <= 0 || unitCost < 0) throw new Error('Cantidad o costo inválido');
+      const itemSubtotal = Number((quantity * unitCost).toFixed(2));
+      const itemTax = Number((itemSubtotal * taxRate / 100).toFixed(2));
+      subtotal += itemSubtotal;
+      taxTotal += itemTax;
+      return {
+        id: `oci-${Date.now()}-${product.id}`,
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        unit: product.unit,
+        quantity,
+        unitCost,
+        taxRate,
+        subtotal: itemSubtotal,
+        taxAmount: itemTax,
+        total: Number((itemSubtotal + itemTax).toFixed(2))
+      };
+    });
+
+    const order = db.addPurchaseOrder({
+      supplierId: supplier.id,
+      supplierName: supplier.name,
+      supplierTaxId: supplier.taxId,
+      date: req.body.date || new Date().toISOString().slice(0, 10),
+      expectedDate: req.body.expectedDate,
+      status: req.body.status || 'DRAFT',
+      items: normalizedItems,
+      subtotal: Number(subtotal.toFixed(2)),
+      taxTotal: Number(taxTotal.toFixed(2)),
+      total: Number((subtotal + taxTotal).toFixed(2)),
+      currency: req.body.currency || db.getSettings().currencySymbol || 'S/.',
+      paymentTerms: req.body.paymentTerms || supplier.paymentTerms || '',
+      notes: req.body.notes || '',
+      createdBy: req.body.createdBy || getAuthenticatedUser(req)?.name || 'Usuario'
+    });
+    res.status(201).json({ success: true, data: order });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.put('/purchase-orders/:id', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  const allowedStatuses = ['DRAFT', 'ISSUED', 'RECEIVED', 'CANCELLED'];
+  if (req.body.status !== undefined && !allowedStatuses.includes(req.body.status)) {
+    return res.status(400).json({ success: false, error: 'Estado de orden inválido' });
+  }
+  const order = db.updatePurchaseOrder(req.params.id, req.body);
+  if (!order) return res.status(404).json({ success: false, error: 'Orden de compra no encontrada' });
+  res.json({ success: true, data: order });
+});
+
+router.post('/purchase-orders/:id/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  const order = db.receivePurchaseOrder(req.params.id, getAuthenticatedUser(req)?.name || 'Usuario Almacén');
+  if (!order) return res.status(400).json({ success: false, error: 'La orden ya fue recibida, cancelada o no existe' });
+  res.json({ success: true, data: order });
+});
+
 router.post('/stock-transfers/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   const { guideNumber, storeId } = req.body;
   if (!guideNumber || !storeId) return res.status(400).json({ success: false, error: 'Guía y tienda de destino son requeridas' });

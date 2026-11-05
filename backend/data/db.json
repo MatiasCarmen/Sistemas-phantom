@@ -10,7 +10,7 @@
       "costPrice": 3700,
       "sellingPrice": 3999.9,
       "taxRate": 18,
-      "stock": 15,
+      "stock": 14,
       "minStock": 5,
       "maxStock": 100,
       "unit": "UND",
@@ -21,7 +21,7 @@
       "id": "prod-1791263428688",
       "status": "in_stock",
       "createdAt": "2026-10-06T05:10:28.688Z",
-      "updatedAt": "2026-10-06T05:20:41.245Z"
+      "updatedAt": "2026-11-05T00:58:49.198Z"
     },
     {
       "id": "prod-1",
@@ -34,7 +34,7 @@
       "costPrice": 2200,
       "sellingPrice": 2799.9,
       "taxRate": 18,
-      "stock": 8,
+      "stock": 7,
       "minStock": 2,
       "maxStock": 20,
       "unit": "UND",
@@ -44,7 +44,7 @@
       "imageUrl": "/assets/ps5-slim.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-2",
@@ -57,7 +57,7 @@
       "costPrice": 180,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 12,
+      "stock": 11,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
@@ -67,7 +67,7 @@
       "imageUrl": "/assets/dualsense.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-3",
@@ -149,7 +149,7 @@
       "costPrice": 150,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 18,
+      "stock": 17,
       "minStock": 5,
       "maxStock": 30,
       "unit": "UND",
@@ -159,7 +159,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-7",
@@ -172,7 +172,7 @@
       "costPrice": 200,
       "sellingPrice": 399.9,
       "taxRate": 18,
-      "stock": 14,
+      "stock": 13,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
@@ -182,7 +182,7 @@
       "imageUrl": "/assets/audifonos-jbl-tune-770.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-8",
@@ -195,7 +195,7 @@
       "costPrice": 450,
       "sellingPrice": 799.9,
       "taxRate": 18,
-      "stock": 9,
+      "stock": 8,
       "minStock": 3,
       "maxStock": 15,
       "unit": "UND",
@@ -205,7 +205,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-9",
@@ -218,7 +218,7 @@
       "costPrice": 70,
       "sellingPrice": 149.9,
       "taxRate": 18,
-      "stock": 15,
+      "stock": 14,
       "minStock": 7,
       "maxStock": 38,
       "unit": "UND",
@@ -228,7 +228,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-04T23:58:39.144Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-10",
@@ -241,7 +241,7 @@
       "costPrice": 2800,
       "sellingPrice": 3999.9,
       "taxRate": 18,
-      "stock": 5,
+      "stock": 4,
       "minStock": 2,
       "maxStock": 12,
       "unit": "UND",
@@ -251,7 +251,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-11",
@@ -425,7 +425,7 @@
       "costPrice": 35,
       "sellingPrice": 89.9,
       "taxRate": 18,
-      "stock": 9,
+      "stock": 8,
       "minStock": 2,
       "maxStock": 18,
       "unit": "UND",
@@ -435,7 +435,7 @@
       "imageUrl": "/assets/funko-charizard.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-19",
@@ -448,7 +448,7 @@
       "costPrice": 39,
       "sellingPrice": 89.9,
       "taxRate": 18,
-      "stock": 8,
+      "stock": 7,
       "minStock": 2,
       "maxStock": 16,
       "unit": "UND",
@@ -458,7 +458,7 @@
       "imageUrl": "/assets/funko-venom.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     },
     {
       "id": "prod-20",
@@ -505,6 +505,29 @@
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
       "updatedAt": "2026-09-04T00:00:00.000Z"
+    },
+    {
+      "name": "Cartas Pokemon TCG",
+      "sku": "094427",
+      "barcode": "775175889",
+      "description": "",
+      "category": "Coleccionables",
+      "brand": "Pokemon",
+      "costPrice": 5.8,
+      "sellingPrice": 25,
+      "taxRate": 18,
+      "stock": 5,
+      "minStock": 5,
+      "maxStock": 100,
+      "unit": "UND",
+      "location": "Tienda principal",
+      "supplierId": "sup-1",
+      "supplierName": "Tecnologia Peru SAC",
+      "imageUrl": "/assets/images-1793839270929.jpg",
+      "id": "prod-1793839373824",
+      "status": "low_stock",
+      "createdAt": "2026-11-05T00:42:53.824Z",
+      "updatedAt": "2026-11-05T00:44:46.774Z"
     }
   ],
   "categories": [
@@ -575,7 +598,10 @@
       "address": "Lima",
       "contactPerson": "Carlos Mendoza",
       "notes": "Proveedor de tecnología y equipos para gaming.",
-      "createdAt": "2025-01-10T10:00:00.000Z"
+      "createdAt": "2025-01-10T10:00:00.000Z",
+      "category": "Coleccionables",
+      "paymentTerms": "Contado",
+      "status": "Activo"
     },
     {
       "id": "sup-2",
@@ -586,7 +612,10 @@
       "address": "Lima",
       "contactPerson": "Mariana Reyes",
       "notes": "Proveedor especializado en productos gaming y accesorios.",
-      "createdAt": "2025-01-12T14:30:00.000Z"
+      "createdAt": "2025-01-12T14:30:00.000Z",
+      "category": "Monitores",
+      "paymentTerms": "Contado",
+      "status": "Activo"
     },
     {
       "id": "sup-3",
@@ -597,7 +626,10 @@
       "address": "Lima",
       "contactPerson": "Roberto Salcedo",
       "notes": "Distribuidor gamer con amplia variedad de periféricos y equipos.",
-      "createdAt": "2025-01-15T09:00:00.000Z"
+      "createdAt": "2025-01-15T09:00:00.000Z",
+      "category": "Perifericos",
+      "paymentTerms": "Contado",
+      "status": "Activo"
     },
     {
       "name": "AGM Server SAC",
@@ -607,7 +639,10 @@
       "address": "",
       "contactPerson": "Aldo Soto",
       "id": "sup-1791417979612",
-      "createdAt": "2026-10-08T00:06:19.612Z"
+      "createdAt": "2026-10-08T00:06:19.612Z",
+      "category": "Consolas",
+      "paymentTerms": "Contado",
+      "status": "Activo"
     },
     {
       "name": "Grupo RM SAC",
@@ -723,36 +758,6 @@
   ],
   "inventoryMovements": [
     {
-      "productId": "prod-9",
-      "productSku": "257538",
-      "productName": "Mouse Redragon Cobra",
-      "type": "OUT_ADJUSTMENT",
-      "quantity": 6,
-      "previousStock": 21,
-      "newStock": 15,
-      "unitCost": 70,
-      "referenceId": "TR-1793836719144-prod-9",
-      "notes": "Transferencia al almacén Mall Aventura - Comas",
-      "createdBy": "Usuario Almacén",
-      "id": "mov-1793836719144-48",
-      "createdAt": "2026-11-04T23:58:39.144Z"
-    },
-    {
-      "productId": "prod-9",
-      "productSku": "257538",
-      "productName": "Mouse Redragon Cobra",
-      "type": "OUT_ADJUSTMENT",
-      "quantity": 5,
-      "previousStock": 26,
-      "newStock": 21,
-      "unitCost": 70,
-      "referenceId": "TR-1793836323420-prod-9",
-      "notes": "Transferencia al almacén Mega Plaza - Independencia",
-      "createdBy": "Usuario Almacén",
-      "id": "mov-1793836323420-415",
-      "createdAt": "2026-11-04T23:52:03.420Z"
-    },
-    {
       "productId": "prod-1791263428688",
       "productSku": "130588",
       "productName": "PlayStation 5 Pro Consola (Digital)",
@@ -825,6 +830,225 @@
       "notes": "Venta por proyecto a Innovatech Software Labs.",
       "createdBy": "Ventas - Ana López",
       "createdAt": "2025-01-25T14:10:00.000Z"
+    },
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 5,
+      "previousStock": 26,
+      "newStock": 21,
+      "unitCost": 70,
+      "referenceId": "TR-1793836323420-prod-9",
+      "notes": "Transferencia al almacén Mega Plaza - Independencia",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1793836323420-415",
+      "createdAt": "2026-11-04T23:52:03.420Z"
+    },
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 6,
+      "previousStock": 21,
+      "newStock": 15,
+      "unitCost": 70,
+      "referenceId": "TR-1793836719144-prod-9",
+      "notes": "Transferencia al almacén Mall Aventura - Comas",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1793836719144-48",
+      "createdAt": "2026-11-04T23:58:39.144Z"
+    },
+    {
+      "productId": "prod-1793839373824",
+      "productSku": "094427",
+      "productName": "Cartas Pokemon TCG",
+      "type": "IN_ADJUSTMENT",
+      "quantity": 10,
+      "previousStock": 0,
+      "newStock": 10,
+      "unitCost": 5.8,
+      "notes": "Stock inicial al registrar producto",
+      "createdBy": "Sistema",
+      "id": "mov-1793839373824-2",
+      "createdAt": "2026-11-05T00:42:53.824Z"
+    },
+    {
+      "productId": "prod-1793839373824",
+      "productSku": "094427",
+      "productName": "Cartas Pokemon TCG",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 5,
+      "previousStock": 10,
+      "newStock": 5,
+      "unitCost": 5.8,
+      "referenceId": "TR-1793839486774-prod-1793839373824",
+      "notes": "Transferencia al almacén Mega Plaza - Independencia",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1793839486774-702",
+      "createdAt": "2026-11-05T00:44:46.774Z"
+    },
+    {
+      "productId": "prod-1791263428688",
+      "productSku": "130588",
+      "productName": "PlayStation 5 Pro Consola (Digital)",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 15,
+      "newStock": 14,
+      "unitCost": 3700,
+      "referenceId": "FAC-00000004",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000004 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840329198-500",
+      "createdAt": "2026-11-05T00:58:49.198Z"
+    },
+    {
+      "productId": "prod-1",
+      "productSku": "029587",
+      "productName": "PlayStation 5 Consola Slim Digital",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 8,
+      "newStock": 7,
+      "unitCost": 2200,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360171-709",
+      "createdAt": "2026-11-05T00:59:20.171Z"
+    },
+    {
+      "productId": "prod-2",
+      "productSku": "256618",
+      "productName": "Control DualSense PlayStation 5",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 12,
+      "newStock": 11,
+      "unitCost": 180,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360172-762",
+      "createdAt": "2026-11-05T00:59:20.172Z"
+    },
+    {
+      "productId": "prod-6",
+      "productSku": "746979",
+      "productName": "Mouse Logitech G502",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 18,
+      "newStock": 17,
+      "unitCost": 150,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360173-689",
+      "createdAt": "2026-11-05T00:59:20.173Z"
+    },
+    {
+      "productId": "prod-7",
+      "productSku": "233834",
+      "productName": "Audifonos JBL Tune 770 BT NC",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 14,
+      "newStock": 13,
+      "unitCost": 200,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360173-773",
+      "createdAt": "2026-11-05T00:59:20.173Z"
+    },
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 15,
+      "newStock": 14,
+      "unitCost": 70,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360174-233",
+      "createdAt": "2026-11-05T00:59:20.174Z"
+    },
+    {
+      "productId": "prod-8",
+      "productSku": "143070",
+      "productName": "Monitor Samsung 24 Pulgadas",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 9,
+      "newStock": 8,
+      "unitCost": 450,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360174-252",
+      "createdAt": "2026-11-05T00:59:20.174Z"
+    },
+    {
+      "productId": "prod-10",
+      "productSku": "936784",
+      "productName": "Laptop ASUS TUF Gaming",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 5,
+      "newStock": 4,
+      "unitCost": 2800,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360175-402",
+      "createdAt": "2026-11-05T00:59:20.175Z"
+    },
+    {
+      "productId": "prod-18",
+      "productSku": "346627",
+      "productName": "Funko Pop Pokémon - Charizard (Soft Color)",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 9,
+      "newStock": 8,
+      "unitCost": 35,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360178-362",
+      "createdAt": "2026-11-05T00:59:20.178Z"
+    },
+    {
+      "productId": "prod-19",
+      "productSku": "229321",
+      "productName": "Funko Pop Marvel: Marvel Rivals - Venom",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 8,
+      "newStock": 7,
+      "unitCost": 39,
+      "referenceId": "FAC-00000005",
+      "storeId": "main-warehouse",
+      "notes": "Venta comprobante FAC-00000005 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1793840360179-903",
+      "createdAt": "2026-11-05T00:59:20.179Z"
     }
   ],
   "quotes": [
@@ -1115,6 +1339,214 @@
       "status": "COMPLETED",
       "createdAt": "2025-01-25T14:10:00.000Z",
       "updatedAt": "2025-01-25T14:10:00.000Z"
+    },
+    {
+      "voucherType": "FACTURA",
+      "customerId": "cust-1791418034103",
+      "customerName": "Christian Rojas ",
+      "customerTaxId": "72279251",
+      "customerEmail": "prueba@gmail.com",
+      "customerPhone": "",
+      "customerAddress": "",
+      "date": "2026-11-05",
+      "storeId": "main-warehouse",
+      "items": [
+        {
+          "id": "sitem-1793840320359-310",
+          "productId": "prod-1791263428688",
+          "sku": "130588",
+          "name": "PlayStation 5 Pro Consola (Digital)",
+          "unit": "UND",
+          "unitPrice": 3999.9,
+          "costPrice": 3700,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 3389.75,
+          "taxAmount": 610.15,
+          "total": 3999.9
+        }
+      ],
+      "subtotal": 3389.75,
+      "discountTotal": 0,
+      "taxTotal": 610.15,
+      "total": 3999.9,
+      "currency": "S/.",
+      "paymentMethod": "CASH",
+      "paymentStatus": "PAID",
+      "paidAmount": 3999.9,
+      "dueAmount": 0,
+      "notes": "",
+      "sellerName": "Cajero Principal",
+      "status": "COMPLETED",
+      "id": "sale-1793840329198",
+      "saleNumber": "FAC-00000004",
+      "createdAt": "2026-11-05T00:58:49.198Z",
+      "updatedAt": "2026-11-05T00:58:49.198Z"
+    },
+    {
+      "voucherType": "FACTURA",
+      "customerId": "cust-1791418034103",
+      "customerName": "Christian Rojas ",
+      "customerTaxId": "72279251",
+      "customerEmail": "prueba@gmail.com",
+      "customerPhone": "",
+      "customerAddress": "",
+      "date": "2026-11-05",
+      "storeId": "main-warehouse",
+      "items": [
+        {
+          "id": "sitem-1793840342194-400",
+          "productId": "prod-1",
+          "sku": "029587",
+          "name": "PlayStation 5 Consola Slim Digital",
+          "unit": "UND",
+          "unitPrice": 2799.9,
+          "costPrice": 2200,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 2372.8,
+          "taxAmount": 427.1,
+          "total": 2799.9
+        },
+        {
+          "id": "sitem-1793840343457-148",
+          "productId": "prod-2",
+          "sku": "256618",
+          "name": "Control DualSense PlayStation 5",
+          "unit": "UND",
+          "unitPrice": 299.9,
+          "costPrice": 180,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 254.15,
+          "taxAmount": 45.75,
+          "total": 299.9
+        },
+        {
+          "id": "sitem-1793840344992-913",
+          "productId": "prod-6",
+          "sku": "746979",
+          "name": "Mouse Logitech G502",
+          "unit": "UND",
+          "unitPrice": 299.9,
+          "costPrice": 150,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 254.15,
+          "taxAmount": 45.75,
+          "total": 299.9
+        },
+        {
+          "id": "sitem-1793840346132-192",
+          "productId": "prod-7",
+          "sku": "233834",
+          "name": "Audifonos JBL Tune 770 BT NC",
+          "unit": "UND",
+          "unitPrice": 399.9,
+          "costPrice": 200,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 338.9,
+          "taxAmount": 61,
+          "total": 399.9
+        },
+        {
+          "id": "sitem-1793840348049-68",
+          "productId": "prod-9",
+          "sku": "257538",
+          "name": "Mouse Redragon Cobra",
+          "unit": "UND",
+          "unitPrice": 149.9,
+          "costPrice": 70,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 127.03,
+          "taxAmount": 22.87,
+          "total": 149.9
+        },
+        {
+          "id": "sitem-1793840348885-354",
+          "productId": "prod-8",
+          "sku": "143070",
+          "name": "Monitor Samsung 24 Pulgadas",
+          "unit": "UND",
+          "unitPrice": 799.9,
+          "costPrice": 450,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 677.88,
+          "taxAmount": 122.02,
+          "total": 799.9
+        },
+        {
+          "id": "sitem-1793840350215-674",
+          "productId": "prod-10",
+          "sku": "936784",
+          "name": "Laptop ASUS TUF Gaming",
+          "unit": "UND",
+          "unitPrice": 3999.9,
+          "costPrice": 2800,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 3389.75,
+          "taxAmount": 610.15,
+          "total": 3999.9
+        },
+        {
+          "id": "sitem-1793840354261-69",
+          "productId": "prod-18",
+          "sku": "346627",
+          "name": "Funko Pop Pokémon - Charizard (Soft Color)",
+          "unit": "UND",
+          "unitPrice": 89.9,
+          "costPrice": 35,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 76.19,
+          "taxAmount": 13.71,
+          "total": 89.9
+        },
+        {
+          "id": "sitem-1793840355142-704",
+          "productId": "prod-19",
+          "sku": "229321",
+          "name": "Funko Pop Marvel: Marvel Rivals - Venom",
+          "unit": "UND",
+          "unitPrice": 89.9,
+          "costPrice": 39,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 76.19,
+          "taxAmount": 13.71,
+          "total": 89.9
+        }
+      ],
+      "subtotal": 7567.03,
+      "discountTotal": 0,
+      "taxTotal": 1362.07,
+      "total": 8929.1,
+      "currency": "S/.",
+      "paymentMethod": "CASH",
+      "paymentStatus": "PAID",
+      "paidAmount": 8929.1,
+      "dueAmount": 0,
+      "notes": "",
+      "sellerName": "Cajero Principal",
+      "status": "COMPLETED",
+      "id": "sale-1793840360171",
+      "saleNumber": "FAC-00000005",
+      "createdAt": "2026-11-05T00:59:20.171Z",
+      "updatedAt": "2026-11-05T00:59:20.171Z"
     }
   ],
   "settings": {
@@ -1132,7 +1564,7 @@
     "invoicePrefix": "FAC-",
     "ticketPrefix": "TKT-2026-",
     "nextQuoteNumber": 4,
-    "nextInvoiceNumber": 4,
+    "nextInvoiceNumber": 6,
     "nextTicketNumber": 1,
     "quoteTermsDefault": "1. Precios expresados en Soles (S/.) e incluyen IGV (18%).\n2. Validez de la oferta: 15 días calendario.\n3. Garantía de 12 meses directa por fabricante.\n4. Forma de pago: 50% anticipo, 50% contra entrega.",
     "salesNotesDefault": "Gracias por su preferencia comercial. Este documento es un comprobante válido para garantía."
@@ -1160,7 +1592,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-11-04T23:45:35.917Z"
+      "lastLogin": "2026-11-05T06:36:54.081Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -1482,9 +1914,29 @@
       "storeId": "store-07",
       "productId": "prod-9",
       "quantity": 6
+    },
+    {
+      "storeId": "store-06",
+      "productId": "prod-1793839373824",
+      "quantity": 5
     }
   ],
   "stockTransfers": [
+    {
+      "id": "TR-1793836323420-prod-9",
+      "guideNumber": "TRS-00000001",
+      "verificationNumber": "06",
+      "productId": "prod-9",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-06",
+      "quantity": 5,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-04T23:52:03.420Z",
+      "receivedAt": "2026-11-04T23:52:17.463Z"
+    },
     {
       "id": "TR-1793836719144-prod-9",
       "guideNumber": "TRS-00000002",
@@ -1501,10 +1953,10 @@
       "receivedAt": "2026-11-04T23:58:50.789Z"
     },
     {
-      "id": "TR-1793836323420-prod-9",
-      "guideNumber": "TRS-00000001",
+      "id": "TR-1793839486774-prod-1793839373824",
+      "guideNumber": "TRS-00000003",
       "verificationNumber": "06",
-      "productId": "prod-9",
+      "productId": "prod-1793839373824",
       "fromStoreId": "main-warehouse",
       "toStoreId": "store-06",
       "quantity": 5,
@@ -1512,9 +1964,10 @@
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
       "status": "RECEIVED",
-      "createdAt": "2026-11-04T23:52:03.420Z",
-      "receivedAt": "2026-11-04T23:52:17.463Z"
+      "createdAt": "2026-11-05T00:44:46.774Z",
+      "receivedAt": "2026-11-05T00:45:32.336Z"
     }
   ],
-  "lastUpdated": "2026-11-04T23:58:50.789Z"
+  "purchaseOrders": [],
+  "lastUpdated": "2026-11-05T06:36:54.083Z"
 }

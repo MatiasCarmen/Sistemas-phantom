@@ -15,7 +15,8 @@ import {
   User,
   Store,
   StoreStock,
-  StockTransfer
+  StockTransfer,
+  PurchaseOrder
 } from './types';
 import { 
   initialProducts, 
@@ -51,6 +52,7 @@ export interface DatabaseSchema {
   stores: Store[];
   storeStock: StoreStock[];
   stockTransfers: StockTransfer[];
+  purchaseOrders: PurchaseOrder[];
   lastUpdated: string;
 }
 
@@ -94,6 +96,7 @@ class DataStore {
         )
       ],
       stockTransfers: [],
+      purchaseOrders: [],
       lastUpdated: new Date().toISOString()
     };
   }
@@ -159,6 +162,7 @@ class DataStore {
     });
     if (!Array.isArray(this.data.storeStock)) this.data.storeStock = [];
     if (!Array.isArray(this.data.stockTransfers)) this.data.stockTransfers = [];
+    if (!Array.isArray(this.data.purchaseOrders)) this.data.purchaseOrders = [];
     this.normalizeProductCodes();
     this.normalizeHistoricalTransactions();
     this.normalizeSaleNumbering();
@@ -328,6 +332,74 @@ class DataStore {
       .catch((err) => {
         console.error('[DataStore] Failed to persist snapshot to MongoDB:', err);
       });
+  }
+
+  // --- PURCHASE ORDERS ---
+  getPurchaseOrders(): PurchaseOrder[] {
+    return this.data.purchaseOrders || [];
+  }
+
+  addPurchaseOrder(orderData: Omit<PurchaseOrder, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'> & { orderNumber?: string }): PurchaseOrder {
+    const now = new Date().toISOString();
+    const maximum = (this.data.purchaseOrders || []).reduce((highest, order) => {
+      const match = order.orderNumber.match(/(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    const order: PurchaseOrder = {
+      ...orderData,
+      id: `oc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      orderNumber: orderData.orderNumber || `OC-${String(maximum + 1).padStart(8, '0')}`,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.data.purchaseOrders.unshift(order);
+    this.saveToFile();
+    return order;
+  }
+
+  updatePurchaseOrder(id: string, updates: Partial<PurchaseOrder>): PurchaseOrder | null {
+    const index = this.data.purchaseOrders.findIndex(order => order.id === id);
+    if (index === -1) return null;
+    this.data.purchaseOrders[index] = {
+      ...this.data.purchaseOrders[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    this.saveToFile();
+    return this.data.purchaseOrders[index];
+  }
+
+  receivePurchaseOrder(id: string, receivedBy: string): PurchaseOrder | null {
+    const order = this.data.purchaseOrders.find(item => item.id === id);
+    if (!order || order.status === 'RECEIVED' || order.status === 'CANCELLED') return null;
+
+    for (const item of order.items) {
+      const product = this.getProductById(item.productId);
+      if (!product) continue;
+      const previousStock = product.stock;
+      product.stock += item.quantity;
+      product.updatedAt = new Date().toISOString();
+      product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
+      this.addInventoryMovement({
+        productId: product.id,
+        productSku: product.sku,
+        productName: product.name,
+        type: 'IN_PURCHASE',
+        quantity: item.quantity,
+        previousStock,
+        newStock: product.stock,
+        unitCost: item.unitCost,
+        referenceId: order.orderNumber,
+        notes: `Recepción de orden de compra ${order.orderNumber}`,
+        createdBy: receivedBy
+      });
+    }
+
+    order.status = 'RECEIVED';
+    order.receivedAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return order;
   }
 
   // --- PRODUCTS ---

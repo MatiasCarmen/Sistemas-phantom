@@ -48,7 +48,7 @@ interface InventoryViewProps {
   categories: Category[];
   suppliers: Supplier[];
   settings: CompanySettings | null;
-  onAddProduct: (product: Partial<Product>) => Promise<void>;
+  onAddProduct: (product: Partial<Product>) => Promise<Product | void>;
   onUpdateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
   onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => Promise<void>;
@@ -571,19 +571,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
 
           {inventorySection === 'catalog' && (
-          <div className="flex items-center space-x-2">
-            <select
-              id="select-inventory-category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-            >
-              <option value="ALL">Todas las Categorías</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
-              ))}
-            </select>
-
+          <div className="hidden items-center space-x-2 lg:flex" aria-hidden="true">
+            {/* Los filtros rápidos se muestran en la segunda fila, como en el diseño de referencia. */}
             {/* View Mode Toggle */}
             <div className="flex bg-[#0E0E0E] p-1 rounded border border-[#2D2D2D] shrink-0">
               <button
@@ -608,6 +597,26 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
 
         </div>
+
+        {inventorySection === 'catalog' && (
+          <div className="flex items-center gap-2">
+            <select
+              id="select-inventory-category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full max-w-[220px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
+            >
+              <option value="ALL">Todas las Categorías</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+            <div className="flex bg-[#0E0E0E] p-1 rounded border border-[#2D2D2D] shrink-0">
+              <button id="btn-view-table-secondary" onClick={() => setViewMode('table')} className={`p-1.5 rounded transition-colors ${viewMode === 'table' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`} title="Vista en tabla detallada"><List className="w-4 h-4" /></button>
+              <button id="btn-view-grid-secondary" onClick={() => setViewMode('grid')} className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`} title="Vista en cuadrícula"><Grid className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
 
         {inventorySection === 'stores' && selectedStoreId && (
           <div className="flex flex-wrap items-center gap-2">
@@ -1230,95 +1239,53 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Pricing & Profit Margin Preview */}
-              <div className="p-4 bg-[#1E1E1E] border border-[#2D2D2D] rounded space-y-3">
-                <span className="text-xs font-bold text-white uppercase font-mono block">Precios & Margen de Ganancia</span>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
-                    <input
-                      id="input-prod-cost"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.costPrice}
-                      onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Precio Venta ({currency}) *</label>
-                    <input
-                      id="input-prod-price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.sellingPrice}
-                      onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#FFDAD8] focus:border-[#C8102E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Margen Calculado</label>
-                    <div className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-bold text-[#A7F3D0] font-mono">
-                      +{marginPercent}% (${formatAmount(formData.sellingPrice - formData.costPrice)})
+              {editingProduct ? (
+                <>
+                  <div className="pt-1">
+                    <p className="mb-3 text-xs font-bold text-[#9CA3AF]">PRECIOS &amp; MARGEN DE GANANCIA</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
+                        <input id="input-prod-cost" type="number" step="0.01" min="0" required readOnly value={formData.costPrice} className="w-full px-3 py-2 bg-[#151515] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#9CA3AF] cursor-not-allowed" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Precio Venta ({currency}) *</label>
+                        <input id="input-prod-selling-price" type="number" step="0.01" min="0" required value={formData.sellingPrice} onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Margen Calculado</label>
+                        <div className="flex h-[34px] items-center rounded border border-[#2D2D2D] bg-[#0E0E0E] px-3 text-xs font-mono font-bold text-[#10B981]">
+                          {formData.costPrice > 0 ? `${((((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100)).toFixed(1)}% (${(formData.sellingPrice - formData.costPrice).toFixed(2)})` : '0.0%'}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Stock and Thresholds */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Stock Actual *</label>
+                      <input id="input-prod-stock" type="number" min="0" required readOnly value={formData.stock} className="w-full px-3 py-2 bg-[#151515] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#9CA3AF] cursor-not-allowed" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Stock Mínimo (Alerta) *</label>
+                      <input id="input-prod-min-stock" type="number" min="0" required value={formData.minStock} onChange={e => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Ubicación en Almacén *</label>
+                      <select id="select-prod-location" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]">
+                        <option value="">Seleccione ubicación</option>
+                        {mainWarehouses.map(store => <option key={store.id} value={store.name}>{store.name}</option>)}
+                        {!mainWarehouses.some(store => store.name === formData.location) && <option value={formData.location}>{formData.location}</option>}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              ) : (
                 <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">
-                    {editingProduct ? `Stock Actual - ${selectedMainWarehouse} *` : 'Stock Actual *'}
-                  </label>
-                  <input
-                    id="input-prod-stock"
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.stock}
-                    onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
-                  />
+                  <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
+                  <input id="input-prod-cost" type="number" step="0.01" min="0" required value={formData.costPrice} onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Mínimo (Alerta) *</label>
-                  <input
-                    id="input-prod-minstock"
-                    type="number"
-                    min="1"
-                    required
-                    value={formData.minStock}
-                    onChange={e => setFormData({ ...formData, minStock: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono text-white focus:border-[#C8102E]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Ubicación en Almacén *</label>
-                  <select
-                    id="input-prod-location"
-                    required
-                    disabled={Boolean(editingProduct)}
-                    value={mainWarehouses.some(store => store.name === formData.location) ? formData.location : selectedMainWarehouse}
-                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white disabled:opacity-100 focus:border-[#C8102E]"
-                  >
-                    {(mainWarehouses.length ? mainWarehouses : [{ id: 'main-warehouse', name: 'Tienda principal' }]).map(store => (
-                      <option key={store.id} value={store.name}>{store.name}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[10px] text-[#6B7280]">Los productos nuevos se registran únicamente en el almacén principal.</p>
-                </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Descripción / Especificaciones Técnicas</label>

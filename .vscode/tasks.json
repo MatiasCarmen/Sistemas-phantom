@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build frontend",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Rebuild frontend after purchase orders layout fix",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

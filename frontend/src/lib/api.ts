@@ -15,7 +15,8 @@ import {
   AuditLogEvent,
   Store,
   StoreStock,
-  StockTransfer
+  StockTransfer,
+  PurchaseOrder
 } from '../types';
 
 const API_BASE = '/api';
@@ -98,6 +99,15 @@ export const api = {
     fetchJson<StockTransfer>('/stock-transfers', { method: 'POST', body: JSON.stringify(data) }),
   confirmTransferReceipt: (guideNumber: string, storeId: string) =>
     fetchJson<StockTransfer[]>('/stock-transfers/receive', { method: 'POST', body: JSON.stringify({ guideNumber, storeId }) }),
+
+  // Purchase orders
+  getPurchaseOrders: () => fetchJson<PurchaseOrder[]>('/purchase-orders'),
+  createPurchaseOrder: (order: Omit<Partial<PurchaseOrder>, 'items'> & { items: Array<{ productId: string; quantity: number; unitCost: number }> }) =>
+    fetchJson<PurchaseOrder>('/purchase-orders', { method: 'POST', body: JSON.stringify(order) }),
+  updatePurchaseOrder: (id: string, order: Partial<PurchaseOrder>) =>
+    fetchJson<PurchaseOrder>(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(order) }),
+  receivePurchaseOrder: (id: string) =>
+    fetchJson<PurchaseOrder>(`/purchase-orders/${id}/receive`, { method: 'POST' }),
 
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),

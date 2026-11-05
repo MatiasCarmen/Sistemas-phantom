@@ -40,6 +40,44 @@ export interface StoreStock {
   quantity: number;
 }
 
+export type PurchaseOrderStatus = 'DRAFT' | 'ISSUED' | 'RECEIVED' | 'CANCELLED';
+
+export interface PurchaseOrderItem {
+  id: string;
+  productId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  unitCost: number;
+  taxRate: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  orderNumber: string;
+  supplierId: string;
+  supplierName: string;
+  supplierTaxId: string;
+  date: string;
+  expectedDate?: string;
+  status: PurchaseOrderStatus;
+  items: PurchaseOrderItem[];
+  subtotal: number;
+  taxTotal: number;
+  total: number;
+  currency: string;
+  paymentTerms?: string;
+  notes?: string;
+  createdBy: string;
+  receivedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StockTransfer {
   id: string;
   guideNumber: string;
