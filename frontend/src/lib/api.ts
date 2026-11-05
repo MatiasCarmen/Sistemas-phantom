@@ -106,8 +106,9 @@ export const api = {
     fetchJson<PurchaseOrder>('/purchase-orders', { method: 'POST', body: JSON.stringify(order) }),
   updatePurchaseOrder: (id: string, order: Partial<PurchaseOrder>) =>
     fetchJson<PurchaseOrder>(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(order) }),
-  receivePurchaseOrder: (id: string) =>
-    fetchJson<PurchaseOrder>(`/purchase-orders/${id}/receive`, { method: 'POST' }),
+  receivePurchaseOrder: (id: string, items?: Array<{ productId: string; sellingPrice: number; minStock: number; location: string }>) =>
+    fetchJson<PurchaseOrder>(`/purchase-orders/${id}/receive`, { method: 'POST', body: JSON.stringify({ items }) }),
+  deletePurchaseOrder: (id: string) => fetchJson<{ success: boolean }>(`/purchase-orders/${id}`, { method: 'DELETE' }),
 
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),

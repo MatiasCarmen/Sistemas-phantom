@@ -430,9 +430,19 @@ export default function App() {
     }
   };
 
-  const handleReceivePurchaseOrder = async (id: string) => {
+  const handleDeletePurchaseOrder = async (id: string) => {
     try {
-      const order = await api.receivePurchaseOrder(id);
+      await api.deletePurchaseOrder(id);
+      setPurchaseOrders(current => current.filter(order => order.id !== id));
+      showToast('Orden de compra eliminada.');
+    } catch (err: any) {
+      showToast(err.message || 'Error al eliminar la orden de compra', 'error');
+    }
+  };
+
+  const handleReceivePurchaseOrder = async (id: string, items?: Array<{ productId: string; sellingPrice: number; minStock: number; location: string }>) => {
+    try {
+      const order = await api.receivePurchaseOrder(id, items);
       setPurchaseOrders(current => current.map(item => item.id === id ? order : item));
       const [newProducts, newMovements] = await Promise.all([api.getProducts(), api.getKardex()]);
       setProducts(newProducts);
@@ -724,10 +734,12 @@ export default function App() {
               products={products}
               suppliers={suppliers}
               categories={categories}
+              settings={settings}
               onAddProduct={handleAddProduct}
               onCreate={handleCreatePurchaseOrder}
               onStatusChange={handlePurchaseOrderStatus}
               onReceive={handleReceivePurchaseOrder}
+              onDelete={handleDeletePurchaseOrder}
             />
           )}
 

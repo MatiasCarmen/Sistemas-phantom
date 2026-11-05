@@ -16,6 +16,46 @@
 			"args": [],
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Build redesigned purchase products table",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build POS location stock changes",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build out-of-stock sales card style",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build purchase actions and reception",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Rebuild purchase actions and reception",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

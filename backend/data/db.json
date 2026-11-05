@@ -1,6 +1,29 @@
 {
   "products": [
     {
+      "name": "Monitor Gamer Samsung Odyssey G5 32''",
+      "sku": "450116",
+      "barcode": "775175527310",
+      "description": "resolución de alta definición y frecuencia de actualización de 165 Hz para una experiencia de juego fluida e inmersiva. Cuenta con tiempo de respuesta de 1 ms MPRT y tecnología HDR10, que ofrece imágenes nítidas, colores vibrantes y mayor detalle en cada escena.",
+      "category": "Monitores",
+      "brand": "Samsung",
+      "costPrice": 1100,
+      "sellingPrice": 1100,
+      "taxRate": 18,
+      "stock": 17,
+      "minStock": 5,
+      "maxStock": 100,
+      "unit": "UND",
+      "location": "Tienda principal",
+      "supplierId": "sup-2",
+      "supplierName": "Gaming Store SAC",
+      "imageUrl": "/assets/Monitor-Samsung-G5-32-1793887258177.jpg",
+      "id": "prod-1793887351327",
+      "status": "in_stock",
+      "createdAt": "2026-11-05T14:02:31.327Z",
+      "updatedAt": "2026-11-05T14:03:19.012Z"
+    },
+    {
       "name": "PlayStation 5 Pro Consola (Digital)",
       "sku": "130588",
       "barcode": "775572636",
@@ -57,7 +80,7 @@
       "costPrice": 180,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 11,
+      "stock": 21,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
@@ -67,7 +90,7 @@
       "imageUrl": "/assets/dualsense.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T00:59:20.171Z"
+      "updatedAt": "2026-11-05T14:48:48.505Z"
     },
     {
       "id": "prod-3",
@@ -126,7 +149,7 @@
       "costPrice": 120,
       "sellingPrice": 249.9,
       "taxRate": 18,
-      "stock": 21,
+      "stock": 31,
       "minStock": 6,
       "maxStock": 35,
       "unit": "UND",
@@ -136,7 +159,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-05T14:48:48.506Z"
     },
     {
       "id": "prod-6",
@@ -149,7 +172,7 @@
       "costPrice": 150,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 17,
+      "stock": 27,
       "minStock": 5,
       "maxStock": 30,
       "unit": "UND",
@@ -159,7 +182,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T00:59:20.171Z"
+      "updatedAt": "2026-11-05T14:48:48.510Z"
     },
     {
       "id": "prod-7",
@@ -195,7 +218,7 @@
       "costPrice": 450,
       "sellingPrice": 799.9,
       "taxRate": 18,
-      "stock": 8,
+      "stock": 18,
       "minStock": 3,
       "maxStock": 15,
       "unit": "UND",
@@ -205,7 +228,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T00:59:20.171Z"
+      "updatedAt": "2026-11-05T14:03:19.011Z"
     },
     {
       "id": "prod-9",
@@ -218,7 +241,7 @@
       "costPrice": 70,
       "sellingPrice": 149.9,
       "taxRate": 18,
-      "stock": 14,
+      "stock": 24,
       "minStock": 7,
       "maxStock": 38,
       "unit": "UND",
@@ -228,7 +251,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T00:59:20.171Z"
+      "updatedAt": "2026-11-05T14:48:48.511Z"
     },
     {
       "id": "prod-10",
@@ -757,6 +780,96 @@
     }
   ],
   "inventoryMovements": [
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "IN_PURCHASE",
+      "quantity": 10,
+      "previousStock": 14,
+      "newStock": 24,
+      "unitCost": 70,
+      "referenceId": "OC-00000002",
+      "notes": "Recepción de orden de compra OC-00000002",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793890128511-641",
+      "createdAt": "2026-11-05T14:48:48.511Z"
+    },
+    {
+      "productId": "prod-6",
+      "productSku": "746979",
+      "productName": "Mouse Logitech G502",
+      "type": "IN_PURCHASE",
+      "quantity": 10,
+      "previousStock": 17,
+      "newStock": 27,
+      "unitCost": 150,
+      "referenceId": "OC-00000002",
+      "notes": "Recepción de orden de compra OC-00000002",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793890128510-332",
+      "createdAt": "2026-11-05T14:48:48.510Z"
+    },
+    {
+      "productId": "prod-5",
+      "productSku": "910402",
+      "productName": "Teclado Razer Cynosa Lite",
+      "type": "IN_PURCHASE",
+      "quantity": 10,
+      "previousStock": 21,
+      "newStock": 31,
+      "unitCost": 120,
+      "referenceId": "OC-00000002",
+      "notes": "Recepción de orden de compra OC-00000002",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793890128506-152",
+      "createdAt": "2026-11-05T14:48:48.506Z"
+    },
+    {
+      "productId": "prod-2",
+      "productSku": "256618",
+      "productName": "Control DualSense PlayStation 5",
+      "type": "IN_PURCHASE",
+      "quantity": 10,
+      "previousStock": 11,
+      "newStock": 21,
+      "unitCost": 180,
+      "referenceId": "OC-00000002",
+      "notes": "Recepción de orden de compra OC-00000002",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793890128506-154",
+      "createdAt": "2026-11-05T14:48:48.506Z"
+    },
+    {
+      "productId": "prod-1793887351327",
+      "productSku": "450116",
+      "productName": "Monitor Gamer Samsung Odyssey G5 32''",
+      "type": "IN_PURCHASE",
+      "quantity": 17,
+      "previousStock": 0,
+      "newStock": 17,
+      "unitCost": 1100,
+      "referenceId": "OC-00000001",
+      "notes": "Recepción de orden de compra OC-00000001",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793887399012-113",
+      "createdAt": "2026-11-05T14:03:19.012Z"
+    },
+    {
+      "productId": "prod-8",
+      "productSku": "143070",
+      "productName": "Monitor Samsung 24 Pulgadas",
+      "type": "IN_PURCHASE",
+      "quantity": 10,
+      "previousStock": 8,
+      "newStock": 18,
+      "unitCost": 450,
+      "referenceId": "OC-00000001",
+      "notes": "Recepción de orden de compra OC-00000001",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1793887399011-748",
+      "createdAt": "2026-11-05T14:03:19.011Z"
+    },
     {
       "productId": "prod-1791263428688",
       "productSku": "130588",
@@ -1592,7 +1705,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-11-05T06:36:54.081Z"
+      "lastLogin": "2026-11-05T13:49:58.259Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -1968,6 +2081,129 @@
       "receivedAt": "2026-11-05T00:45:32.336Z"
     }
   ],
-  "purchaseOrders": [],
-  "lastUpdated": "2026-11-05T06:36:54.083Z"
+  "purchaseOrders": [
+    {
+      "supplierId": "sup-3",
+      "supplierName": "Distribuciones Gamer SAC",
+      "supplierTaxId": "20456789123",
+      "date": "2026-11-05",
+      "expectedDate": "2026-11-10",
+      "status": "RECEIVED",
+      "items": [
+        {
+          "id": "oci-1793889532897-prod-2",
+          "productId": "prod-2",
+          "sku": "256618",
+          "name": "Control DualSense PlayStation 5",
+          "unit": "UND",
+          "quantity": 10,
+          "unitCost": 180,
+          "taxRate": 18,
+          "subtotal": 1800,
+          "taxAmount": 324,
+          "total": 2124
+        },
+        {
+          "id": "oci-1793889532897-prod-5",
+          "productId": "prod-5",
+          "sku": "910402",
+          "name": "Teclado Razer Cynosa Lite",
+          "unit": "UND",
+          "quantity": 10,
+          "unitCost": 120,
+          "taxRate": 18,
+          "subtotal": 1200,
+          "taxAmount": 216,
+          "total": 1416
+        },
+        {
+          "id": "oci-1793889532897-prod-6",
+          "productId": "prod-6",
+          "sku": "746979",
+          "name": "Mouse Logitech G502",
+          "unit": "UND",
+          "quantity": 10,
+          "unitCost": 150,
+          "taxRate": 18,
+          "subtotal": 1500,
+          "taxAmount": 270,
+          "total": 1770
+        },
+        {
+          "id": "oci-1793889532897-prod-9",
+          "productId": "prod-9",
+          "sku": "257538",
+          "name": "Mouse Redragon Cobra",
+          "unit": "UND",
+          "quantity": 10,
+          "unitCost": 70,
+          "taxRate": 18,
+          "subtotal": 700,
+          "taxAmount": 126,
+          "total": 826
+        }
+      ],
+      "subtotal": 5200,
+      "taxTotal": 936,
+      "total": 6136,
+      "currency": "S/.",
+      "paymentTerms": "Contado",
+      "notes": "",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "oc-1793889532898-801",
+      "orderNumber": "OC-00000002",
+      "createdAt": "2026-11-05T14:38:52.897Z",
+      "updatedAt": "2026-11-05T14:48:48.512Z",
+      "receivedAt": "2026-11-05T14:48:48.512Z"
+    },
+    {
+      "supplierId": "sup-2",
+      "supplierName": "Gaming Store SAC",
+      "supplierTaxId": "20987654321",
+      "date": "2026-11-05",
+      "expectedDate": "2026-11-09",
+      "status": "RECEIVED",
+      "items": [
+        {
+          "id": "oci-1793887375090-prod-8",
+          "productId": "prod-8",
+          "sku": "143070",
+          "name": "Monitor Samsung 24 Pulgadas",
+          "unit": "UND",
+          "quantity": 10,
+          "unitCost": 450,
+          "taxRate": 18,
+          "subtotal": 4500,
+          "taxAmount": 810,
+          "total": 5310
+        },
+        {
+          "id": "oci-1793887375090-prod-1793887351327",
+          "productId": "prod-1793887351327",
+          "sku": "450116",
+          "name": "Monitor Gamer Samsung Odyssey G5 32''",
+          "unit": "UND",
+          "quantity": 17,
+          "unitCost": 1100,
+          "taxRate": 18,
+          "subtotal": 18700,
+          "taxAmount": 3366,
+          "total": 22066
+        }
+      ],
+      "subtotal": 23200,
+      "taxTotal": 4176,
+      "total": 27376,
+      "currency": "S/.",
+      "paymentTerms": "Contado",
+      "notes": "",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "oc-1793887375090-205",
+      "orderNumber": "OC-00000001",
+      "createdAt": "2026-11-05T14:02:55.090Z",
+      "updatedAt": "2026-11-05T14:03:19.013Z",
+      "receivedAt": "2026-11-05T14:03:19.013Z"
+    }
+  ],
+  "lastUpdated": "2026-11-05T14:48:48.512Z"
 }

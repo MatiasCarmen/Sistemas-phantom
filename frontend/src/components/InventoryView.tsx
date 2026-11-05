@@ -499,14 +499,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <span>Ver Kárdex General</span>
           </button>
 
-          <button
-            id="btn-add-product-main"
-            onClick={handleOpenAdd}
-            className="px-4 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-xs font-bold transition-colors flex items-center space-x-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Producto</span>
-          </button>
         </div>
       </div>
 

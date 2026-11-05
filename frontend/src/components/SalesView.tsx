@@ -86,6 +86,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const getAvailableStock = (productId: string) => selectedStoreId === 'main-warehouse'
     ? products.find(product => product.id === productId)?.stock || 0
     : storeStock.find(stock => stock.storeId === selectedStoreId && stock.productId === productId)?.quantity || 0;
+  const getRemainingStock = (productId: string) => {
+    const cartQuantity = cartItems.find(item => item.productId === productId)?.quantity || 0;
+    return Math.max(0, getAvailableStock(productId) - cartQuantity);
+  };
   const [notes, setNotes] = useState('');
   
   // Cash Tendered & Change
@@ -295,7 +299,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
       p.name.toLowerCase().includes(posSearch.toLowerCase()) ||
       p.sku.toLowerCase().includes(posSearch.toLowerCase()) ||
       (p.barcode && p.barcode.toLowerCase().includes(posSearch.toLowerCase()));
-    return matchesCategory && matchesSearch;
+    const belongsToLocation = selectedStoreId === 'main-warehouse'
+      ? true
+      : storeStock.some(stock => stock.storeId === selectedStoreId && stock.productId === p.id);
+    return matchesCategory && matchesSearch && belongsToLocation;
   });
 
   return (
@@ -308,7 +315,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
           <select
             id="select-pos-store"
             value={selectedStoreId}
-            onChange={e => setSelectedStoreId(e.target.value)}
+            onChange={e => {
+              setSelectedStoreId(e.target.value);
+              setCartItems([]);
+            }}
             className="w-full px-2.5 py-1.5 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs focus:outline-none focus:border-[#C8102E]"
           >
             {stores.filter(store => store.status === 'ACTIVE').map(store => (
@@ -405,7 +415,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
             {/* Products Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-1">
               {posFilteredProducts.map(product => {
-                const isOutOfStock = product.stock <= 0;
+                const remainingStock = getRemainingStock(product.id);
+                const isOutOfStock = remainingStock <= 0;
                 return (
                   <button
                     key={product.id}
@@ -423,9 +434,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <span className="text-[10px] font-mono text-[#71717A] truncate max-w-[100px]">{product.sku}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono tabular-nums ${
                           isOutOfStock ? 'bg-[#C8102E]/15 text-[#ffb3b1] border border-[#C8102E]/40' :
-                          product.stock <= product.minStock ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/40'
+                          remainingStock <= product.minStock ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/40'
                         }`}>
-                          {product.stock} {product.unit}
+                          {isOutOfStock ? 'AGOTADO' : `${remainingStock} ${product.unit}`}
                         </span>
                       </div>
                       <h4 className="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ffb3b1] transition-colors">
@@ -434,12 +445,16 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-[#1E1E1E] flex items-center justify-between">
-                      <span className="text-sm font-bold text-white font-mono tabular-nums">
+                      <span className={`text-sm font-bold font-mono tabular-nums ${isOutOfStock ? 'text-[#71717A]' : 'text-white'}`}>
                         {currency} {formatAmount(product.sellingPrice)}
                       </span>
-                      <span className="w-6 h-6 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] font-bold flex items-center justify-center text-xs group-hover:bg-[#C8102E] group-hover:text-white group-hover:border-[#C8102E] transition-colors">
-                        +
-                      </span>
+                      {isOutOfStock ? (
+                        <span className="w-6 h-6 rounded border border-[#303030] text-[#4F4F4F] flex items-center justify-center text-xs">+</span>
+                      ) : (
+                        <span className="w-6 h-6 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] font-bold flex items-center justify-center text-xs group-hover:bg-[#C8102E] group-hover:text-white group-hover:border-[#C8102E] transition-colors">
+                          +
+                        </span>
+                      )}
                     </div>
                   </button>
                 );

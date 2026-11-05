@@ -369,7 +369,7 @@ class DataStore {
     return this.data.purchaseOrders[index];
   }
 
-  receivePurchaseOrder(id: string, receivedBy: string): PurchaseOrder | null {
+  receivePurchaseOrder(id: string, receivedBy: string, receptionItems?: Array<{ productId: string; sellingPrice?: number; minStock?: number; location?: string }>): PurchaseOrder | null {
     const order = this.data.purchaseOrders.find(item => item.id === id);
     if (!order || order.status === 'RECEIVED' || order.status === 'CANCELLED') return null;
 
@@ -377,7 +377,13 @@ class DataStore {
       const product = this.getProductById(item.productId);
       if (!product) continue;
       const previousStock = product.stock;
+      const receptionItem = receptionItems?.find(entry => entry.productId === item.productId);
       product.stock += item.quantity;
+      if (receptionItem) {
+        if (Number.isFinite(Number(receptionItem.sellingPrice))) product.sellingPrice = Number(receptionItem.sellingPrice);
+        if (Number.isFinite(Number(receptionItem.minStock))) product.minStock = Math.max(0, Number(receptionItem.minStock));
+        product.location = 'Almacén principal';
+      }
       product.updatedAt = new Date().toISOString();
       product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
       this.addInventoryMovement({
@@ -400,6 +406,27 @@ class DataStore {
     order.updatedAt = new Date().toISOString();
     this.saveToFile();
     return order;
+  }
+
+  deletePurchaseOrder(id: string): boolean {
+    const index = this.data.purchaseOrders.findIndex(order => order.id === id);
+    if (index === -1) return false;
+
+    const order = this.data.purchaseOrders[index];
+    if (order.status === 'RECEIVED') {
+      for (const item of order.items) {
+        const product = this.getProductById(item.productId);
+        if (!product) continue;
+        product.stock = Math.max(0, product.stock - item.quantity);
+        product.updatedAt = new Date().toISOString();
+        product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
+      }
+      this.data.inventoryMovements = this.data.inventoryMovements.filter(movement => movement.referenceId !== order.orderNumber);
+    }
+
+    this.data.purchaseOrders.splice(index, 1);
+    this.saveToFile();
+    return true;
   }
 
   // --- PRODUCTS ---

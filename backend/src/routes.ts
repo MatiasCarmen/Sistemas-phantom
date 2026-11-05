@@ -458,9 +458,17 @@ router.put('/purchase-orders/:id', requirePermission('canManageInventory'), (req
 });
 
 router.post('/purchase-orders/:id/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
-  const order = db.receivePurchaseOrder(req.params.id, getAuthenticatedUser(req)?.name || 'Usuario Almacén');
+  const receptionItems = Array.isArray(req.body.items) ? req.body.items : undefined;
+  const order = db.receivePurchaseOrder(req.params.id, getAuthenticatedUser(req)?.name || 'Usuario Almacén', receptionItems);
   if (!order) return res.status(400).json({ success: false, error: 'La orden ya fue recibida, cancelada o no existe' });
   res.json({ success: true, data: order });
+});
+
+router.delete('/purchase-orders/:id', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  if (!db.deletePurchaseOrder(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'La orden de compra no existe' });
+  }
+  res.json({ success: true });
 });
 
 router.post('/stock-transfers/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
