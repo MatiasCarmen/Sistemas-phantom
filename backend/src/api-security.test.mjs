@@ -1,6 +1,13 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'phantom-api-security-'));
+process.env.PHANTOM_DATA_DIR = dataDir;
+process.env.MONGODB_DATABASE = `phantom_api_security_${randomUUID().replaceAll('-', '')}`;
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 
@@ -17,6 +24,8 @@ before(async () => {
 
 after(async () => {
   await new Promise((resolve) => server.close(resolve));
+  assert.ok(path.resolve(dataDir).startsWith(path.resolve(os.tmpdir()) + path.sep));
+  fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
 test('requiere autenticación para endpoints sensibles y conserva health público', async () => {

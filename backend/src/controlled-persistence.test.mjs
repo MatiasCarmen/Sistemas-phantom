@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { MongoClient } from 'mongodb';
+import { randomUUID } from 'node:crypto';
 
 const isolatedDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'phantom-controlled-'));
 const isolatedSnapshot = JSON.parse(fs.readFileSync(path.resolve('data/db.json'), 'utf8'));
@@ -11,7 +12,7 @@ delete isolatedSnapshot.users;
 fs.writeFileSync(path.join(isolatedDataDir, 'db.json'), JSON.stringify(isolatedSnapshot, null, 2));
 fs.copyFileSync(path.resolve('data/audit.json'), path.join(isolatedDataDir, 'audit.json'));
 process.env.PHANTOM_DATA_DIR = isolatedDataDir;
-process.env.MONGODB_DATABASE = `phantom_erp_controlled_${Date.now()}`;
+process.env.MONGODB_DATABASE = `phantom_erp_controlled_${randomUUID().replaceAll('-', '')}`;
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 
@@ -50,6 +51,7 @@ before(async () => {
 after(async () => {
   await new Promise(resolve => server.close(resolve));
   await db.close();
+  assert.match(process.env.MONGODB_DATABASE, /^phantom_erp_(controlled|auth_pricing)_[a-f0-9]{32}$/);
   await mongo.db(process.env.MONGODB_DATABASE).dropDatabase();
   await mongo.close();
   fs.rmSync(isolatedDataDir, { recursive: true, force: true });
