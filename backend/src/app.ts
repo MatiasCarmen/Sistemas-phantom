@@ -1,10 +1,12 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import apiRoutes from './routes';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
+import { loginRateLimit } from './loginRateLimit';
 
 export function createApp(): Express {
   const app = express();
   const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+  app.use('/api/auth/login', loginRateLimit());
 
   // Middleware CORS nativo tipado
   app.use((req: Request, res: Response, next: NextFunction) => {

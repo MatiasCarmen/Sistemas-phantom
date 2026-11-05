@@ -2,7 +2,7 @@ import { Router, Request, Response, type NextFunction } from 'express';
 import { db, TransactionValidationError, type DatabaseSchema } from './dataStore';
 import { buildAuditEvents } from './audit';
 import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
-import { signAuthToken, verifyAuthToken } from './security';
+import { signAuthToken, verifyAuthToken, revokeAuthToken } from './security';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -62,7 +62,16 @@ router.post('/uploads/product-image', async (req: Request, res: Response) => {
 
 function getAuthenticatedUser(req: Request) {
   const verified = verifyAuthToken(req.headers.authorization);
-  return verified ? db.getUserById(verified.userId) : undefined;
+  const user = verified ? db.getUserById(verified.userId) : undefined;
+  return user?.status === 'active' ? user : undefined;
+}
+
+function redactUserPasswords(data: DatabaseSchema): DatabaseSchema {
+  const sanitized = JSON.parse(JSON.stringify(data)) as DatabaseSchema;
+  if (Array.isArray(sanitized.users)) {
+    sanitized.users = sanitized.users.map(({ password, ...user }) => user);
+  }
+  return sanitized;
 }
 
 function authenticate(req: Request, res: Response, next: NextFunction): void {
@@ -965,12 +974,13 @@ router.put('/settings', requirePermission('canManageSettings'), (req: Request, r
 // --- AUTHENTICATION & USERS ---
 router.post('/auth/login', (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
-    if (!username) {
-      return res.status(400).json({ success: false, error: 'Ingrese su nombre de usuario o correo' });
+    const { username, password } = req.body ?? {};
+    if (typeof username !== 'string' || !username.trim() || username.length > 254 ||
+        typeof password !== 'string' || !password || password.length > 1024) {
+      return res.status(401).json({ success: false, error: 'Credenciales inválidas' });
     }
 
-    const authResult = db.authenticateUser(username, password || '');
+    const authResult = db.authenticateUser(username, password);
     if (authResult.error || !authResult.user) {
       return res.status(401).json({ success: false, error: authResult.error || 'Credenciales inválidas' });
     }
@@ -986,8 +996,8 @@ router.post('/auth/login', (req: Request, res: Response) => {
       user: authResult.user,
       message: `Bienvenido(a), ${authResult.user.name}`
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch {
+    res.status(503).json({ success: false, error: 'No se pudo iniciar sesión. Intente de nuevo más tarde.' });
   }
 });
 
@@ -1006,6 +1016,7 @@ router.get('/auth/me', (req: Request, res: Response) => {
 });
 
 router.post('/auth/logout', (req: Request, res: Response) => {
+  revokeAuthToken(req.headers.authorization);
   res.json({ success: true, message: 'Sesión cerrada correctamente' });
 });
 
@@ -1020,30 +1031,13 @@ router.get('/users', requirePermission('canManageUsers'), (req: Request, res: Re
 
 router.post('/users', requirePermission('canManageUsers'), (req: Request, res: Response) => {
   try {
-    const { username, name, email, role, password, permissions } = req.body;
-    if (!username || !name || !email) {
-      return res.status(400).json({ success: false, error: 'Campos requeridos: username, name, email' });
-    }
-
-    // Check duplicate
-    const existing = db.getUserByUsernameOrEmail(username);
-    if (existing) {
-      return res.status(400).json({ success: false, error: 'El nombre de usuario o correo ya está registrado' });
-    }
-
-    const newUser = db.addUser({
-      username: username.trim().toLowerCase(),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: role || 'collaborator',
-      roleLabel: role === 'admin' ? 'Administrador' : role === 'warehouse' ? 'Almacén' : role === 'cashier' ? 'Caja' : 'Colaborador',
-      password: password || '123456',
-      status: 'active',
-      permissions: permissions || undefined
-    });
+    const newUser = db.addUser(req.body);
 
     res.status(201).json({ success: true, data: newUser, message: 'Usuario colaborador creado con éxito' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1056,6 +1050,9 @@ router.put('/users/:id', requirePermission('canManageUsers'), (req: Request, res
     }
     res.json({ success: true, data: updated, message: 'Usuario actualizado correctamente' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1068,6 +1065,9 @@ router.delete('/users/:id', requirePermission('canManageUsers'), requirePermissi
     }
     res.json({ success: true, message: 'Usuario eliminado exitosamente' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1075,7 +1075,7 @@ router.delete('/users/:id', requirePermission('canManageUsers'), requirePermissi
 // --- SYSTEM BACKUP / RESET / EXPORT ---
 router.get('/system/export', (req: Request, res: Response) => {
   try {
-    const data = db.exportDatabase();
+    const data = redactUserPasswords(db.exportDatabase());
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename=inventario_db_backup_${Date.now()}.json`);
     res.send(JSON.stringify(data, null, 2));
@@ -1086,7 +1086,7 @@ router.get('/system/export', (req: Request, res: Response) => {
 
 router.get('/system/raw-db', (req: Request, res: Response) => {
   try {
-    const data = db.exportDatabase();
+    const data = redactUserPasswords(db.exportDatabase());
     res.json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -1262,7 +1262,7 @@ router.get('/system/sql-export', (req: Request, res: Response) => {
 
 router.get('/database/mysql-script', (req: Request, res: Response) => {
   try {
-    const data = db.exportDatabase();
+    const data = redactUserPasswords(db.exportDatabase());
     const dbName = 'phantom_erp';
     const prefix = 'nexus_';
 
@@ -1508,7 +1508,7 @@ router.get('/database/mysql-script', (req: Request, res: Response) => {
     // Users
     data.users.forEach(u => {
       const perms = JSON.stringify(u.permissions || {}).replace(/'/g, "\\'");
-      const password = (u.password || '123456').replace(/'/g, "\\'");
+      const password = (u.password || '[REDACTED]').replace(/'/g, "\\'");
       sql += `INSERT INTO \`${prefix}users\` (\`id\`, \`username\`, \`name\`, \`email\`, \`password\`, \`role\`, \`role_label\`, \`avatar_color\`, \`status\`, \`permissions\`) VALUES ('${u.id}', '${u.username}', '${u.name.replace(/'/g, "\\'")}', '${u.email}', '${password}', '${u.role}', '${u.roleLabel.replace(/'/g, "\\'")}', '${u.avatarColor || 'indigo'}', '${u.status}', '${perms}');\n`;
     });
     sql += `\n`;
@@ -1564,13 +1564,16 @@ router.post('/system/import', (req: Request, res: Response) => {
     }
     res.json({ success: true, message: 'Base de datos restaurada correctamente' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 router.post('/system/reset-demo', (req: Request, res: Response) => {
   try {
-    const data = db.resetDemoData();
+    const data = redactUserPasswords(db.resetDemoData());
     res.json({ success: true, message: 'Datos de prueba reiniciados con éxito', data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
