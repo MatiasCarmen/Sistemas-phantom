@@ -218,7 +218,7 @@
       "costPrice": 70,
       "sellingPrice": 149.9,
       "taxRate": 18,
-      "stock": 26,
+      "stock": 15,
       "minStock": 7,
       "maxStock": 38,
       "unit": "UND",
@@ -228,7 +228,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-04T23:58:39.144Z"
     },
     {
       "id": "prod-10",
@@ -608,6 +608,19 @@
       "contactPerson": "Aldo Soto",
       "id": "sup-1791417979612",
       "createdAt": "2026-10-08T00:06:19.612Z"
+    },
+    {
+      "name": "Grupo RM SAC",
+      "taxId": "201465789313",
+      "email": "rojas.m@gruporm.com.pe",
+      "phone": "963451029",
+      "address": "",
+      "contactPerson": "Mario Rojas",
+      "category": "Transportista",
+      "paymentTerms": "Contado",
+      "status": "Activo",
+      "id": "sup-1793836220395",
+      "createdAt": "2026-11-04T23:50:20.395Z"
     }
   ],
   "customers": [
@@ -709,6 +722,36 @@
     }
   ],
   "inventoryMovements": [
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 6,
+      "previousStock": 21,
+      "newStock": 15,
+      "unitCost": 70,
+      "referenceId": "TR-1793836719144-prod-9",
+      "notes": "Transferencia al almacén Mall Aventura - Comas",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1793836719144-48",
+      "createdAt": "2026-11-04T23:58:39.144Z"
+    },
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 5,
+      "previousStock": 26,
+      "newStock": 21,
+      "unitCost": 70,
+      "referenceId": "TR-1793836323420-prod-9",
+      "notes": "Transferencia al almacén Mega Plaza - Independencia",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1793836323420-415",
+      "createdAt": "2026-11-04T23:52:03.420Z"
+    },
     {
       "productId": "prod-1791263428688",
       "productSku": "130588",
@@ -815,7 +858,7 @@
         }
       ],
       "subtotal": 4508.31,
-      "discountTotal": 1091.49,
+      "discountTotal": 279.99,
       "taxTotal": 811.5,
       "total": 5319.81,
       "currency": "S/.",
@@ -873,7 +916,7 @@
         }
       ],
       "subtotal": 2457.29,
-      "discountTotal": 442.31,
+      "discountTotal": 0,
       "taxTotal": 442.31,
       "total": 2899.6,
       "currency": "S/.",
@@ -929,7 +972,7 @@
         }
       ],
       "subtotal": 2554.85,
-      "discountTotal": 644.85,
+      "discountTotal": 184.98,
       "taxTotal": 459.87,
       "total": 3014.72,
       "currency": "S/.",
@@ -971,7 +1014,7 @@
         }
       ],
       "subtotal": 4508.31,
-      "discountTotal": 1091.49,
+      "discountTotal": 279.99,
       "taxTotal": 811.5,
       "total": 5319.81,
       "currency": "S/.",
@@ -1016,7 +1059,7 @@
         }
       ],
       "subtotal": 762.46,
-      "discountTotal": 137.24,
+      "discountTotal": 0,
       "taxTotal": 137.24,
       "total": 899.7,
       "currency": "S/.",
@@ -1059,7 +1102,7 @@
         }
       ],
       "subtotal": 2288.05,
-      "discountTotal": 411.85,
+      "discountTotal": 0,
       "taxTotal": 411.85,
       "total": 2699.9,
       "currency": "S/.",
@@ -1117,7 +1160,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-11-04T04:00:03.186Z"
+      "lastLogin": "2026-11-04T23:45:35.917Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -1429,8 +1472,49 @@
       "storeId": "store-02",
       "productId": "prod-21",
       "quantity": 6
+    },
+    {
+      "storeId": "store-06",
+      "productId": "prod-9",
+      "quantity": 5
+    },
+    {
+      "storeId": "store-07",
+      "productId": "prod-9",
+      "quantity": 6
     }
   ],
-  "stockTransfers": [],
-  "lastUpdated": "2026-11-04T23:23:46.453Z"
+  "stockTransfers": [
+    {
+      "id": "TR-1793836719144-prod-9",
+      "guideNumber": "TRS-00000002",
+      "verificationNumber": "07",
+      "productId": "prod-9",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-07",
+      "quantity": 6,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-04T23:58:39.144Z",
+      "receivedAt": "2026-11-04T23:58:50.789Z"
+    },
+    {
+      "id": "TR-1793836323420-prod-9",
+      "guideNumber": "TRS-00000001",
+      "verificationNumber": "06",
+      "productId": "prod-9",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-06",
+      "quantity": 5,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-04T23:52:03.420Z",
+      "receivedAt": "2026-11-04T23:52:17.463Z"
+    }
+  ],
+  "lastUpdated": "2026-11-04T23:58:50.789Z"
 }

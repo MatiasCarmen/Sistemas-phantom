@@ -53,6 +53,7 @@ interface InventoryViewProps {
   onDeleteProduct: (id: string) => Promise<void>;
   onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => Promise<void>;
   onOpenKardex: (product?: Product) => void;
+  onStockTransferred?: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -66,6 +67,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onDeleteProduct,
   onAdjustStock,
   onOpenKardex,
+  onStockTransferred,
   isLoading
 }) => {
   const currency = settings?.currencySymbol || 'S/.';
@@ -91,6 +93,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [transferStore, setTransferStore] = useState('');
   const [transferQuantity, setTransferQuantity] = useState(1);
   const [transferError, setTransferError] = useState('');
+  const [transferSuccess, setTransferSuccess] = useState('');
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [isTransferPanelOpen, setIsTransferPanelOpen] = useState(false);
   const [transferQuantities, setTransferQuantities] = useState<Record<string, number>>({});
@@ -110,6 +113,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     setStoreSearch('');
     setSelectedStoreId(null);
     setIsTransferPanelOpen(false);
+  };
+
+  const changeInventorySection = (section: 'catalog' | 'stores') => {
+    if (section !== inventorySection) {
+      closeStoreInventory();
+      setTransferSuccess('');
+    }
+    setInventorySection(section);
   };
 
   const loadStockLocations = async () => {
@@ -398,6 +409,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const handleTransfer = async () => {
     setTransferError('');
+    setTransferSuccess('');
     const items = Object.entries(transferQuantities).filter(([, quantity]) => quantity > 0).map(([productId, quantity]) => ({ productId, quantity }));
     if (!transferStore || items.length === 0) {
       setTransferError('Seleccione una tienda y indique al menos una cantidad.');
@@ -407,10 +419,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     try {
       await api.transferStock({ items, toStoreId: transferStore, transportSupplierId, transportSupplierName: transportSupplier?.name });
       await loadStockLocations();
+      await onStockTransferred?.();
+      const destinationStore = stores.find(store => store.id === transferStore);
+      setSelectedStoreId(transferStore);
+      setTransferSuccess(`Transferencia exitosa hacia ${destinationStore?.name || 'la tienda destino'}.`);
       setIsTransferPanelOpen(false);
+      setTransferStore('');
       setTransferQuantities({});
       setTransportSupplierId('');
-      window.location.reload();
+      window.setTimeout(() => setTransferSuccess(''), 4000);
     } catch (error: any) {
       setTransferError(error.message || 'No se pudo realizar la transferencia');
     }
@@ -442,7 +459,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      
+      {transferSuccess && (
+        <div role="status" className="fixed right-6 top-6 z-[100] flex max-w-md items-center gap-3 rounded border border-[#10B981]/50 bg-[#063A2F] px-5 py-4 text-sm font-bold text-[#D1FAE5] shadow-2xl">
+          <Check size={20} className="shrink-0 text-[#31D0AA]" />
+          <span>{transferSuccess}</span>
+          <button type="button" onClick={() => setTransferSuccess('')} className="ml-2 text-[#9CA3AF] hover:text-white" aria-label="Cerrar mensaje"><X size={16} /></button>
+        </div>
+      )}
+
       {/* Top Header & Action Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#141414] p-5 rounded border border-[#2D2D2D]">
         <div>
@@ -491,7 +515,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           ['catalog', 'Listado de productos'],
           ['stores', 'Tiendas']
         ] as const).map(([key, label]) => (
-          <button key={key} onClick={() => setInventorySection(key)} className={`px-4 py-2.5 text-xs font-bold border-b-2 -mb-px ${inventorySection === key ? 'text-white border-[#C8102E]' : 'text-[#9CA3AF] border-transparent hover:text-white'}`}>
+          <button key={key} onClick={() => changeInventorySection(key)} className={`px-4 py-2.5 text-xs font-bold border-b-2 -mb-px ${inventorySection === key ? 'text-white border-[#C8102E]' : 'text-[#9CA3AF] border-transparent hover:text-white'}`}>
             {label}
           </button>
         ))}

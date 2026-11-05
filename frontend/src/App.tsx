@@ -627,6 +627,7 @@ export default function App() {
               onDeleteProduct={handleDeleteProduct}
               onAdjustStock={handleAdjustStock}
               onOpenKardex={handleOpenKardex}
+              onStockTransferred={fetchAllData}
               isLoading={isLoading}
             />
           )}
