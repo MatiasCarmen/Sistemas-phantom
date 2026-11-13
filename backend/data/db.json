@@ -10,7 +10,7 @@
       "costPrice": 3700,
       "sellingPrice": 3999.9,
       "taxRate": 18,
-      "stock": 900,
+      "stock": 880,
       "minStock": 5,
       "maxStock": 100,
       "unit": "UND",
@@ -21,7 +21,7 @@
       "id": "prod-1791263428688",
       "status": "in_stock",
       "createdAt": "2026-10-06T05:10:28.688Z",
-      "updatedAt": "2026-11-13T03:58:53.164Z"
+      "updatedAt": "2026-11-13T18:03:54.028Z"
     },
     {
       "id": "prod-1",
@@ -34,7 +34,7 @@
       "costPrice": 2200,
       "sellingPrice": 2799.9,
       "taxRate": 18,
-      "stock": 158,
+      "stock": 138,
       "minStock": 2,
       "maxStock": 20,
       "unit": "UND",
@@ -44,7 +44,7 @@
       "imageUrl": "/assets/ps5-slim.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T03:58:53.166Z"
+      "updatedAt": "2026-11-13T18:03:54.031Z"
     },
     {
       "id": "prod-2",
@@ -57,7 +57,7 @@
       "costPrice": 180,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 21,
+      "stock": 11,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
@@ -67,7 +67,7 @@
       "imageUrl": "/assets/dualsense.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T14:48:48.505Z"
+      "updatedAt": "2026-11-13T18:03:54.036Z"
     },
     {
       "id": "prod-3",
@@ -80,7 +80,7 @@
       "costPrice": 1500,
       "sellingPrice": 1999.9,
       "taxRate": 18,
-      "stock": 195,
+      "stock": 175,
       "minStock": 3,
       "maxStock": 22,
       "unit": "UND",
@@ -90,7 +90,7 @@
       "imageUrl": "/assets/switch-oled.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T03:58:53.165Z"
+      "updatedAt": "2026-11-13T18:03:54.039Z"
     },
     {
       "id": "prod-4",
@@ -103,7 +103,7 @@
       "costPrice": 2100,
       "sellingPrice": 2699.9,
       "taxRate": 18,
-      "stock": 161,
+      "stock": 146,
       "minStock": 2,
       "maxStock": 18,
       "unit": "UND",
@@ -113,7 +113,7 @@
       "imageUrl": "/assets/xbox-series-x.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T03:58:53.166Z"
+      "updatedAt": "2026-11-13T18:03:54.047Z"
     },
     {
       "id": "prod-5",
@@ -126,7 +126,7 @@
       "costPrice": 120,
       "sellingPrice": 249.9,
       "taxRate": 18,
-      "stock": 31,
+      "stock": 25,
       "minStock": 6,
       "maxStock": 35,
       "unit": "UND",
@@ -136,7 +136,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T14:48:48.506Z"
+      "updatedAt": "2026-11-13T18:03:54.049Z"
     },
     {
       "id": "prod-6",
@@ -149,7 +149,7 @@
       "costPrice": 150,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 27,
+      "stock": 20,
       "minStock": 5,
       "maxStock": 30,
       "unit": "UND",
@@ -159,7 +159,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T05:20:18.980Z"
+      "updatedAt": "2026-11-13T18:03:54.051Z"
     },
     {
       "id": "prod-7",
@@ -172,7 +172,7 @@
       "costPrice": 200,
       "sellingPrice": 399.9,
       "taxRate": 18,
-      "stock": 224,
+      "stock": 174,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
@@ -182,7 +182,7 @@
       "imageUrl": "/assets/audifonos-jbl-tune-770.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T03:57:40.533Z"
+      "updatedAt": "2026-11-13T18:03:54.055Z"
     },
     {
       "id": "prod-8",
@@ -195,7 +195,7 @@
       "costPrice": 450,
       "sellingPrice": 850.9,
       "taxRate": 18,
-      "stock": 133,
+      "stock": 103,
       "minStock": 3,
       "maxStock": 15,
       "unit": "UND",
@@ -205,7 +205,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T02:15:52.790Z"
+      "updatedAt": "2026-11-13T18:03:54.059Z"
     },
     {
       "id": "prod-9",
@@ -241,17 +241,17 @@
       "costPrice": 2800,
       "sellingPrice": 3999.9,
       "taxRate": 18,
-      "stock": 4,
+      "stock": 76,
       "minStock": 2,
       "maxStock": 12,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Computadoras",
+      "location": "Almacén principal",
       "supplierId": "sup-1",
       "supplierName": "Tecnologia Peru SAC",
       "imageUrl": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-05T00:59:20.171Z"
+      "updatedAt": "2026-11-13T18:03:54.066Z"
     },
     {
       "id": "prod-11",
@@ -356,7 +356,7 @@
       "costPrice": 38,
       "sellingPrice": 89.9,
       "taxRate": 18,
-      "stock": 176,
+      "stock": 113,
       "minStock": 3,
       "maxStock": 22,
       "unit": "UND",
@@ -364,9 +364,9 @@
       "supplierId": "sup-2",
       "supplierName": "Gaming Store SAC",
       "imageUrl": "/assets/funko-vegeta.png",
-      "status": "low_stock",
+      "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T05:21:33.851Z"
+      "updatedAt": "2026-11-13T17:43:40.561Z"
     },
     {
       "id": "prod-16",
@@ -692,6 +692,19 @@
       "status": "Activo",
       "id": "sup-1794542064663",
       "createdAt": "2026-11-13T03:54:24.663Z"
+    },
+    {
+      "name": "TAI LOY S.A.",
+      "taxId": "20100049181",
+      "email": "gabiel@tailoy.com.pe",
+      "phone": "985440289",
+      "address": "",
+      "contactPerson": "Gabriel Perez",
+      "category": "Computadoras",
+      "paymentTerms": "Contado",
+      "status": "Activo",
+      "id": "sup-1794591163829",
+      "createdAt": "2026-11-13T17:32:43.829Z"
     }
   ],
   "customers": [
@@ -807,6 +820,216 @@
     }
   ],
   "inventoryMovements": [
+    {
+      "productId": "prod-10",
+      "productSku": "936784",
+      "productName": "Laptop ASUS TUF Gaming",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 20,
+      "previousStock": 96,
+      "newStock": 76,
+      "unitCost": 2800,
+      "referenceId": "TR-1794593034066-prod-10",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034066-817",
+      "createdAt": "2026-11-13T18:03:54.066Z"
+    },
+    {
+      "productId": "prod-8",
+      "productSku": "143070",
+      "productName": "Monitor Samsung 24 Pulgadas",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 30,
+      "previousStock": 133,
+      "newStock": 103,
+      "unitCost": 450,
+      "referenceId": "TR-1794593034059-prod-8",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034059-913",
+      "createdAt": "2026-11-13T18:03:54.059Z"
+    },
+    {
+      "productId": "prod-7",
+      "productSku": "233834",
+      "productName": "Audifonos JBL Tune 770 BT NC",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 50,
+      "previousStock": 224,
+      "newStock": 174,
+      "unitCost": 200,
+      "referenceId": "TR-1794593034055-prod-7",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034055-168",
+      "createdAt": "2026-11-13T18:03:54.055Z"
+    },
+    {
+      "productId": "prod-6",
+      "productSku": "746979",
+      "productName": "Mouse Logitech G502",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 7,
+      "previousStock": 27,
+      "newStock": 20,
+      "unitCost": 150,
+      "referenceId": "TR-1794593034051-prod-6",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034051-434",
+      "createdAt": "2026-11-13T18:03:54.051Z"
+    },
+    {
+      "productId": "prod-5",
+      "productSku": "910402",
+      "productName": "Teclado Razer Cynosa Lite",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 6,
+      "previousStock": 31,
+      "newStock": 25,
+      "unitCost": 120,
+      "referenceId": "TR-1794593034049-prod-5",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034049-784",
+      "createdAt": "2026-11-13T18:03:54.049Z"
+    },
+    {
+      "productId": "prod-4",
+      "productSku": "428196",
+      "productName": "Xbox Series X",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 15,
+      "previousStock": 161,
+      "newStock": 146,
+      "unitCost": 2100,
+      "referenceId": "TR-1794593034047-prod-4",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034047-567",
+      "createdAt": "2026-11-13T18:03:54.047Z"
+    },
+    {
+      "productId": "prod-3",
+      "productSku": "592114",
+      "productName": "Nintendo Switch OLED",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 20,
+      "previousStock": 195,
+      "newStock": 175,
+      "unitCost": 1500,
+      "referenceId": "TR-1794593034039-prod-3",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034039-86",
+      "createdAt": "2026-11-13T18:03:54.039Z"
+    },
+    {
+      "productId": "prod-2",
+      "productSku": "256618",
+      "productName": "Control DualSense PlayStation 5",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 10,
+      "previousStock": 21,
+      "newStock": 11,
+      "unitCost": 180,
+      "referenceId": "TR-1794593034036-prod-2",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034036-99",
+      "createdAt": "2026-11-13T18:03:54.036Z"
+    },
+    {
+      "productId": "prod-1",
+      "productSku": "029587",
+      "productName": "PlayStation 5 Consola Slim Digital",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 20,
+      "previousStock": 158,
+      "newStock": 138,
+      "unitCost": 2200,
+      "referenceId": "TR-1794593034031-prod-1",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034031-43",
+      "createdAt": "2026-11-13T18:03:54.031Z"
+    },
+    {
+      "productId": "prod-1791263428688",
+      "productSku": "130588",
+      "productName": "PlayStation 5 Pro Consola (Digital)",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 20,
+      "previousStock": 900,
+      "newStock": 880,
+      "unitCost": 3700,
+      "referenceId": "TR-1794593034028-prod-1791263428688",
+      "notes": "Transferencia al almacén Real Plaza Puruchuco",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794593034029-150",
+      "createdAt": "2026-11-13T18:03:54.029Z"
+    },
+    {
+      "productId": "prod-15",
+      "productSku": "218105",
+      "productName": "Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark)",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 22,
+      "previousStock": 135,
+      "newStock": 113,
+      "unitCost": 38,
+      "referenceId": "TR-1794591820561-prod-15",
+      "notes": "Transferencia al almacén Mega Plaza - Independencia: Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794591820562-895",
+      "createdAt": "2026-11-13T17:43:40.562Z"
+    },
+    {
+      "productId": "prod-15",
+      "productSku": "218105",
+      "productName": "Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark)",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 19,
+      "previousStock": 154,
+      "newStock": 135,
+      "unitCost": 38,
+      "referenceId": "TR-1794591803603-prod-15",
+      "notes": "Transferencia al almacén Jockey Plaza: Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794591803603-780",
+      "createdAt": "2026-11-13T17:43:23.603Z"
+    },
+    {
+      "productId": "prod-15",
+      "productSku": "218105",
+      "productName": "Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark)",
+      "type": "OUT_ADJUSTMENT",
+      "quantity": 22,
+      "previousStock": 176,
+      "newStock": 154,
+      "unitCost": 38,
+      "referenceId": "TR-1794591788675-prod-15",
+      "notes": "Transferencia al almacén Mall Aventura - Comas: Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "id": "mov-1794591788676-552",
+      "createdAt": "2026-11-13T17:43:08.676Z"
+    },
+    {
+      "productId": "prod-10",
+      "productSku": "936784",
+      "productName": "Laptop ASUS TUF Gaming",
+      "type": "IN_PURCHASE",
+      "quantity": 92,
+      "previousStock": 4,
+      "newStock": 96,
+      "unitCost": 2800,
+      "referenceId": "OC-00000007",
+      "notes": "Recepción de orden de compra OC-00000007",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794591204310-263",
+      "createdAt": "2026-11-13T17:33:24.310Z"
+    },
     {
       "productId": "prod-21",
       "productSku": "431449",
@@ -2308,7 +2531,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-11-13T02:01:30.608Z"
+      "lastLogin": "2026-11-13T17:20:27.405Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -2579,7 +2802,7 @@
     {
       "storeId": "store-01",
       "productId": "prod-15",
-      "quantity": 3
+      "quantity": 22
     },
     {
       "storeId": "store-01",
@@ -2640,9 +2863,201 @@
       "storeId": "store-05",
       "productId": "prod-11",
       "quantity": 13
+    },
+    {
+      "storeId": "store-06",
+      "productId": "prod-15",
+      "quantity": 22
+    },
+    {
+      "storeId": "store-07",
+      "productId": "prod-15",
+      "quantity": 22
     }
   ],
   "stockTransfers": [
+    {
+      "id": "TR-1794593034066-prod-10",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-10",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 20,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.066Z"
+    },
+    {
+      "id": "TR-1794593034059-prod-8",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-8",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 30,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.059Z"
+    },
+    {
+      "id": "TR-1794593034055-prod-7",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-7",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 50,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.055Z"
+    },
+    {
+      "id": "TR-1794593034051-prod-6",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-6",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 7,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.051Z"
+    },
+    {
+      "id": "TR-1794593034049-prod-5",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-5",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 6,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.049Z"
+    },
+    {
+      "id": "TR-1794593034047-prod-4",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-4",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 15,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.047Z"
+    },
+    {
+      "id": "TR-1794593034039-prod-3",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-3",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 20,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.039Z"
+    },
+    {
+      "id": "TR-1794593034036-prod-2",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-2",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 10,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.036Z"
+    },
+    {
+      "id": "TR-1794593034031-prod-1",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-1",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 20,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.031Z"
+    },
+    {
+      "id": "TR-1794593034028-prod-1791263428688",
+      "guideNumber": "TRS-00000009",
+      "verificationNumber": "08",
+      "productId": "prod-1791263428688",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-08",
+      "quantity": 20,
+      "transportSupplierId": "sup-1793836220395",
+      "transportSupplierName": "Grupo RM SAC",
+      "createdBy": "Usuario Almacén",
+      "status": "IN_TRANSIT",
+      "createdAt": "2026-11-13T18:03:54.028Z"
+    },
+    {
+      "id": "TR-1794591820561-prod-15",
+      "guideNumber": "TRS-00000008",
+      "verificationNumber": "06",
+      "productId": "prod-15",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-06",
+      "quantity": 22,
+      "notes": "Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T17:43:40.561Z",
+      "receivedAt": "2026-11-13T17:44:01.191Z"
+    },
+    {
+      "id": "TR-1794591803603-prod-15",
+      "guideNumber": "TRS-00000007",
+      "verificationNumber": "01",
+      "productId": "prod-15",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-01",
+      "quantity": 19,
+      "notes": "Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T17:43:23.603Z",
+      "receivedAt": "2026-11-13T17:43:50.778Z"
+    },
+    {
+      "id": "TR-1794591788675-prod-15",
+      "guideNumber": "TRS-00000006",
+      "verificationNumber": "07",
+      "productId": "prod-15",
+      "fromStoreId": "main-warehouse",
+      "toStoreId": "store-07",
+      "quantity": 22,
+      "notes": "Reposición sugerida aprobada. Stock objetivo: 22",
+      "createdBy": "Usuario Almacén",
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T17:43:08.675Z",
+      "receivedAt": "2026-11-13T17:44:28.619Z"
+    },
     {
       "id": "TR-1793836323420-prod-9",
       "guideNumber": "TRS-00000001",
@@ -2718,6 +3133,41 @@
     }
   ],
   "purchaseOrders": [
+    {
+      "supplierId": "sup-1794591163829",
+      "supplierName": "TAI LOY S.A.",
+      "supplierTaxId": "20100049181",
+      "date": "2026-11-13",
+      "expectedDate": "2026-11-20",
+      "status": "RECEIVED",
+      "items": [
+        {
+          "id": "oci-1794591197044-prod-10",
+          "productId": "prod-10",
+          "sku": "936784",
+          "name": "Laptop ASUS TUF Gaming",
+          "unit": "UND",
+          "quantity": 92,
+          "unitCost": 2800,
+          "taxRate": 18,
+          "subtotal": 257600,
+          "taxAmount": 46368,
+          "total": 303968
+        }
+      ],
+      "subtotal": 257600,
+      "taxTotal": 46368,
+      "total": 303968,
+      "currency": "S/.",
+      "paymentTerms": "Contado",
+      "notes": "",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "oc-1794591197044-296",
+      "orderNumber": "OC-00000007",
+      "createdAt": "2026-11-13T17:33:17.044Z",
+      "updatedAt": "2026-11-13T17:33:24.311Z",
+      "receivedAt": "2026-11-13T17:33:24.311Z"
+    },
     {
       "supplierId": "sup-1791417979612",
       "supplierName": "AGM Server SAC",
@@ -3163,5 +3613,5 @@
       "receivedAt": "2026-11-05T14:48:48.512Z"
     }
   ],
-  "lastUpdated": "2026-11-13T05:32:47.553Z"
+  "lastUpdated": "2026-11-13T18:03:54.068Z"
 }

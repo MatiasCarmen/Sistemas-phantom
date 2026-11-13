@@ -22,7 +22,7 @@ import {
   Percent, 
   Barcode
 } from 'lucide-react';
-import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock, ReplenishmentSuggestion } from '../types';
+import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock, StockTransfer, ReplenishmentSuggestion } from '../types';
 import { api } from '../lib/api';
 
 const createFormCode = (prefix: string, usedCodes: Set<string>): string => {
@@ -88,7 +88,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const mainWarehouses = stores.filter(store => store.type === 'MAIN_WAREHOUSE');
   const selectedMainWarehouse = mainWarehouses[0]?.name || 'Tienda principal';
   const [storeStock, setStoreStock] = useState<StoreStock[]>([]);
-  const [stockTransfers, setStockTransfers] = useState<any[]>([]);
+  const [stockTransfers, setStockTransfers] = useState<StockTransfer[]>([]);
   const [transferProduct, setTransferProduct] = useState('');
   const [transferStore, setTransferStore] = useState('');
   const [transferQuantity, setTransferQuantity] = useState(1);
@@ -506,6 +506,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const getStoreQuantity = (storeId: string, productId: string) =>
     storeStock.find(item => item.storeId === storeId && item.productId === productId)?.quantity || 0;
+  const getPendingTransfersForStore = (storeId: string) => {
+    const transfersByGuide = new Map<string, StockTransfer>();
+    stockTransfers
+      .filter(transfer => transfer.toStoreId === storeId && transfer.status !== 'RECEIVED')
+      .forEach(transfer => transfersByGuide.set(transfer.guideNumber, transfer));
+    return [...transfersByGuide.values()];
+  };
+  const pendingStoreTransfers = stores.flatMap(store =>
+    store.type === 'STORE'
+      ? getPendingTransfersForStore(store.id).map(transfer => ({ store, transfer }))
+      : []
+  );
   const totalStoreStock = (productId: string) => storeStock.filter(item => item.productId === productId).reduce((sum, item) => sum + item.quantity, 0);
   const nextTransferGuide = `TRS-${String(stockTransfers.reduce((maximum, transfer) => {
     const number = Number(transfer.guideNumber?.match(/(\d+)$/)?.[1] || 0);
@@ -571,6 +583,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </button>
         ))}
       </div>
+
+      {inventorySection === 'stores' && !selectedStoreId && pendingStoreTransfers.length > 0 && (
+        <div role="alert" className="flex flex-col gap-3 rounded border border-amber-500/40 bg-amber-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+            <div>
+              <p className="text-sm font-bold text-amber-200">
+                Hay {pendingStoreTransfers.length} transferencia{pendingStoreTransfers.length === 1 ? '' : 's'} pendiente{pendingStoreTransfers.length === 1 ? '' : 's'} de aceptar.
+              </p>
+              <p className="mt-1 text-xs text-amber-100/80">Selecciona la tienda de destino para revisar y recibir el stock.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const { store, transfer } = pendingStoreTransfers[0];
+              openStoreInventory(store.id);
+              setReceivingGuide(transfer.guideNumber);
+            }}
+            className="shrink-0 rounded border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-900/40"
+          >
+            Revisar transferencia
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       {!(inventorySection === 'stores' && selectedStoreId) && (
@@ -750,6 +787,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <>
               {orderedFilteredStores.map(store => {
                 const isWarehouse = store.type === 'MAIN_WAREHOUSE';
+                const pendingTransfers = getPendingTransfersForStore(store.id);
                 const quantity = isWarehouse
                   ? products.reduce((sum, product) => sum + product.stock, 0)
                   : storeStock.filter(item => item.storeId === store.id).reduce((sum, item) => sum + item.quantity, 0);
@@ -761,6 +799,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     <div className="flex items-center gap-3">
                       <h3 className="text-lg font-bold text-white">{store.name}</h3>
                       {isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}
+                      {pendingTransfers.length > 0 && <span className="rounded border border-amber-500/40 bg-amber-950/40 px-2 py-1 text-[10px] font-bold text-amber-300">{pendingTransfers.length} pendiente{pendingTransfers.length === 1 ? '' : 's'}</span>}
                     </div>
                     {store.address && <p className="text-xs text-[#9CA3AF] mt-1">{store.address}</p>}
                     <p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p>
@@ -790,10 +829,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id);
               return quantity <= product.minStock;
             }).length;
+            const pendingTransfers = getPendingTransfersForStore(store.id);
             const selectedStoreSuggestions = replenishmentSuggestions.filter(suggestion => suggestion.storeId === replenishmentStoreId);
             return (
               <div className="space-y-4">
                 <button onClick={closeStoreInventory} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
+                {!isWarehouse && pendingTransfers.length > 0 && (
+                  <div role="alert" className="flex flex-col gap-3 rounded border border-amber-500/40 bg-amber-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="text-sm font-bold text-amber-200">
+                          Tienes {pendingTransfers.length} transferencia{pendingTransfers.length === 1 ? '' : 's'} pendiente{pendingTransfers.length === 1 ? '' : 's'} de aceptar.
+                        </p>
+                        <p className="mt-1 text-xs text-amber-100/80">Recibe el stock para actualizar el inventario de esta tienda.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReceivingGuide(pendingTransfers[0].guideNumber)}
+                      className="shrink-0 rounded border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-900/40"
+                    >
+                      Aceptar transferencia
+                    </button>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div><div className="flex items-center gap-3"><h3 className="text-2xl font-bold text-white">{store.name}</h3>{isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}</div>{store.address && <p className="mt-1 text-xs text-[#9CA3AF]">{store.address}</p>}<p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p></div>
                   <button

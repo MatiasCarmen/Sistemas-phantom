@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Product, 
   Quote, 
@@ -62,6 +62,7 @@ export default function App() {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const mainContentRef = useRef<HTMLElement | null>(null);
 
   // Theme State (Dark / Light)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -95,6 +96,12 @@ export default function App() {
       sessionStorage.setItem('phantom_active_tab', activeTab);
     } catch {
       // Session storage may be unavailable in restricted browser contexts.
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
     }
   }, [activeTab]);
 
@@ -647,7 +654,7 @@ export default function App() {
         />
 
         {/* Scrollable View Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           
           {activeTab === 'dashboard' && (
             <DashboardView
