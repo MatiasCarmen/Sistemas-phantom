@@ -57,17 +57,17 @@
       "costPrice": 180,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 11,
+      "stock": 175,
       "minStock": 4,
       "maxStock": 25,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Perifericos",
+      "location": "Almacén principal",
       "supplierId": "sup-1",
       "supplierName": "Tecnologia Peru SAC",
       "imageUrl": "/assets/dualsense.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T18:03:54.036Z"
+      "updatedAt": "2026-11-13T18:16:50.542Z"
     },
     {
       "id": "prod-3",
@@ -126,17 +126,17 @@
       "costPrice": 120,
       "sellingPrice": 249.9,
       "taxRate": 18,
-      "stock": 25,
+      "stock": 308,
       "minStock": 6,
       "maxStock": 35,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Perifericos",
+      "location": "Almacén principal",
       "supplierId": "sup-2",
       "supplierName": "Gaming Store SAC",
       "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T18:03:54.049Z"
+      "updatedAt": "2026-11-13T18:16:50.538Z"
     },
     {
       "id": "prod-6",
@@ -149,17 +149,17 @@
       "costPrice": 150,
       "sellingPrice": 299.9,
       "taxRate": 18,
-      "stock": 20,
+      "stock": 231,
       "minStock": 5,
       "maxStock": 30,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Perifericos",
+      "location": "Almacén principal",
       "supplierId": "sup-2",
       "supplierName": "Gaming Store SAC",
       "imageUrl": "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T18:03:54.051Z"
+      "updatedAt": "2026-11-13T18:16:50.541Z"
     },
     {
       "id": "prod-7",
@@ -218,17 +218,17 @@
       "costPrice": 70,
       "sellingPrice": 149.9,
       "taxRate": 18,
-      "stock": 24,
+      "stock": 326,
       "minStock": 7,
       "maxStock": 38,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Perifericos",
+      "location": "Almacén principal",
       "supplierId": "sup-3",
       "supplierName": "Distribuciones Gamer SAC",
       "imageUrl": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T05:20:18.979Z"
+      "updatedAt": "2026-11-13T18:16:50.536Z"
     },
     {
       "id": "prod-10",
@@ -274,7 +274,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=900&q=80",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T03:57:40.534Z"
+      "updatedAt": "2026-11-13T18:29:52.208Z"
     },
     {
       "id": "prod-12",
@@ -287,17 +287,17 @@
       "costPrice": 420,
       "sellingPrice": 699.9,
       "taxRate": 18,
-      "stock": 6,
+      "stock": 112,
       "minStock": 2,
       "maxStock": 14,
       "unit": "UND",
-      "location": "Almacén Gamer - Sección Mobiliario",
+      "location": "Almacén principal",
       "supplierId": "sup-2",
       "supplierName": "Gaming Store SAC",
       "imageUrl": "/assets/thunder-x3.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-09-04T00:00:00.000Z"
+      "updatedAt": "2026-11-13T18:16:54.681Z"
     },
     {
       "id": "prod-13",
@@ -366,7 +366,7 @@
       "imageUrl": "/assets/funko-vegeta.png",
       "status": "in_stock",
       "createdAt": "2026-09-04T00:00:00.000Z",
-      "updatedAt": "2026-11-13T17:43:40.561Z"
+      "updatedAt": "2026-11-13T18:29:02.658Z"
     },
     {
       "id": "prod-16",
@@ -705,6 +705,32 @@
       "status": "Activo",
       "id": "sup-1794591163829",
       "createdAt": "2026-11-13T17:32:43.829Z"
+    },
+    {
+      "name": "GamerStore SAC",
+      "taxId": "204783156019",
+      "email": "Solano123@gmail.com",
+      "phone": "954235108",
+      "address": "",
+      "contactPerson": "Edgardo Solano",
+      "category": "Videojuegos",
+      "paymentTerms": "Contado",
+      "status": "Activo",
+      "id": "sup-1794593593874",
+      "createdAt": "2026-11-13T18:13:13.874Z"
+    },
+    {
+      "name": "Achorado SAC",
+      "taxId": "204865530549",
+      "email": "matias.m@achorado.com",
+      "phone": "945203610",
+      "address": "",
+      "contactPerson": "Matias Velasquez",
+      "category": "Sillas Gamer",
+      "paymentTerms": "Contado",
+      "status": "Activo",
+      "id": "sup-1794593704475",
+      "createdAt": "2026-11-13T18:15:04.475Z"
     }
   ],
   "customers": [
@@ -820,6 +846,113 @@
     }
   ],
   "inventoryMovements": [
+    {
+      "productId": "prod-11",
+      "productSku": "825051",
+      "productName": "Auriculares SteelSeries Arctis 5",
+      "type": "OUT_SALE",
+      "quantity": 1,
+      "previousStock": 7,
+      "newStock": 6,
+      "unitCost": 240,
+      "referenceId": "FAC-00000010",
+      "storeId": "store-02",
+      "notes": "Venta comprobante FAC-00000010 - Cliente: Christian Rojas ",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1794594592208-262",
+      "createdAt": "2026-11-13T18:29:52.208Z"
+    },
+    {
+      "productId": "prod-15",
+      "productSku": "218105",
+      "productName": "Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark)",
+      "type": "OUT_SALE",
+      "quantity": 2,
+      "previousStock": 22,
+      "newStock": 20,
+      "unitCost": 38,
+      "referenceId": "FAC-00000009",
+      "storeId": "store-01",
+      "notes": "Venta comprobante FAC-00000009 - Cliente: CLIENTES VARIOS / PÚBLICO GENERAL",
+      "createdBy": "Cajero Principal",
+      "id": "mov-1794594542658-775",
+      "createdAt": "2026-11-13T18:29:02.658Z"
+    },
+    {
+      "productId": "prod-12",
+      "productSku": "567850",
+      "productName": "Silla Gamer Thunder X3",
+      "type": "IN_PURCHASE",
+      "quantity": 106,
+      "previousStock": 6,
+      "newStock": 112,
+      "unitCost": 420,
+      "referenceId": "OC-00000008",
+      "notes": "Recepción de orden de compra OC-00000008",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794593814681-975",
+      "createdAt": "2026-11-13T18:16:54.681Z"
+    },
+    {
+      "productId": "prod-2",
+      "productSku": "256618",
+      "productName": "Control DualSense PlayStation 5",
+      "type": "IN_PURCHASE",
+      "quantity": 164,
+      "previousStock": 11,
+      "newStock": 175,
+      "unitCost": 180,
+      "referenceId": "OC-00000009",
+      "notes": "Recepción de orden de compra OC-00000009",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794593810542-26",
+      "createdAt": "2026-11-13T18:16:50.542Z"
+    },
+    {
+      "productId": "prod-6",
+      "productSku": "746979",
+      "productName": "Mouse Logitech G502",
+      "type": "IN_PURCHASE",
+      "quantity": 211,
+      "previousStock": 20,
+      "newStock": 231,
+      "unitCost": 150,
+      "referenceId": "OC-00000009",
+      "notes": "Recepción de orden de compra OC-00000009",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794593810541-32",
+      "createdAt": "2026-11-13T18:16:50.541Z"
+    },
+    {
+      "productId": "prod-5",
+      "productSku": "910402",
+      "productName": "Teclado Razer Cynosa Lite",
+      "type": "IN_PURCHASE",
+      "quantity": 283,
+      "previousStock": 25,
+      "newStock": 308,
+      "unitCost": 120,
+      "referenceId": "OC-00000009",
+      "notes": "Recepción de orden de compra OC-00000009",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794593810538-142",
+      "createdAt": "2026-11-13T18:16:50.538Z"
+    },
+    {
+      "productId": "prod-9",
+      "productSku": "257538",
+      "productName": "Mouse Redragon Cobra",
+      "type": "IN_PURCHASE",
+      "quantity": 302,
+      "previousStock": 24,
+      "newStock": 326,
+      "unitCost": 70,
+      "referenceId": "OC-00000009",
+      "notes": "Recepción de orden de compra OC-00000009",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "mov-1794593810536-755",
+      "createdAt": "2026-11-13T18:16:50.536Z"
+    },
     {
       "productId": "prod-10",
       "productSku": "936784",
@@ -1986,6 +2119,94 @@
   "sales": [
     {
       "voucherType": "BOLETA",
+      "customerId": "cust-1791418034103",
+      "customerName": "Christian Rojas ",
+      "customerTaxId": "72279251",
+      "customerEmail": "prueba@gmail.com",
+      "customerPhone": "",
+      "customerAddress": "",
+      "date": "2026-11-13",
+      "storeId": "store-02",
+      "items": [
+        {
+          "id": "sitem-1794594585946-760",
+          "productId": "prod-11",
+          "sku": "825051",
+          "name": "Auriculares SteelSeries Arctis 5",
+          "unit": "UND",
+          "unitPrice": 429.9,
+          "costPrice": 240,
+          "quantity": 1,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 364.32,
+          "taxAmount": 65.58,
+          "total": 429.9
+        }
+      ],
+      "subtotal": 364.32,
+      "discountTotal": 0,
+      "taxTotal": 65.58,
+      "total": 429.9,
+      "currency": "S/.",
+      "paymentMethod": "CARD",
+      "paymentStatus": "PAID",
+      "paidAmount": 429.9,
+      "dueAmount": 0,
+      "notes": "Tarjeta: VISA",
+      "sellerName": "Cajero Principal",
+      "status": "COMPLETED",
+      "id": "sale-1794594592208",
+      "saleNumber": "FAC-00000010",
+      "createdAt": "2026-11-13T18:29:52.208Z",
+      "updatedAt": "2026-11-13T18:29:52.208Z"
+    },
+    {
+      "voucherType": "BOLETA",
+      "customerId": "general",
+      "customerName": "CLIENTES VARIOS / PÚBLICO GENERAL",
+      "customerTaxId": "99999999",
+      "customerEmail": "",
+      "customerPhone": "",
+      "customerAddress": "",
+      "date": "2026-11-13",
+      "storeId": "store-01",
+      "items": [
+        {
+          "id": "sitem-1794594526104-448",
+          "productId": "prod-15",
+          "sku": "218105",
+          "name": "Funko Pop Dragon Ball Z - Vegeta (Galick Gun) (Glow in the Dark)",
+          "unit": "UND",
+          "unitPrice": 89.9,
+          "costPrice": 38,
+          "quantity": 2,
+          "discountPercent": 0,
+          "taxRate": 18,
+          "subtotal": 152.37,
+          "taxAmount": 27.43,
+          "total": 179.8
+        }
+      ],
+      "subtotal": 152.37,
+      "discountTotal": 0,
+      "taxTotal": 27.43,
+      "total": 179.8,
+      "currency": "S/.",
+      "paymentMethod": "CASH",
+      "paymentStatus": "PAID",
+      "paidAmount": 179.8,
+      "dueAmount": 0,
+      "notes": "",
+      "sellerName": "Cajero Principal",
+      "status": "COMPLETED",
+      "id": "sale-1794594542658",
+      "saleNumber": "FAC-00000009",
+      "createdAt": "2026-11-13T18:29:02.658Z",
+      "updatedAt": "2026-11-13T18:29:02.658Z"
+    },
+    {
+      "voucherType": "BOLETA",
       "customerId": "general",
       "customerName": "CLIENTES VARIOS / PÚBLICO GENERAL",
       "customerTaxId": "99999999",
@@ -2503,7 +2724,7 @@
     "invoicePrefix": "FAC-",
     "ticketPrefix": "TKT-2026-",
     "nextQuoteNumber": 4,
-    "nextInvoiceNumber": 9,
+    "nextInvoiceNumber": 11,
     "nextTicketNumber": 1,
     "quoteTermsDefault": "1. Precios expresados en Soles (S/.) e incluyen IGV (18%).\n2. Validez de la oferta: 15 días calendario.\n3. Garantía de 12 meses directa por fabricante.\n4. Forma de pago: 50% anticipo, 50% contra entrega.",
     "salesNotesDefault": "Gracias por su preferencia comercial. Este documento es un comprobante válido para garantía."
@@ -2531,7 +2752,7 @@
         "canDeleteRecords": true
       },
       "createdAt": "2025-01-15T08:30:00.000Z",
-      "lastLogin": "2026-11-13T17:20:27.405Z"
+      "lastLogin": "2026-11-13T18:06:39.268Z"
     },
     {
       "id": "usr-vendedor-1",
@@ -2782,7 +3003,7 @@
     {
       "storeId": "store-02",
       "productId": "prod-11",
-      "quantity": 7
+      "quantity": 6
     },
     {
       "storeId": "store-01",
@@ -2802,7 +3023,7 @@
     {
       "storeId": "store-01",
       "productId": "prod-15",
-      "quantity": 22
+      "quantity": 20
     },
     {
       "storeId": "store-01",
@@ -2873,6 +3094,56 @@
       "storeId": "store-07",
       "productId": "prod-15",
       "quantity": 22
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-10",
+      "quantity": 20
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-8",
+      "quantity": 30
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-7",
+      "quantity": 50
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-6",
+      "quantity": 7
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-5",
+      "quantity": 6
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-4",
+      "quantity": 15
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-3",
+      "quantity": 20
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-2",
+      "quantity": 10
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-1",
+      "quantity": 20
+    },
+    {
+      "storeId": "store-08",
+      "productId": "prod-1791263428688",
+      "quantity": 20
     }
   ],
   "stockTransfers": [
@@ -2887,8 +3158,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.066Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.066Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034059-prod-8",
@@ -2901,8 +3173,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.059Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.059Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034055-prod-7",
@@ -2915,8 +3188,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.055Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.055Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034051-prod-6",
@@ -2929,8 +3203,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.051Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.051Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034049-prod-5",
@@ -2943,8 +3218,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.049Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.049Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034047-prod-4",
@@ -2957,8 +3233,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.047Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.047Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034039-prod-3",
@@ -2971,8 +3248,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.039Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.039Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034036-prod-2",
@@ -2985,8 +3263,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.036Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.036Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034031-prod-1",
@@ -2999,8 +3278,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.031Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.031Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794593034028-prod-1791263428688",
@@ -3013,8 +3293,9 @@
       "transportSupplierId": "sup-1793836220395",
       "transportSupplierName": "Grupo RM SAC",
       "createdBy": "Usuario Almacén",
-      "status": "IN_TRANSIT",
-      "createdAt": "2026-11-13T18:03:54.028Z"
+      "status": "RECEIVED",
+      "createdAt": "2026-11-13T18:03:54.028Z",
+      "receivedAt": "2026-11-13T18:06:56.196Z"
     },
     {
       "id": "TR-1794591820561-prod-15",
@@ -3133,6 +3414,115 @@
     }
   ],
   "purchaseOrders": [
+    {
+      "supplierId": "sup-3",
+      "supplierName": "Distribuciones Gamer SAC",
+      "supplierTaxId": "20456789123",
+      "date": "2026-11-13",
+      "expectedDate": "2026-11-20",
+      "status": "RECEIVED",
+      "items": [
+        {
+          "id": "oci-1794593799812-prod-9",
+          "productId": "prod-9",
+          "sku": "257538",
+          "name": "Mouse Redragon Cobra",
+          "unit": "UND",
+          "quantity": 302,
+          "unitCost": 70,
+          "taxRate": 18,
+          "subtotal": 21140,
+          "taxAmount": 3805.2,
+          "total": 24945.2
+        },
+        {
+          "id": "oci-1794593799812-prod-5",
+          "productId": "prod-5",
+          "sku": "910402",
+          "name": "Teclado Razer Cynosa Lite",
+          "unit": "UND",
+          "quantity": 283,
+          "unitCost": 120,
+          "taxRate": 18,
+          "subtotal": 33960,
+          "taxAmount": 6112.8,
+          "total": 40072.8
+        },
+        {
+          "id": "oci-1794593799812-prod-6",
+          "productId": "prod-6",
+          "sku": "746979",
+          "name": "Mouse Logitech G502",
+          "unit": "UND",
+          "quantity": 211,
+          "unitCost": 150,
+          "taxRate": 18,
+          "subtotal": 31650,
+          "taxAmount": 5697,
+          "total": 37347
+        },
+        {
+          "id": "oci-1794593799812-prod-2",
+          "productId": "prod-2",
+          "sku": "256618",
+          "name": "Control DualSense PlayStation 5",
+          "unit": "UND",
+          "quantity": 164,
+          "unitCost": 180,
+          "taxRate": 18,
+          "subtotal": 29520,
+          "taxAmount": 5313.6,
+          "total": 34833.6
+        }
+      ],
+      "subtotal": 116270,
+      "taxTotal": 20928.6,
+      "total": 137198.6,
+      "currency": "S/.",
+      "paymentTerms": "Contado",
+      "notes": "",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "oc-1794593799812-856",
+      "orderNumber": "OC-00000009",
+      "createdAt": "2026-11-13T18:16:39.812Z",
+      "updatedAt": "2026-11-13T18:16:50.544Z",
+      "receivedAt": "2026-11-13T18:16:50.544Z"
+    },
+    {
+      "supplierId": "sup-1794593704475",
+      "supplierName": "Achorado SAC",
+      "supplierTaxId": "204865530549",
+      "date": "2026-11-13",
+      "expectedDate": "2026-11-17",
+      "status": "RECEIVED",
+      "items": [
+        {
+          "id": "oci-1794593753379-prod-12",
+          "productId": "prod-12",
+          "sku": "567850",
+          "name": "Silla Gamer Thunder X3",
+          "unit": "UND",
+          "quantity": 106,
+          "unitCost": 420,
+          "taxRate": 18,
+          "subtotal": 44520,
+          "taxAmount": 8013.6,
+          "total": 52533.6
+        }
+      ],
+      "subtotal": 44520,
+      "taxTotal": 8013.6,
+      "total": 52533.6,
+      "currency": "S/.",
+      "paymentTerms": "Contado",
+      "notes": "",
+      "createdBy": "Juan Pérez Ramírez",
+      "id": "oc-1794593753380-287",
+      "orderNumber": "OC-00000008",
+      "createdAt": "2026-11-13T18:15:53.380Z",
+      "updatedAt": "2026-11-13T18:16:54.683Z",
+      "receivedAt": "2026-11-13T18:16:54.683Z"
+    },
     {
       "supplierId": "sup-1794591163829",
       "supplierName": "TAI LOY S.A.",
@@ -3613,5 +4003,5 @@
       "receivedAt": "2026-11-05T14:48:48.512Z"
     }
   ],
-  "lastUpdated": "2026-11-13T18:03:54.068Z"
+  "lastUpdated": "2026-11-13T18:29:52.209Z"
 }
