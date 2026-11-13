@@ -95,6 +95,38 @@ export interface StockTransfer {
   createdAt: string;
 }
 
+export interface ReplenishmentSuggestion {
+  storeId: string;
+  storeName: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: string;
+  currentStock: number;
+  inTransitQuantity: number;
+  minimumStock: number;
+  targetStock: number;
+  recentSales: number;
+  requestedQuantity: number;
+  availableQuantity: number;
+  suggestedQuantity: number;
+}
+
+export interface PurchaseSuggestion {
+  productId: string;
+  productName: string;
+  sku: string;
+  category: string;
+  unit: string;
+  centralStock: number;
+  minimumStock: number;
+  targetStock: number;
+  recentSales: number;
+  openOrderQuantity: number;
+  storeDemand: number;
+  requestedQuantity: number;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -363,4 +395,3 @@ export interface AuditLogEvent {
   before?: unknown;
   after?: unknown;
 }
-

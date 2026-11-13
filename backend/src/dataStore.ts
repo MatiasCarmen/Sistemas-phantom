@@ -16,8 +16,13 @@ import {
   Store,
   StoreStock,
   StockTransfer,
+  ReplenishmentSuggestion,
+  PurchaseSuggestion,
   PurchaseOrder
 } from './types';
+import { buildReplenishmentSuggestions } from './replenishment';
+import { buildPurchaseSuggestions } from './purchaseSuggestions';
+import { getNextSaleNumber, getStoreSeriesNumber } from './saleNumbering';
 import { 
   initialProducts, 
   initialCategories, 
@@ -311,11 +316,25 @@ class DataStore {
     });
     const saleNumbersById = new Map<string, string>();
     const saleNumbersByPreviousNumber = new Map<string, string>();
+    const storeNumbers = new Map(this.data.stores.map(store => [store.id, getStoreSeriesNumber(store)]));
+    let legacySequence = chronologicalSales.reduce((highest, sale) => {
+      const sequence = Number(sale.saleNumber.match(/^FAC-(\d{8})$/)?.[1] || 0);
+      return Math.max(highest, sequence);
+    }, 0);
 
-    chronologicalSales.forEach((sale, index) => {
-      const saleNumber = `FAC-${String(index + 1).padStart(8, '0')}`;
+    chronologicalSales.forEach(sale => {
+      const previousSaleNumber = sale.saleNumber;
+      const storeNumber = (sale.storeId && storeNumbers.get(sale.storeId)) || '00';
+      const expectedSeries = `${sale.voucherType === 'BOLETA' ? 'BOL' : sale.voucherType === 'TICKET' ? 'TKT' : 'FAC'}${storeNumber}`;
+      const matchesExpectedSeries = new RegExp(`^${expectedSeries}-\\d{8}$`).test(previousSaleNumber);
+      const saleNumber = matchesExpectedSeries
+        ? previousSaleNumber
+        : getNextSaleNumber(this.data.sales, storeNumber, sale.voucherType);
+      if (!matchesExpectedSeries && /^FAC-\d{8}$/.test(previousSaleNumber)) {
+        legacySequence += 1;
+      }
       saleNumbersById.set(sale.id, saleNumber);
-      saleNumbersByPreviousNumber.set(sale.saleNumber, saleNumber);
+      saleNumbersByPreviousNumber.set(previousSaleNumber, saleNumber);
       sale.saleNumber = saleNumber;
     });
 
@@ -335,7 +354,7 @@ class DataStore {
     }
 
     this.data.settings.invoicePrefix = 'FAC-';
-    this.data.settings.nextInvoiceNumber = chronologicalSales.length + 1;
+    this.data.settings.nextInvoiceNumber = legacySequence + 1;
   }
 
   private saveToFile() {
@@ -752,6 +771,27 @@ class DataStore {
     return this.data.stockTransfers || [];
   }
 
+  getReplenishmentSuggestions(): ReplenishmentSuggestion[] {
+    return buildReplenishmentSuggestions({
+      products: this.data.products,
+      stores: this.data.stores,
+      storeStock: this.data.storeStock,
+      transfers: this.data.stockTransfers,
+      sales: this.data.sales
+    });
+  }
+
+  getPurchaseSuggestions(): PurchaseSuggestion[] {
+    return buildPurchaseSuggestions({
+      products: this.data.products,
+      sales: this.data.sales,
+      orders: this.data.purchaseOrders,
+      stores: this.data.stores,
+      storeStock: this.data.storeStock,
+      transfers: this.data.stockTransfers
+    });
+  }
+
   // --- CATEGORIES ---
   getCategories(): Category[] {
     // Recount items dynamically
@@ -1084,14 +1124,18 @@ class DataStore {
   }
 
   addSale(saleData: Omit<Sale, 'id' | 'saleNumber' | 'createdAt' | 'updatedAt'> & { id?: string; saleNumber?: string }): Sale {
-    const settings = this.data.settings;
-    const existingSequences = this.data.sales
-      .map(sale => Number((sale.saleNumber.match(/^FAC-(\d{8})$/)?.[1] || '0')))
-      .filter(sequence => Number.isFinite(sequence));
-    const nextNum = existingSequences.length > 0 ? Math.max(...existingSequences) + 1 : 1;
-    const saleNumber = `FAC-${String(nextNum).padStart(8, '0')}`;
-    settings.invoicePrefix = 'FAC-';
-    settings.nextInvoiceNumber = nextNum + 1;
+    const store = saleData.storeId
+      ? this.data.stores.find(candidate => candidate.id === saleData.storeId && candidate.status === 'ACTIVE')
+      : this.data.stores.find(candidate => candidate.id === 'main-warehouse');
+    if (saleData.storeId && !store) {
+      throw new TransactionValidationError('La tienda seleccionada no existe o está inactiva');
+    }
+    const storeNumber = getStoreSeriesNumber(store);
+    const saleNumber = getNextSaleNumber(
+      this.data.sales,
+      storeNumber,
+      saleData.voucherType || 'FACTURA'
+    );
     const now = new Date().toISOString();
 
     const newSale: Sale = {

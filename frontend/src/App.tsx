@@ -212,6 +212,7 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (user: User, _token: string) => {
+    setActiveTab('dashboard');
     setCurrentUser(user);
     showToast(`¡Bienvenido(a), ${user.name}!`);
     fetchAllData();
@@ -223,6 +224,7 @@ export default function App() {
     } catch {}
     localStorage.removeItem('nexus_auth_token');
     localStorage.removeItem('nexus_auth_user');
+    setActiveTab('dashboard');
     setCurrentUser(null);
     showToast('Sesión finalizada correctamente.');
   };
@@ -464,6 +466,13 @@ export default function App() {
     } catch (err: any) {
       showToast(err.message || 'Error al crear cliente', 'error');
     }
+  };
+
+  const handleRegisterCustomerFromPOS = async (customer: Partial<Customer>): Promise<Customer> => {
+    const newCustomer = await api.createCustomer(customer);
+    setCustomers(current => [newCustomer, ...current]);
+    showToast(`Cliente "${newCustomer.name}" registrado.`);
+    return newCustomer;
   };
 
   const handleUpdateCustomer = async (id: string, c: Partial<Customer>) => {
@@ -721,6 +730,7 @@ export default function App() {
               storeStock={storeStock}
               settings={settings}
               onCreateSale={handleCreateSale}
+              onRegisterCustomer={handleRegisterCustomerFromPOS}
               onCancelSale={handleCancelSale}
               isPosModalOpen={isPosModalOpen}
               setIsPosModalOpen={setIsPosModalOpen}
@@ -740,6 +750,7 @@ export default function App() {
               onStatusChange={handlePurchaseOrderStatus}
               onReceive={handleReceivePurchaseOrder}
               onDelete={handleDeletePurchaseOrder}
+              onNavigateToKardex={() => handleOpenKardex()}
             />
           )}
 

@@ -369,6 +369,10 @@ router.get('/store-stock', requireAnyPermission('canManageInventory', 'canManage
   res.json({ success: true, data: { storeStock: db.getStoreStock(), transfers: db.getStockTransfers() } });
 });
 
+router.get('/stock-transfers/suggestions', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getReplenishmentSuggestions() });
+});
+
 router.post('/stock-transfers', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   const items = Array.isArray(req.body.items) && req.body.items.length > 0
     ? req.body.items
@@ -397,6 +401,10 @@ router.post('/stock-transfers', requirePermission('canManageInventory'), (req: R
 
 router.get('/purchase-orders', requireAnyPermission('canManageInventory', 'canManageContacts'), (req: Request, res: Response) => {
   res.json({ success: true, data: db.getPurchaseOrders() });
+});
+
+router.get('/purchase-orders/suggestions', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getPurchaseSuggestions() });
 });
 
 router.post('/purchase-orders', requirePermission('canManageInventory'), (req: Request, res: Response) => {
@@ -574,13 +582,17 @@ router.get('/customers', requirePermission('canManageContacts'), (req: Request, 
 
 router.post('/customers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
-    const { name, taxId, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
+    const { name, taxId, documentType, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
       return res.status(400).json({ success: false, error: 'Nombre y Documento de Identidad/RUC son obligatorios' });
+    }
+    if (db.getCustomers().some(customer => customer.taxId.replace(/\D/g, '') === String(taxId).replace(/\D/g, ''))) {
+      return res.status(409).json({ success: false, error: 'Ya existe un cliente registrado con ese documento' });
     }
     const newCust = db.addCustomer({ 
       name, 
       taxId, 
+      documentType,
       email: email || '', 
       phone: phone || '', 
       address: address || '',

@@ -22,7 +22,7 @@ import {
   Percent, 
   Barcode
 } from 'lucide-react';
-import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock } from '../types';
+import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock, ReplenishmentSuggestion } from '../types';
 import { api } from '../lib/api';
 
 const createFormCode = (prefix: string, usedCodes: Set<string>): string => {
@@ -101,6 +101,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [stockMatrixProduct, setStockMatrixProduct] = useState<Product | null>(null);
   const [receivingGuide, setReceivingGuide] = useState<string | null>(null);
   const [showNoPendingTransfers, setShowNoPendingTransfers] = useState(false);
+  const [replenishmentSuggestions, setReplenishmentSuggestions] = useState<ReplenishmentSuggestion[]>([]);
+  const [isReplenishmentModalOpen, setIsReplenishmentModalOpen] = useState(false);
+  const [replenishmentStoreId, setReplenishmentStoreId] = useState('');
+  const [hasGeneratedSuggestions, setHasGeneratedSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [suggestionError, setSuggestionError] = useState('');
+  const [approvingSuggestion, setApprovingSuggestion] = useState<string | null>(null);
 
   const openStoreInventory = (storeId: string) => {
     setSelectedCategory('ALL');
@@ -404,6 +411,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const handleConfirmReceipt = async (guideNumber: string, storeId: string) => {
     await api.confirmTransferReceipt(guideNumber, storeId);
     await loadStockLocations();
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
     setReceivingGuide(null);
   };
 
@@ -420,6 +429,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       await api.transferStock({ items, toStoreId: transferStore, transportSupplierId, transportSupplierName: transportSupplier?.name });
       await loadStockLocations();
       await onStockTransferred?.();
+      setReplenishmentSuggestions([]);
+      setHasGeneratedSuggestions(false);
       const destinationStore = stores.find(store => store.id === transferStore);
       setSelectedStoreId(transferStore);
       setTransferSuccess(`Transferencia exitosa hacia ${destinationStore?.name || 'la tienda destino'}.`);
@@ -430,6 +441,54 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       window.setTimeout(() => setTransferSuccess(''), 4000);
     } catch (error: any) {
       setTransferError(error.message || 'No se pudo realizar la transferencia');
+    }
+  };
+
+  const handleGenerateSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    setSuggestionError('');
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
+    try {
+      setReplenishmentSuggestions(await api.getReplenishmentSuggestions());
+      setHasGeneratedSuggestions(true);
+    } catch (error: any) {
+      setSuggestionError(error.message || 'No se pudieron generar las sugerencias');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleApproveSuggestion = async (suggestion: ReplenishmentSuggestion) => {
+    const suggestionKey = `${suggestion.storeId}:${suggestion.productId}`;
+    setApprovingSuggestion(suggestionKey);
+    setSuggestionError('');
+    try {
+      await api.transferStock({
+        productId: suggestion.productId,
+        quantity: suggestion.suggestedQuantity,
+        toStoreId: suggestion.storeId,
+        notes: `Reposición sugerida aprobada. Stock objetivo: ${suggestion.targetStock}`
+      });
+    } catch (error: any) {
+      setSuggestionError(error.message || 'No se pudo aprobar la transferencia');
+      setApprovingSuggestion(null);
+      return;
+    }
+
+    setTransferSuccess(`Reposición aprobada para ${suggestion.storeName}: ${suggestion.productName}.`);
+    window.setTimeout(() => setTransferSuccess(''), 4000);
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
+    try {
+      await loadStockLocations();
+      await onStockTransferred?.();
+      setReplenishmentSuggestions(await api.getReplenishmentSuggestions());
+      setHasGeneratedSuggestions(true);
+    } catch (error: any) {
+      setSuggestionError(`La transferencia se aprobó, pero no se pudieron actualizar los datos: ${error.message || 'error de conexión'}`);
+    } finally {
+      setApprovingSuggestion(null);
     }
   };
 
@@ -731,6 +790,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id);
               return quantity <= product.minStock;
             }).length;
+            const selectedStoreSuggestions = replenishmentSuggestions.filter(suggestion => suggestion.storeId === replenishmentStoreId);
             return (
               <div className="space-y-4">
                 <button onClick={closeStoreInventory} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
@@ -754,10 +814,141 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   >
                     {isWarehouse ? 'Transferir a tiendas' : 'Recibir stock de la principal'}
                   </button>
+                  {isWarehouse && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsReplenishmentModalOpen(true);
+                        setReplenishmentStoreId('');
+                        void handleGenerateSuggestions();
+                      }}
+                      disabled={isLoadingSuggestions}
+                      className="px-4 py-2.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] border border-[#3D3D3D] text-white rounded text-sm font-bold disabled:opacity-50"
+                    >
+                      Generar sugerencias de reposición
+                    </button>
+                  )}
                 </div>
+                {isWarehouse && isReplenishmentModalOpen && (
+                  <div
+                      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4"
+                      onClick={() => setIsReplenishmentModalOpen(false)}
+                  >
+                      <section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="replenishment-modal-title"
+                        className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded border border-[#3D3D3D] bg-[#141414] shadow-2xl"
+                        onClick={event => event.stopPropagation()}
+                      >
+                        <header className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
+                          <div>
+                            <h4 id="replenishment-modal-title" className="font-bold text-white">Sugerencias de reposición</h4>
+                            <p className="mt-1 text-xs text-[#9CA3AF]">Selecciona una tienda para consultar y aprobar sus reposiciones.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsReplenishmentModalOpen(false)}
+                            className="text-[#9CA3AF] hover:text-white"
+                            aria-label="Cerrar sugerencias de reposición"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </header>
+                        <div className="space-y-4 overflow-y-auto p-5">
+                          <div className="max-w-md">
+                            <label htmlFor="replenishment-store" className="mb-2 block text-sm font-semibold text-white">Tienda</label>
+                            <select
+                              id="replenishment-store"
+                              value={replenishmentStoreId}
+                              onChange={event => setReplenishmentStoreId(event.target.value)}
+                              className="w-full rounded border border-[#3D3D3D] bg-[#0E0E0E] px-3 py-3 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                            >
+                              <option value="">Seleccione una tienda</option>
+                              {stores.filter(item => item.type === 'STORE' && item.status === 'ACTIVE').map(item => (
+                                <option key={item.id} value={item.id}>{item.verificationNumber} - {item.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <p className="text-xs text-[#9CA3AF]">
+                            El cálculo considera ventas de los últimos 30 días, existencias y transferencias en tránsito. El objetivo usa maxStock o, si no está definido, el doble del mínimo, y puede cubrir hasta 7 días de demanda. Cada envío requiere aprobación.
+                          </p>
+                          {isLoadingSuggestions && <p role="status" className="text-sm text-[#9CA3AF]">Calculando sugerencias...</p>}
+                          {suggestionError && <p role="alert" className="rounded border border-red-500/40 bg-red-950/30 p-3 text-sm text-red-300">{suggestionError}</p>}
+                          {!isLoadingSuggestions && hasGeneratedSuggestions && !replenishmentStoreId && (
+                            <p className="rounded border border-[#2D2D2D] bg-[#0E0E0E] p-4 text-sm text-[#9CA3AF]">Selecciona una tienda para ver sus productos sugeridos.</p>
+                          )}
+                          {!isLoadingSuggestions && replenishmentStoreId && selectedStoreSuggestions.length > 0 && (
+                            <div className="overflow-x-auto rounded border border-[#2D2D2D]">
+                              <table className="w-full min-w-[850px] text-left text-xs">
+                                <thead className="bg-[#1E1E1E] text-[#9CA3AF]">
+                                  <tr>
+                                    <th className="p-3">Producto</th>
+                                    <th className="p-3">Stock / mínimo</th>
+                                    <th className="p-3">En tránsito</th>
+                                    <th className="p-3">Venta 30 días</th>
+                                    <th className="p-3">Objetivo</th>
+                                    <th className="p-3">Sugerido</th>
+                                    <th className="p-3">Acción</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedStoreSuggestions.map(suggestion => {
+                                    const key = `${suggestion.storeId}:${suggestion.productId}`;
+                                    return (
+                                      <tr key={key} className="border-t border-[#2D2D2D]">
+                                        <td className="p-3 text-white">{suggestion.productName}<span className="block text-[#9CA3AF]">SKU {suggestion.sku}</span></td>
+                                        <td className="p-3 font-mono text-white">{suggestion.currentStock} / {suggestion.minimumStock}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.inTransitQuantity}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.recentSales}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.targetStock}</td>
+                                        <td className="p-3 font-mono font-bold text-white">
+                                          {suggestion.suggestedQuantity} {suggestion.unit}
+                                          {suggestion.requestedQuantity > suggestion.availableQuantity && (
+                                            <span className="mt-1 block text-[10px] font-normal text-amber-400">Necesario: {suggestion.requestedQuantity}; stock central insuficiente</span>
+                                          )}
+                                        </td>
+                                        <td className="p-3">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleApproveSuggestion(suggestion)}
+                                            disabled={suggestion.suggestedQuantity <= 0 || approvingSuggestion !== null}
+                                            className="rounded bg-[#C8102E] px-3 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                          >
+                                            {approvingSuggestion === key ? 'Enviando...' : 'Aprobar envío'}
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          {!isLoadingSuggestions && hasGeneratedSuggestions && replenishmentStoreId && selectedStoreSuggestions.length === 0 && !suggestionError && (
+                            <p className="rounded border border-[#2D2D2D] bg-[#0E0E0E] p-4 text-sm text-[#9CA3AF]">Esta tienda no necesita reposición por el momento.</p>
+                          )}
+                        </div>
+                        <footer className="flex justify-end border-t border-[#303030] px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => setIsReplenishmentModalOpen(false)}
+                            className="rounded bg-[#252525] px-4 py-2 text-xs font-bold text-white hover:bg-[#333]"
+                          >
+                            Cerrar
+                          </button>
+                        </footer>
+                      </section>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   {[['SKUs', locationProducts.length], ['Unidades', units], ['Inventario a costo', `${currency} ${formatAmount(cost)}`], ['Inventario a venta', `${currency} ${formatAmount(selling)}`], ['Productos bajo mínimo', lowStock]].map(([label, value]) => <div key={String(label)} className="bg-[#141414] border border-[#2D2D2D] rounded p-4"><div className="text-lg font-mono font-bold text-white">{value}</div><div className="mt-1 text-xs text-[#9CA3AF]">{label}</div></div>)}
                 </div>
+                {isWarehouse && (
+                  <p className="text-xs text-[#9CA3AF]">
+                    Existencias mostradas abajo: stock disponible en el almacén central, sin sumar las cantidades de las tiendas.
+                  </p>
+                )}
                 <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
                   <div className="relative">
                     <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -860,8 +1051,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   </div>
                 )}
                 <div className="overflow-x-auto bg-[#141414] border border-[#2D2D2D] rounded">
-                  <table className="w-full text-left text-xs min-w-[760px]"><thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase"><tr><th className="p-3">Producto</th><th className="p-3">Existencia</th><th className="p-3">Valor costo</th><th className="p-3">Estado</th><th className="p-3">Acciones</th></tr></thead>
-                    <tbody>{locationProducts.map(product => { const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id); return <tr key={product.id} className="border-t border-[#2D2D2D]"><td className="p-3"><div className="font-bold text-white">{product.name}</div><div className="text-[#9CA3AF]">SKU {product.sku}</div></td><td className="p-3 font-mono font-bold text-white">{quantity} <span className="text-[#9CA3AF] font-normal">de mín. {product.minStock}</span></td><td className="p-3 font-mono">{currency} {formatAmount(quantity * product.costPrice)}</td><td className="p-3"><span className={`px-2 py-1 rounded border text-[10px] font-bold ${quantity <= product.minStock ? 'text-[#FBBF24] border-[#F59E0B]/50' : 'text-[#31D0AA] border-[#10B981]/50'}`}>{quantity <= product.minStock ? 'Bajo mínimo' : 'OK'}</span></td><td className="p-3"><button onClick={() => onOpenKardex(product)} className="px-2 py-1 border border-[#2563EB]/50 rounded text-[#60A5FA]">Kárdex</button></td></tr>; })}</tbody>
+                  <table className="w-full text-left text-xs min-w-[760px]"><thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase"><tr><th className="p-3">Producto</th><th className="p-3">{isWarehouse ? 'Cantidad en almacén central' : 'Cantidad en tienda'}</th><th className="p-3">Valor costo</th><th className="p-3">Estado</th><th className="p-3">Acciones</th></tr></thead>
+                    <tbody>{locationProducts.map(product => { const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id); return <tr key={product.id} className="border-t border-[#2D2D2D]"><td className="p-3"><div className="font-bold text-white">{product.name}</div><div className="text-[#9CA3AF]">SKU {product.sku}</div></td><td className="p-3 font-mono font-bold text-white">{quantity} {product.unit} <span className="text-[#9CA3AF] font-normal">de mín. {product.minStock}</span></td><td className="p-3 font-mono">{currency} {formatAmount(quantity * product.costPrice)}</td><td className="p-3"><span className={`px-2 py-1 rounded border text-[10px] font-bold ${quantity <= product.minStock ? 'text-[#FBBF24] border-[#F59E0B]/50' : 'text-[#31D0AA] border-[#10B981]/50'}`}>{quantity <= product.minStock ? 'Bajo mínimo' : 'OK'}</span></td><td className="p-3"><button onClick={() => onOpenKardex(product)} className="px-2 py-1 border border-[#2563EB]/50 rounded text-[#60A5FA]">Kárdex</button></td></tr>; })}</tbody>
                   </table>
                 </div>
               </div>

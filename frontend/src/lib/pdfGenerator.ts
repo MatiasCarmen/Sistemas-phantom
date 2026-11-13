@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { Quote, Sale, CompanySettings } from '../types';
+import { Quote, Sale, CompanySettings, InventoryMovement, Product } from '../types';
 import { formatAmount } from './formatters';
 
 export function generateQuotePDF(quote: Quote, settings: CompanySettings): void {
@@ -335,4 +335,123 @@ export function generateSaleInvoicePDF(sale: Sale, settings: CompanySettings): v
   doc.text(`${settings.companyName} - Sistema de Gestión Comercial Integrado`, pageWidth / 2, footerY, { align: 'center' });
 
   doc.save(`${sale.saleNumber}_${sale.voucherType}.pdf`);
+}
+
+export function generateKardexPDF(movements: InventoryMovement[], settings: CompanySettings, product?: Product): jsPDF {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 10;
+  const tableWidth = pageWidth - margin * 2;
+  const columns = ['FECHA', 'SKU', 'PRODUCTO', 'MOVIMIENTO', 'CANT.', 'STOCK ANT.', 'STOCK NUEVO', 'REFERENCIA / MOTIVO', 'RESPONSABLE'];
+  const widths = [23, 18, 35, 29, 12, 14, 14, 26, 19];
+  const title = product ? 'KARDEX FÍSICO POR PRODUCTO' : 'LIBRO KARDEX GENERAL';
+  let pageNumber = 0;
+  let y = 0;
+
+  const drawPageHeader = () => {
+    pageNumber += 1;
+    doc.setFillColor(200, 16, 46);
+    doc.rect(0, 0, pageWidth, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(30, 41, 59);
+    doc.text(settings.companyName || 'PHANTOM', margin, 18);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`RUC/Tax ID: ${settings.taxId || 'N/A'}`, margin, 23);
+    doc.text(`${settings.address || ''}${settings.cityCountry ? `, ${settings.cityCountry}` : ''}`.slice(0, 100), margin, 27);
+    doc.text(`Tel: ${settings.phone || 'N/A'} | Email: ${settings.email || 'N/A'}`.slice(0, 110), margin, 31);
+
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(pageWidth - 76, 13, 66, 23, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(200, 16, 46);
+    doc.text(title, pageWidth - 72, 19);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Emitido: ${new Date().toLocaleDateString('es-PE')}`, pageWidth - 72, 24);
+    doc.text(`Página ${pageNumber}`, pageWidth - 72, 30);
+
+    y = 40;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, tableWidth, product ? 16 : 12, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 41, 59);
+    if (product) {
+      doc.text(`PRODUCTO: ${product.name}`.slice(0, 120), margin + 4, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(`SKU: ${product.sku}   Categoría: ${product.category}   Stock actual: ${product.stock} ${product.unit}`.slice(0, 150), margin + 4, y + 12);
+      y += 20;
+    } else {
+      const productCount = new Set(movements.map(movement => movement.productId)).size;
+      doc.text(`MOVIMIENTOS: ${movements.length}     PRODUCTOS: ${productCount}`, margin + 4, y + 7.5);
+      y += 16;
+    }
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, y, tableWidth, 9, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(255, 255, 255);
+    let x = margin + 2;
+    columns.forEach((column, index) => {
+      doc.text(column, x, y + 5.8, { maxWidth: widths[index] - 3 });
+      x += widths[index];
+    });
+    y += 9;
+  };
+
+  drawPageHeader();
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.3);
+  doc.setTextColor(30, 41, 59);
+
+  movements.forEach((movement, index) => {
+    const cells = [
+      new Date(movement.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      movement.productSku,
+      movement.productName,
+      movement.type.replace(/_/g, ' '),
+      `${movement.type.startsWith('IN_') ? '+' : '-'}${movement.quantity}`,
+      String(movement.previousStock),
+      String(movement.newStock),
+      [movement.referenceId, movement.notes].filter(Boolean).join(' · ') || '-',
+      movement.createdBy
+    ];
+    const wrapped = cells.map((value, cellIndex) => doc.splitTextToSize(value, widths[cellIndex] - 3));
+    const rowHeight = Math.max(8, ...wrapped.map(lines => lines.length * 3.1 + 2));
+    if (y + rowHeight > pageHeight - 16) {
+      doc.addPage();
+      drawPageHeader();
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.3);
+      doc.setTextColor(30, 41, 59);
+    }
+    if (index % 2 === 1) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(margin, y, tableWidth, rowHeight, 'F');
+    }
+    let x = margin + 2;
+    wrapped.forEach((lines, cellIndex) => {
+      doc.text(lines, x, y + 3.5, { maxWidth: widths[cellIndex] - 3 });
+      x += widths[cellIndex];
+    });
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, y + rowHeight, margin + tableWidth, y + rowHeight);
+    y += rowHeight;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(148, 163, 184);
+  doc.text(`${settings.companyName} - Sistema de Gestión Comercial Integrado`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+  return doc;
 }
