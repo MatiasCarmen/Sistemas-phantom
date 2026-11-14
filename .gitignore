@@ -9,3 +9,4 @@ backend/dist/
 backend/.env
 *.log
 .DS_Store
+backend/atlas-credentials.env
