@@ -1,264 +1,108 @@
-# POWER BI APF3 - Phantom
+# POWER BI APF3 - Integración Analítica Sistemas Phantom (`/api/bi`)
 
-## Alcance y estado
+## 1. Arquitectura de Conexión Directa (Modelo Estrella)
 
-Este informe prepara dos exportaciones estáticas para Power BI Desktop:
+El backend incorpora el router dedicado [`backend/src/biRoutes.ts`](./backend/src/biRoutes.ts), montado en `/api/bi`, que expone los datos en vivo desde el mismo `DataStore` respaldado por **MongoDB** (sin abrir conexiones adicionales ni pasar por la autenticación JWT de sesión de usuario).
 
-1. Ventas.
-2. Inventario por tienda.
+### Seguridad del Conector BI
+* Todas las rutas `/api/bi/*` están protegidas mediante el encabezado HTTP **`x-api-key`**, validado en tiempo constante (`timingSafeEqual`) contra `process.env.BI_API_KEY`.
+* Si `BI_API_KEY` no está definida en el entorno (`backend/.env`), el router responde **`503 Service Unavailable`** con un mensaje explícito.
+* Si el header `x-api-key` falta o no coincide, responde **`401 Unauthorized`**.
 
-No se modificaron MongoDB, `phantom_erp_test`, `phantom_erp`, `db.json` ni
-`audit.json`. No se ejecutó el SQL histórico, no se generaron ventas o stock
-synthetic, y no se incluyeron nombres de clientes, documentos, teléfonos,
-correos, direcciones, contraseñas, JWT ni otras credenciales.
+---
 
-## Fuentes verificadas
+## 2. Endpoints Disponibles (`/api/bi`)
 
-| Fuente | Estado | Registros relevantes | Uso |
-|---|---|---:|---|
-| MongoDB `phantom_erp_test` | Base aislada de prueba | `products`: 1; `stores`: 9; `store_stock`: 26; `sales`: 0; `inventory_movements`: 0; `stock_transfers`: 0 | Evidencia actual de la conexión de prueba; no es una base representativa para ventas |
-| `backend/data/db.json` | Respaldo JSON local existente | `products`: 22; `sales`: 3; `stores`: 9; `storeStock`: 26; `inventoryMovements`: 5; `stockTransfers`: 0 | Fuente de los CSV generados |
-| MongoDB `phantom_erp` | Base principal prevista | No consultada ni modificada | No declarar como fuente del reporte hasta una extracción autorizada |
+Todos los endpoints `GET` devuelven **arreglos JSON planos** (sin objetos ni arreglos anidados, fechas normalizadas en formato ISO 8601 UTC `YYYY-MM-DDTHH:mm:ss.sssZ` y montos/cantidades numéricos). Además, todos aceptan **`?format=csv`** para devolver CSV conforme a RFC 4180 (con encabezados y comillas escapadas para textos con comas o saltos de línea).
 
-La configuración local actual sigue apuntando a `phantom_erp_test`. La lectura
-de MongoDB confirmó que hay 9 tiendas: 1 registro `MAIN_WAREHOUSE` y 8
-registros `STORE`. Esto corresponde a un almacén central y ocho sucursales.
+| Tipo | Endpoint | Grano / Descripción | Claves de relación |
+|---|---|---|---|
+| Hechos | `GET /api/bi/fact_ventas` | Cabeceras de ventas completadas (**excluye ventas anuladas**) | `id_venta`, `id_tienda`, `id_cliente`, `id_cotizacion_origen` |
+| Hechos | `GET /api/bi/fact_detalle_venta` | Líneas de productos vendidos (**excluye ventas anuladas**), incluye `costo_total` y `margen_bruto` | `id_detalle`, `id_venta`, `id_tienda`, `id_cliente`, `id_producto` |
+| Hechos | `GET /api/bi/fact_kardex` | Movimientos de inventario (`ENTRADA` / `SALIDA`) valorizados | `id_movimiento`, `id_producto`, `id_tienda` |
+| Hechos | `GET /api/bi/fact_cotizaciones` | Proformas emitidas y estado de conversión a venta | `id_cotizacion`, `id_cliente`, `id_venta_convertida` |
+| Dimensión | `GET /api/bi/dim_productos` | Catálogo de productos, costos, precios, stock y valorización | `id_producto`, `id_proveedor` |
+| Dimensión | `GET /api/bi/dim_clientes` | Directorio de clientes, condición de pago, crédito y compras acumuladas | `id_cliente` |
+| Dimensión | `GET /api/bi/dim_proveedores` | Directorio de proveedores comerciales y condiciones de pago | `id_proveedor` |
+| Dimensión | `GET /api/bi/dim_tiendas` | Almacén central (`MAIN_WAREHOUSE`) y sucursales (`STORE`) | `id_tienda` |
 
-## Archivos generados
+---
 
-- [`ventas_powerbi.csv`](<./reports/powerbi_apf3/ventas_powerbi.csv>)
-- [`inventario_tienda_powerbi.csv`](<./reports/powerbi_apf3/inventario_tienda_powerbi.csv>)
+## 3. Pasos para Conectar desde Power BI Desktop
 
-Los dos archivos son exportaciones estáticas; no representan una conexión en
-tiempo real con MongoDB.
+### Paso previo: Configurar `BI_API_KEY`
+1. En `backend/.env`, define una clave secreta para Power BI:
+   ```env
+   BI_API_KEY=<tu-clave-secreta-para-powerbi>
+   ```
+2. Inicia el backend (`npm run dev` o `npm run dev:backend`).
 
-### Ventas
+### Conexión en Power BI Desktop (`Obtener datos > Web > Avanzado`)
+1. Abre **Power BI Desktop**.
+2. En la cinta superior, selecciona **Inicio > Obtener datos > Web**.
+3. En el cuadro de diálogo **Desde la Web**, marca la opción **Avanzado** (*Advanced*).
+4. En **Partes de la dirección URL**, escribe la URL del endpoint (local o desplegado):
+   * Formato JSON directo: `http://localhost:3000/api/bi/fact_ventas`
+   * Formato CSV opcional: `http://localhost:3000/api/bi/fact_ventas?format=csv`
+5. En **Parámetros de encabezado de solicitud HTTP (opcional)** (*HTTP request header parameters*):
+   * En el cuadro izquierdo (nombre del header), escribe exactamente: `x-api-key`
+   * En el cuadro derecho (valor), pega el valor configurado en `BI_API_KEY`.
+6. Haz clic en **Aceptar**.
+7. Si Power BI muestra la ventana **Acceso a contenido web**, selecciona **Anónimo** en el panel izquierdo y pulsa **Conectar** (esto permite que Power BI envíe el encabezado `x-api-key` definido en el modo Avanzado sin sobrescribir `Authorization`).
+8. En el **Editor de Power Query**, verifica los tipos de columna detectados (fechas ISO como *Fecha/Hora/Zona horaria* y montos como *Número decimal*) y pulsa **Cerrar y aplicar**.
+9. Repite los pasos 2 a 8 para cargar `fact_detalle_venta`, `fact_kardex`, `fact_cotizaciones`, `dim_productos`, `dim_clientes`, `dim_proveedores` y `dim_tiendas`.
 
-- Fuente: `backend/data/db.json`.
-- 3 ventas.
-- 3 líneas de venta.
-- Importe total de líneas: `8919.41`.
-- Importe de cabecera y suma de líneas: ambos `8919.41`.
-- La columna `tienda` está vacía porque `Sale` no contiene `storeId`.
-- Cada fila representa una línea de venta, no una venta repetida por cada
-  producto.
-- `importe` usa `SaleItem.total`.
+---
 
-Columnas:
+## 4. Relaciones Recomendadas en la Vista de Modelo
 
-`id_venta`, `fecha`, `tienda`, `id_producto`, `sku`, `producto`, `categoria`,
-`cantidad`, `importe`, `fuente`, `calidad_dato`.
+Configura relaciones de **uno a varios (`1:*`)** con filtro único desde las dimensiones hacia las tablas de hechos:
 
-### Inventario por tienda
+* `dim_tiendas[id_tienda]` → `fact_ventas[id_tienda]`, `fact_detalle_venta[id_tienda]`, `fact_kardex[id_tienda]`
+* `dim_clientes[id_cliente]` → `fact_ventas[id_cliente]`, `fact_detalle_venta[id_cliente]`, `fact_cotizaciones[id_cliente]`
+* `dim_productos[id_producto]` → `fact_detalle_venta[id_producto]`, `fact_kardex[id_producto]`
+* `dim_proveedores[id_proveedor]` → `dim_productos[id_proveedor]`
+* `fact_ventas[id_venta]` → `fact_detalle_venta[id_venta]`
 
-- Fuente: `backend/data/db.json`.
-- 9 tiendas.
-- 26 filas de `storeStock`.
-- 26 filas exportadas con referencias resueltas.
-- `stock_actual_tienda` usa `storeStock.quantity`.
-- `stock_minimo` y `costo_unitario` provienen del producto.
-- `valor_inventario = stock_actual_tienda * costo_unitario`.
-- El archivo no incluye PII.
+---
 
-Columnas:
-
-`id_tienda`, `tienda`, `tipo_tienda`, `id_producto`, `sku`, `producto`,
-`categoria`, `stock_actual_tienda`, `stock_minimo`, `stock_global_producto`,
-`costo_unitario`, `valor_inventario`, `fuente`, `calidad_dato`.
-
-## Integridad y limitaciones
-
-### Ventas
-
-La suma del importe de cada línea coincide con la suma de las cabeceras:
-
-```text
-sale-201: 5319.81
-sale-202:  899.70
-sale-203: 2699.90
-Total:    8919.41
-```
-
-Para evitar duplicar importes, el dashboard debe sumar `importe` desde el
-CSV de líneas. No debe sumar `total` de una tabla de cabeceras unida a varias
-líneas. Si posteriormente se extrae una tabla de ventas de MongoDB, debe
-mantenerse una tabla de cabeceras separada o calcular el total con
-`DISTINCTCOUNT(id_venta)` y una medida no duplicada.
-
-Limitaciones:
-
-- No hay tienda asociada a las ventas.
-- Solo existen 3 ventas, insuficientes para tendencias representativas.
-- La fuente es un respaldo JSON, no la base MongoDB actualmente configurada.
-
-### Inventario
-
-`products.stock` y `store_stock.quantity` no son equivalentes:
-
-- `products.stock` es un stock global o del almacén principal según el modelo
-  actual.
-- `store_stock.quantity` es stock distribuido por tienda.
-- En el JSON, la suma de `store_stock` es 90 unidades.
-- Hay 19 productos cuya suma por tienda no coincide con `products.stock`.
-- Por tanto, el dashboard por tienda debe usar exclusivamente
-  `stock_actual_tienda`; no debe sumar `stock_global_producto` como si fuera
-  otra tienda.
-
-El dashboard de inventario es utilizable como fotografía del respaldo, pero
-debe presentarse con la advertencia de que la conciliación global aún está
-pendiente.
-
-La instancia MongoDB de prueba tampoco puede usarse para un dashboard de
-inventario representativo: sus 26 filas `store_stock` apuntan a productos
-ausentes en esa base y solo contiene un producto de prueba. Esto se conserva
-como evidencia y no se corrigió porque la solicitud prohíbe escribir datos.
-
-## Medidas DAX sugeridas
-
-Los nombres siguientes corresponden a las columnas de los CSV.
-
-### Dashboard de ventas
+## 5. Medidas DAX Sugeridas sobre el Modelo Estrella
 
 ```DAX
-Ventas Totales = SUM(ventas_powerbi[importe])
+Ventas Totales = SUM(fact_ventas[total])
 ```
 
 ```DAX
-Unidades Vendidas = SUM(ventas_powerbi[cantidad])
+Ventas Netas (Sin IGV) = SUM(fact_ventas[subtotal])
 ```
 
 ```DAX
-Ventas Distintas = DISTINCTCOUNT(ventas_powerbi[id_venta])
+Unidades Vendidas = SUM(fact_detalle_venta[cantidad])
 ```
 
 ```DAX
-Ticket Promedio = DIVIDE([Ventas Totales], [Ventas Distintas], 0)
+Margen Bruto = SUM(fact_detalle_venta[margen_bruto])
 ```
 
 ```DAX
-Productos Vendidos = DISTINCTCOUNT(ventas_powerbi[id_producto])
-```
-
-Indicadores recomendados:
-
-1. Ventas totales.
-2. Unidades vendidas.
-3. Ventas distintas.
-4. Ticket promedio.
-5. Productos vendidos.
-
-No usar `tienda` para comparar rendimiento hasta que el backend capture
-`storeId` en las ventas.
-
-### Dashboard de inventario
-
-```DAX
-Stock por Tienda = SUM(inventario_tienda_powerbi[stock_actual_tienda])
+Ticket Promedio = DIVIDE([Ventas Totales], DISTINCTCOUNT(fact_ventas[id_venta]), 0)
 ```
 
 ```DAX
-Valor del Inventario = SUM(inventario_tienda_powerbi[valor_inventario])
-```
-
-```DAX
-Stock Bajo = 
-SUMX(
-    inventario_tienda_powerbi,
-    IF(
-        inventario_tienda_powerbi[stock_actual_tienda]
-            <= inventario_tienda_powerbi[stock_minimo],
-        inventario_tienda_powerbi[stock_actual_tienda],
-        0
-    )
+Tasa de Conversion Cotizaciones =
+DIVIDE(
+    CALCULATE(COUNTROWS(fact_cotizaciones), fact_cotizaciones[convertida_venta] = TRUE()),
+    COUNTROWS(fact_cotizaciones),
+    0
 )
 ```
 
 ```DAX
-Productos Bajo Minimo =
-COUNTROWS(
-    FILTER(
-        inventario_tienda_powerbi,
-        inventario_tienda_powerbi[stock_actual_tienda]
-            <= inventario_tienda_powerbi[stock_minimo]
-    )
-)
+Valor Inventario Almacen Central = SUM(dim_productos[valor_inventario_costo])
 ```
 
-```DAX
-Productos Distintos en Tienda =
-DISTINCTCOUNT(inventario_tienda_powerbi[id_producto])
-```
+---
 
-Indicadores recomendados:
+## 6. Respaldo Estático Histórico (CSV APF3)
 
-1. Stock por tienda.
-2. Valor del inventario.
-3. Stock bajo mínimo.
-4. Productos bajo mínimo.
-5. Productos distintos en tienda.
-
-## Importación en Power BI Desktop
-
-### Dashboard de ventas
-
-1. Abrir Power BI Desktop.
-2. Seleccionar **Obtener datos > Texto/CSV**.
-3. Abrir `reports/powerbi_apf3/ventas_powerbi.csv`.
-4. En la vista previa, seleccionar **Transformar datos**.
-5. Convertir `fecha` a tipo **Fecha**.
-6. Convertir `cantidad` a **Número entero**.
-7. Convertir `importe` a **Número decimal fijo**.
-8. Confirmar que `fuente` sea `backup_json_no_Mongo`.
-9. Seleccionar **Cerrar y aplicar**.
-10. Crear tarjetas para las cinco medidas DAX anteriores.
-11. Crear gráficos por `fecha`, `categoria`, `producto` y `cantidad`.
-12. Mostrar una tarjeta de advertencia con texto: **Ventas sin tienda
-    registrada; fuente: respaldo JSON**.
-
-### Dashboard de inventario
-
-1. Seleccionar **Obtener datos > Texto/CSV**.
-2. Abrir `reports/powerbi_apf3/inventario_tienda_powerbi.csv`.
-3. Seleccionar **Transformar datos**.
-4. Convertir `stock_actual_tienda`, `stock_minimo` y
-   `stock_global_producto` a **Número entero**.
-5. Convertir `costo_unitario` y `valor_inventario` a **Número decimal fijo**.
-6. Confirmar que `tipo_tienda` distingue `MAIN_WAREHOUSE` de `STORE`.
-7. Seleccionar **Cerrar y aplicar**.
-8. Crear tarjetas para stock, valor, stock bajo y productos bajo mínimo.
-9. Crear una matriz con `tienda`, `categoria`, `producto` y
-   `stock_actual_tienda`.
-10. Crear un gráfico de barras por `tienda` usando `Valor del Inventario`.
-11. Mostrar una advertencia: **Fotografía del respaldo JSON; conciliación de
-    stock global pendiente**.
-
-## Evidencias para exponer en APF3
-
-- Estado Git verificado en `main`; se conservaron los cambios locales de
-  seguridad y no se hizo merge, commit, push ni deploy.
-- Configuración visible sin revelar secretos: `MONGODB_DATABASE=phantom_erp_test`.
-- Consulta directa de MongoDB: `phantom_erp_test` contiene 9 tiendas, 26 filas
-  `store_stock` y cero ventas.
-- Lectura del respaldo: 22 productos, 3 ventas, 9 tiendas, 26 filas de stock,
-  5 movimientos de inventario y cero transferencias.
-- Validación aritmética: total de cabeceras y líneas de ventas igual a
-  `8919.41`.
-- Validación de tiendas: 1 almacén central y 8 sucursales.
-- Validación de procedencia: ambos CSV declaran `backup_json_no_Mongo`.
-
-## Qué falta para un reporte representativo
-
-No se deben fabricar cifras. Para un dashboard definitivo faltan:
-
-1. Una extracción autorizada de `phantom_erp` o una carga controlada de datos
-   reales en una base no productiva.
-2. `storeId` en cada venta para ventas por tienda.
-3. Más ventas y un periodo temporal representativo.
-4. Conciliación formal entre `products.stock` y la suma de `store_stock`.
-5. Movimientos y transferencias reales para analizar rotación y trazabilidad.
-6. Corrección de la instancia `phantom_erp_test` antes de usarla como fuente
-   analítica; no se corrigió aquí por la restricción de no escribir datos.
-
-Hasta completar esos puntos, los CSV sirven como evidencia reproducible para
-demostrar el modelo y el proceso de extracción, pero no deben presentarse
-como indicadores productivos en tiempo real.
+En [`reports/powerbi_apf3/`](./reports/powerbi_apf3/) se conservan como referencia histórica las exportaciones estáticas iniciales (`ventas_powerbi.csv` e `inventario_tienda_powerbi.csv`). Para reportes actualizados sobre MongoDB Atlas, utiliza los endpoints `/api/bi/*` descritos arriba.

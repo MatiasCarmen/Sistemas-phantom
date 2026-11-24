@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import apiRoutes from './routes';
+import biRoutes from './biRoutes';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 export function createApp(): Express {
@@ -16,7 +17,7 @@ export function createApp(): Express {
     }
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
 
     if (req.method === 'OPTIONS') {
       res.status(204).end();
@@ -28,6 +29,9 @@ export function createApp(): Express {
   // Body parsers JSON y URL-encoded
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Endpoints de analítica e integración Power BI (/api/bi)
+  app.use('/api/bi', biRoutes);
 
   // Endpoints RESTful montados bajo /api
   app.use('/api', apiRoutes);
