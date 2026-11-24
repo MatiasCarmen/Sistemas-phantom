@@ -95,26 +95,6 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  // Download Full DB Backup
-  const handleDownloadBackup = async () => {
-    try {
-      const response = await fetch('/api/backup/export');
-      const data = await response.json();
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nexus_database_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Backup download failed:', err);
-    }
-  };
-
   // Reset to Initial Seed Data
   const handleResetDatabase = async () => {
     if (confirm('¿ATENCIÓN: Deseas restaurar la base de datos a sus valores iniciales de demostración?\n\nEsta acción reiniciará los productos, clientes, ventas y cotizaciones al estado por defecto.')) {
@@ -429,7 +409,7 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
             </div>
 
             <p className="text-xs text-[#c8c6c6] leading-relaxed">
-              Consulte la estructura de datos en vivo, visualice tablas relacionales, o descargue copias completas en JSON y scripts SQL.
+              Consulte la estructura de datos en vivo en MongoDB o descargue scripts SQL de referencia.
             </p>
 
             {onOpenDatabaseModal && (
@@ -443,15 +423,6 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
                 <span>Explorar Base de Datos</span>
               </button>
             )}
-
-            <button
-              id="btn-download-db-backup"
-              onClick={handleDownloadBackup}
-              className="w-full py-2.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] text-white border border-[#2D2D2D] rounded text-xs font-bold transition-colors shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>Descargar Copia JSON</span>
-            </button>
 
             <a
               id="btn-download-db-sql"
@@ -469,7 +440,7 @@ export const ReportsSettingsView: React.FC<ReportsSettingsViewProps> = ({
                 <span>Estado de persistencia</span>
               </div>
               <p className="text-[11px] text-[#A1A1AA]">
-                Los datos se persisten en MongoDB. Las copias JSON se descargan manualmente desde esta sección.
+                Los datos se persisten exclusivamente en MongoDB.
               </p>
             </div>
           </div>

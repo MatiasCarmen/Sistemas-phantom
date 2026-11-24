@@ -995,18 +995,7 @@ router.delete('/users/:id', requirePermission('canManageUsers'), requirePermissi
   }
 });
 
-// --- SYSTEM BACKUP / RESET / EXPORT ---
-router.get('/system/export', (req: Request, res: Response) => {
-  try {
-    const data = db.exportDatabase();
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=inventario_db_backup_${Date.now()}.json`);
-    res.send(JSON.stringify(data, null, 2));
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
+// --- SYSTEM STATE / RESET / SQL EXPORT ---
 router.get('/system/raw-db', (req: Request, res: Response) => {
   try {
     const data = db.exportDatabase();
@@ -1474,18 +1463,6 @@ router.get('/database/mysql-script', (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=nexus_erp_mysql_schema_${Date.now()}.sql`);
     res.send(sql);
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.post('/system/import', (req: Request, res: Response) => {
-  try {
-    const success = db.importDatabase(req.body);
-    if (!success) {
-      return res.status(400).json({ success: false, error: 'Estructura de respaldo JSON inválida' });
-    }
-    res.json({ success: true, message: 'Base de datos restaurada correctamente' });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -1,16 +1,9 @@
+import 'dotenv/config';
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { MongoClient } from 'mongodb';
 
-const isolatedDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'phantom-auth-pricing-'));
-const snapshot = JSON.parse(fs.readFileSync(path.resolve('data/db.json'), 'utf8'));
-delete snapshot.users;
-fs.writeFileSync(path.join(isolatedDataDir, 'db.json'), JSON.stringify(snapshot, null, 2));
-fs.copyFileSync(path.resolve('data/audit.json'), path.join(isolatedDataDir, 'audit.json'));
-process.env.PHANTOM_DATA_DIR = isolatedDataDir;
+process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
 process.env.MONGODB_DATABASE = `phantom_erp_auth_pricing_${Date.now()}`;
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 process.env.FRONTEND_URL = 'http://localhost:5173';
@@ -46,16 +39,19 @@ before(async () => {
   server = createApp().listen(0);
   await new Promise(resolve => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}/api`;
-  mongo = new MongoClient(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017');
+  mongo = new MongoClient(process.env.MONGODB_URI);
   await mongo.connect();
 });
 
 after(async () => {
-  await new Promise(resolve => server.close(resolve));
+  if (server) {
+    await new Promise(resolve => server.close(resolve));
+  }
   await db.close();
-  await mongo.db(process.env.MONGODB_DATABASE).dropDatabase();
-  await mongo.close();
-  fs.rmSync(isolatedDataDir, { recursive: true, force: true });
+  if (mongo) {
+    await mongo.db(process.env.MONGODB_DATABASE).dropDatabase();
+    await mongo.close();
+  }
 });
 
 test('distingue autenticación, permisos y calcula importes desde el catálogo', async () => {

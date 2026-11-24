@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { randomBytes } from 'crypto';
 import { 
   Product, 
@@ -28,7 +27,7 @@ import {
   initialCompanySettings,
   initialUsers
 } from './initialData';
-import { closeMongoConnection, getLocalDbFilePath, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
+import { closeMongoConnection, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
 import { hashPassword, verifyPassword } from './security';
 
 export class TransactionValidationError extends Error {
@@ -53,8 +52,6 @@ export interface DatabaseSchema {
   stockTransfers: StockTransfer[];
   lastUpdated: string;
 }
-
-const DB_FILE = getLocalDbFilePath();
 
 class DataStore {
   private data: DatabaseSchema;
@@ -129,20 +126,14 @@ class DataStore {
         ...this.getDefaultSchema(),
         ...snapshotData
       };
-    } else if (fs.existsSync(DB_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) as Partial<DatabaseSchema>;
-      if (!Array.isArray(parsed.products)) {
-        throw new Error('El archivo data/db.json no tiene una estructura válida para migrar.');
-      }
-      const parsedData = { ...parsed } as Partial<DatabaseSchema> & { mysqlConfig?: unknown };
-      delete parsedData.mysqlConfig;
-      this.data = {
-        ...this.getDefaultSchema(),
-        ...parsedData
-      };
       if (!Array.isArray(this.data.users) || this.data.users.length === 0) {
         this.data.users = JSON.parse(JSON.stringify(initialUsers));
       }
+      if (!this.data.settings) {
+        this.data.settings = JSON.parse(JSON.stringify(initialCompanySettings));
+      }
+    } else {
+      this.data = this.getDefaultSchema();
     }
 
     if (!Array.isArray(this.data.stores) || this.data.stores.length < 6) {
@@ -163,7 +154,9 @@ class DataStore {
     this.normalizeHistoricalTransactions();
     this.normalizeSaleNumbering();
     this.normalizeQuoteNumbering();
-    this.saveToFile();
+    this.data.lastUpdated = new Date().toISOString();
+    const initialSnapshot = JSON.parse(JSON.stringify(this.data)) as DatabaseSchema;
+    await saveDatabaseSnapshot(initialSnapshot);
     await this.flushPersistence();
   }
 
@@ -320,7 +313,7 @@ class DataStore {
     this.data.settings.nextInvoiceNumber = chronologicalSales.length + 1;
   }
 
-  private saveToFile() {
+  private persistToMongo() {
     this.data.lastUpdated = new Date().toISOString();
     const snapshot = JSON.parse(JSON.stringify(this.data)) as DatabaseSchema;
     this.persistenceQueue = this.persistenceQueue
@@ -389,7 +382,7 @@ class DataStore {
       });
     }
 
-    this.saveToFile();
+    this.persistToMongo();
     return newProduct;
   }
 
@@ -444,7 +437,7 @@ class DataStore {
         createdBy: 'Administrador'
       });
     } else {
-      this.saveToFile();
+      this.persistToMongo();
     }
     return updated;
   }
@@ -453,7 +446,7 @@ class DataStore {
     const index = this.data.products.findIndex(p => p.id === id);
     if (index === -1) return false;
     this.data.products.splice(index, 1);
-    this.saveToFile();
+    this.persistToMongo();
     return true;
   }
 
@@ -505,7 +498,7 @@ class DataStore {
       createdBy: params.createdBy || 'Usuario Almacén'
     });
 
-    this.saveToFile();
+    this.persistToMongo();
     return { product, movement };
   }
 
@@ -555,7 +548,7 @@ class DataStore {
       createdBy: params.createdBy || 'Administrador'
     });
 
-    this.saveToFile();
+    this.persistToMongo();
     return { product, movement };
   }
 
@@ -607,7 +600,7 @@ class DataStore {
       notes: `Transferencia al almacén ${destination.name}${params.notes ? `: ${params.notes}` : ''}`,
       createdBy: params.createdBy || 'Usuario Almacén'
     });
-    this.saveToFile();
+    this.persistToMongo();
     return transfer;
   }
 
@@ -631,7 +624,7 @@ class DataStore {
       transfer.receivedAt = new Date().toISOString();
     });
 
-    this.saveToFile();
+    this.persistToMongo();
     return transfers;
   }
 
@@ -655,7 +648,7 @@ class DataStore {
       itemCount: 0
     };
     this.data.categories.push(newCat);
-    this.saveToFile();
+    this.persistToMongo();
     return newCat;
   }
 
@@ -663,7 +656,7 @@ class DataStore {
     const index = this.data.categories.findIndex(c => c.id === id);
     if (index === -1) return false;
     this.data.categories.splice(index, 1);
-    this.saveToFile();
+    this.persistToMongo();
     return true;
   }
 
@@ -679,7 +672,7 @@ class DataStore {
       createdAt: new Date().toISOString()
     };
     this.data.suppliers.push(newSup);
-    this.saveToFile();
+    this.persistToMongo();
     return newSup;
   }
 
@@ -687,7 +680,7 @@ class DataStore {
     const index = this.data.suppliers.findIndex(s => s.id === id);
     if (index === -1) return null;
     this.data.suppliers[index] = { ...this.data.suppliers[index], ...updates };
-    this.saveToFile();
+    this.persistToMongo();
     return this.data.suppliers[index];
   }
 
@@ -695,7 +688,7 @@ class DataStore {
     const index = this.data.suppliers.findIndex(s => s.id === id);
     if (index === -1) return false;
     this.data.suppliers.splice(index, 1);
-    this.saveToFile();
+    this.persistToMongo();
     return true;
   }
 
@@ -720,7 +713,7 @@ class DataStore {
       totalPurchases: 0
     };
     this.data.customers.push(newCustomer);
-    this.saveToFile();
+    this.persistToMongo();
     return newCustomer;
   }
 
@@ -728,7 +721,7 @@ class DataStore {
     const index = this.data.customers.findIndex(c => c.id === id);
     if (index === -1) return null;
     this.data.customers[index] = { ...this.data.customers[index], ...updates };
-    this.saveToFile();
+    this.persistToMongo();
     return this.getCustomerById(id) || null;
   }
 
@@ -736,7 +729,7 @@ class DataStore {
     const index = this.data.customers.findIndex(c => c.id === id);
     if (index === -1) return false;
     this.data.customers.splice(index, 1);
-    this.saveToFile();
+    this.persistToMongo();
     return true;
   }
 
@@ -755,7 +748,7 @@ class DataStore {
       createdAt: new Date().toISOString()
     };
     this.data.inventoryMovements.unshift(newMov);
-    this.saveToFile();
+    this.persistToMongo();
     return newMov;
   }
 
@@ -788,7 +781,7 @@ class DataStore {
     };
 
     this.data.quotes.unshift(newQuote);
-    this.saveToFile();
+    this.persistToMongo();
     return newQuote;
   }
 
@@ -803,7 +796,7 @@ class DataStore {
       updatedAt: new Date().toISOString()
     };
 
-    this.saveToFile();
+    this.persistToMongo();
     return this.data.quotes[index];
   }
 
@@ -811,7 +804,7 @@ class DataStore {
     const index = this.data.quotes.findIndex(q => q.id === id);
     if (index === -1) return false;
     this.data.quotes.splice(index, 1);
-    this.saveToFile();
+    this.persistToMongo();
     return true;
   }
 
@@ -884,7 +877,7 @@ class DataStore {
     quote.convertedToSaleNumber = sale.saleNumber;
     quote.updatedAt = new Date().toISOString();
 
-    this.saveToFile();
+    this.persistToMongo();
     return { sale, quote };
   }
 
@@ -1028,7 +1021,7 @@ class DataStore {
       }
     }
 
-    this.saveToFile();
+    this.persistToMongo();
     return newSale;
   }
 
@@ -1079,7 +1072,7 @@ class DataStore {
       }
     }
 
-    this.saveToFile();
+    this.persistToMongo();
     return sale;
   }
 
@@ -1090,7 +1083,7 @@ class DataStore {
 
   updateSettings(updates: Partial<CompanySettings>): CompanySettings {
     this.data.settings = { ...this.data.settings, ...updates };
-    this.saveToFile();
+    this.persistToMongo();
     return this.data.settings;
   }
 
@@ -1240,7 +1233,7 @@ class DataStore {
 
     // Update lastLogin
     user.lastLogin = new Date().toISOString();
-    this.saveToFile();
+    this.persistToMongo();
 
     const { password, ...safeUser } = user;
     return { user: safeUser as User };
@@ -1279,7 +1272,7 @@ class DataStore {
     };
 
     this.data.users.push(newUser);
-    this.saveToFile();
+    this.persistToMongo();
 
     const { password, ...safeUser } = newUser;
     return safeUser as User;
@@ -1299,7 +1292,7 @@ class DataStore {
       createdAt: existing.createdAt
     };
 
-    this.saveToFile();
+    this.persistToMongo();
     const { password, ...safeUser } = this.data.users[index];
     return safeUser as User;
   }
@@ -1317,27 +1310,20 @@ class DataStore {
 
     this.data.users = this.data.users.filter(u => u.id !== id);
     if (this.data.users.length !== initialLen) {
-      this.saveToFile();
+      this.persistToMongo();
       return true;
     }
     return false;
   }
 
-  // --- SYSTEM BACKUP / RESET ---
+  // --- SYSTEM STATE & RESET ---
   exportDatabase(): DatabaseSchema {
     return this.data;
   }
 
-  importDatabase(schema: DatabaseSchema): boolean {
-    if (!schema || !Array.isArray(schema.products)) return false;
-    this.data = schema;
-    this.saveToFile();
-    return true;
-  }
-
   resetDemoData(): DatabaseSchema {
     this.data = this.getDefaultSchema();
-    this.saveToFile();
+    this.persistToMongo();
     return this.data;
   }
 }

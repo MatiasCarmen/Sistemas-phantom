@@ -26,6 +26,6 @@ async function startServer() {
 
 startServer().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`[ERP-Backend] Error al iniciar el servidor: ${message}`);
-  process.exitCode = 1;
+  console.error(`[ERP-Backend] Error crítico al iniciar el servidor (MongoDB requerido): ${message}`);
+  process.exit(1);
 });

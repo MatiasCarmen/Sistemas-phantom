@@ -32,15 +32,13 @@ sistema-de-inventario-cotización-y-ventas/
     ├── package.json              # Dependencias y scripts del servidor
     ├── tsconfig.json             # TypeScript estricto para Node.js
     ├── .env.example              # Plantilla de variables de entorno
-    ├── data/
-    │   └── db.json               # Respaldo y persistencia local automática
     └── src/
         ├── app.ts                # Fábrica Express (CORS, JSON parser, errorHandler)
         ├── server.ts             # Punto de entrada del servidor (puerto 3000)
         ├── routes.ts             # Endpoints RESTful montados bajo /api
         ├── security.ts           # Firma/verificación JWT (HMAC-SHA256) y hash scrypt
         ├── dataStore.ts          # Lógica transaccional de inventario, Kardex y ventas
-        ├── mongo.ts              # Persistencia en MongoDB con fallback automático a JSON
+        ├── mongo.ts              # Persistencia exclusiva en MongoDB (Atlas)
         ├── audit.ts              # Bitácora de auditoría con redacción de credenciales
         ├── audit.test.mjs        # Pruebas automatizadas de auditoría
         ├── initialData.ts        # Semilla de datos iniciales
@@ -61,12 +59,12 @@ npm run install:all
 ### 2. Variables de Entorno (`backend/.env`)
 ```env
 PORT=3000
-MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_URI=
 MONGODB_DATABASE=phantom_erp
 FRONTEND_URL=http://localhost:5173
 JWT_SECRET=phantom_erp_hmac_secret_key_2026_secure
 ```
-> **Nota:** Si MongoDB no está activo localmente en `127.0.0.1:27017`, el backend inicia automáticamente en modo de persistencia local usando `backend/data/db.json` sin interrumpir el desarrollo.
+> **Importante:** `MONGODB_URI` es obligatoria (por ejemplo, la cadena de conexión de MongoDB Atlas). Si MongoDB no está configurado o no responde al iniciar, el backend mostrará un error en consola y se detendrá.
 
 ### 3. Ejecución en Desarrollo (1 solo comando)
 ```bash

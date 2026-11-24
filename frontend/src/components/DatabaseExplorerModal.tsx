@@ -120,7 +120,7 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Persistencia MongoDB en colecciones por entidad, con exportación de respaldos JSON
+                Persistencia exclusiva en MongoDB (Atlas) en colecciones por entidad
               </p>
             </div>
           </div>
@@ -143,15 +143,6 @@ export const DatabaseExplorerModal: React.FC<DatabaseExplorerModalProps> = ({
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Exportar SQL</span>
-            </a>
-            <a
-              id="btn-download-json-export"
-              href={api.exportBackupUrl()}
-              download
-              className="px-3 py-1.5 rounded bg-[#1E1E1E] hover:bg-[#2D2D2D] text-zinc-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-[#2D2D2D]"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Descargar JSON</span>
             </a>
             <button
               id="btn-close-db-modal"

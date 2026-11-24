@@ -279,14 +279,8 @@ export const api = {
   },
 
   // System
-  exportBackupUrl: () => `${API_BASE}/system/export`,
   exportSqlUrl: () => `${API_BASE}/system/sql-export`,
   getRawDatabase: () => fetchJson<{ success: boolean; data: any }>('/system/raw-db'),
-  importBackup: (backupData: any) => 
-    fetchJson<{ success: boolean; message: string }>('/system/import', {
-      method: 'POST',
-      body: JSON.stringify(backupData)
-    }),
   resetDemoData: () => 
     fetchJson<{ success: boolean; message: string }>('/system/reset-demo', {
       method: 'POST'
