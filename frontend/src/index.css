@@ -156,6 +156,18 @@ input, select, textarea, button {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+/* Los campos numéricos se escriben manualmente; ocultar flechas del navegador. */
+input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 button {
   cursor: pointer;
 }
@@ -234,13 +246,21 @@ html.theme-light body,
   background-color: #F1F5F9 !important;
 }
 .theme-light .bg-\[\#181818\],
-.theme-light .bg-\[\#161616\] {
+.theme-light .bg-\[\#161616\],
+.theme-light .bg-\[\#171717\] {
   background-color: #FFFFFF !important;
+}
+.theme-light .bg-\[\#101010\],
+.theme-light .bg-\[\#252525\],
+.theme-light .bg-\[\#303030\] {
+  background-color: #F8FAFC !important;
 }
 
 /* Borders & Separators */
 .theme-light .border-\[\#2D2D2D\],
 .theme-light .border-\[\#3D3D3D\],
+.theme-light .border-\[\#303030\],
+.theme-light .border-\[\#404040\],
 .theme-light .border-\[\#2c2c2c\],
 .theme-light .border-\[\#242424\],
 .theme-light .border-\[\#1E1E1E\],
@@ -263,7 +283,10 @@ html.theme-light body,
 .theme-light .text-zinc-300,
 .theme-light .text-slate-200,
 .theme-light .text-slate-300,
-.theme-light .text-\[\#D1D5DB\] {
+.theme-light .text-\[\#D1D5DB\],
+.theme-light .text-\[\#E5E5E5\],
+.theme-light .text-\[\#D4D4D4\],
+.theme-light .text-\[\#c8c6c6\] {
   color: #334155 !important;
 }
 
@@ -273,7 +296,9 @@ html.theme-light body,
 .theme-light .text-slate-500,
 .theme-light .text-\[\#A1A1AA\],
 .theme-light .text-\[\#a0a0a0\],
-.theme-light .text-\[\#9CA3AF\] {
+.theme-light .text-\[\#9CA3AF\],
+.theme-light .text-\[\#A3A3A3\],
+.theme-light .text-\[\#737373\] {
   color: #475569 !important;
 }
 
@@ -316,6 +341,34 @@ html.theme-light body,
 }
 .theme-light .hover\:bg-\[\#141414\]:hover {
   background-color: #F8FAFC !important;
+}
+.theme-light .hover\:bg-\[\#181818\]:hover {
+  background-color: #F1F5F9 !important;
+}
+
+/* Purchase order table statuses and actions */
+.theme-light .bg-\[\#374151\] {
+  background-color: #F1F5F9 !important;
+  color: #334155 !important;
+}
+.theme-light .bg-\[\#1E3A8A\] {
+  background-color: #EFF6FF !important;
+  color: #1D4ED8 !important;
+}
+.theme-light .bg-\[\#064E3B\] {
+  background-color: #ECFDF5 !important;
+  color: #047857 !important;
+}
+.theme-light .bg-\[\#450A0A\] {
+  background-color: #FEF2F2 !important;
+  color: #B91C1C !important;
+}
+.theme-light .text-\[\#93C5FD\] {
+  color: #1D4ED8 !important;
+}
+.theme-light .text-\[\#6EE7B7\],
+.theme-light .text-\[\#31D0AA\] {
+  color: #047857 !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -471,4 +524,3 @@ html.theme-light body,
 .theme-light .bg-black\/80 {
   background-color: rgba(15, 23, 42, 0.5) !important;
 }
-

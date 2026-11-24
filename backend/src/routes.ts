@@ -2,7 +2,7 @@ import { Router, Request, Response, type NextFunction } from 'express';
 import { db, TransactionValidationError, type DatabaseSchema } from './dataStore';
 import { buildAuditEvents } from './audit';
 import { getMongoStatus, loadAuditEvents, saveAuditEvents } from './mongo';
-import { signAuthToken, verifyAuthToken } from './security';
+import { signAuthToken, verifyAuthToken, revokeAuthToken } from './security';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -62,7 +62,16 @@ router.post('/uploads/product-image', async (req: Request, res: Response) => {
 
 function getAuthenticatedUser(req: Request) {
   const verified = verifyAuthToken(req.headers.authorization);
-  return verified ? db.getUserById(verified.userId) : undefined;
+  const user = verified ? db.getUserById(verified.userId) : undefined;
+  return user?.status === 'active' ? user : undefined;
+}
+
+function redactUserPasswords(data: DatabaseSchema): DatabaseSchema {
+  const sanitized = JSON.parse(JSON.stringify(data)) as DatabaseSchema;
+  if (Array.isArray(sanitized.users)) {
+    sanitized.users = sanitized.users.map(({ password, ...user }) => user);
+  }
+  return sanitized;
 }
 
 function authenticate(req: Request, res: Response, next: NextFunction): void {
@@ -360,6 +369,10 @@ router.get('/store-stock', requireAnyPermission('canManageInventory', 'canManage
   res.json({ success: true, data: { storeStock: db.getStoreStock(), transfers: db.getStockTransfers() } });
 });
 
+router.get('/stock-transfers/suggestions', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getReplenishmentSuggestions() });
+});
+
 router.post('/stock-transfers', requirePermission('canManageInventory'), (req: Request, res: Response) => {
   const items = Array.isArray(req.body.items) && req.body.items.length > 0
     ? req.body.items
@@ -384,6 +397,95 @@ router.post('/stock-transfers', requirePermission('canManageInventory'), (req: R
   }
   if (transfers.length === 0) return res.status(400).json({ success: false, error: 'Indique al menos un producto y una cantidad válida' });
   res.status(201).json({ success: true, data: transfers });
+});
+
+router.get('/purchase-orders', requireAnyPermission('canManageInventory', 'canManageContacts'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getPurchaseOrders() });
+});
+
+router.get('/purchase-orders/suggestions', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  res.json({ success: true, data: db.getPurchaseSuggestions() });
+});
+
+router.post('/purchase-orders', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  try {
+    const supplier = db.getSuppliers().find(item => item.id === req.body.supplierId);
+    if (!supplier) return res.status(400).json({ success: false, error: 'Proveedor no válido' });
+    const items = Array.isArray(req.body.items) ? req.body.items : [];
+    if (!items.length) return res.status(400).json({ success: false, error: 'Agregue al menos un producto' });
+
+    let subtotal = 0;
+    let taxTotal = 0;
+    const normalizedItems = items.map((item: any) => {
+      const product = db.getProductById(item.productId);
+      if (!product) throw new Error('Uno de los productos seleccionados no existe');
+      const quantity = Number(item.quantity);
+      const unitCost = Number(item.unitCost ?? product.costPrice);
+      const taxRate = Number(item.taxRate ?? product.taxRate ?? 18);
+      if (quantity <= 0 || unitCost < 0) throw new Error('Cantidad o costo inválido');
+      const itemSubtotal = Number((quantity * unitCost).toFixed(2));
+      const itemTax = Number((itemSubtotal * taxRate / 100).toFixed(2));
+      subtotal += itemSubtotal;
+      taxTotal += itemTax;
+      return {
+        id: `oci-${Date.now()}-${product.id}`,
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        unit: product.unit,
+        quantity,
+        unitCost,
+        taxRate,
+        subtotal: itemSubtotal,
+        taxAmount: itemTax,
+        total: Number((itemSubtotal + itemTax).toFixed(2))
+      };
+    });
+
+    const order = db.addPurchaseOrder({
+      supplierId: supplier.id,
+      supplierName: supplier.name,
+      supplierTaxId: supplier.taxId,
+      date: req.body.date || new Date().toISOString().slice(0, 10),
+      expectedDate: req.body.expectedDate,
+      status: req.body.status || 'DRAFT',
+      items: normalizedItems,
+      subtotal: Number(subtotal.toFixed(2)),
+      taxTotal: Number(taxTotal.toFixed(2)),
+      total: Number((subtotal + taxTotal).toFixed(2)),
+      currency: req.body.currency || db.getSettings().currencySymbol || 'S/.',
+      paymentTerms: req.body.paymentTerms || supplier.paymentTerms || '',
+      notes: req.body.notes || '',
+      createdBy: req.body.createdBy || getAuthenticatedUser(req)?.name || 'Usuario'
+    });
+    res.status(201).json({ success: true, data: order });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.put('/purchase-orders/:id', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  const allowedStatuses = ['DRAFT', 'ISSUED', 'RECEIVED', 'CANCELLED'];
+  if (req.body.status !== undefined && !allowedStatuses.includes(req.body.status)) {
+    return res.status(400).json({ success: false, error: 'Estado de orden inválido' });
+  }
+  const order = db.updatePurchaseOrder(req.params.id, req.body);
+  if (!order) return res.status(404).json({ success: false, error: 'Orden de compra no encontrada' });
+  res.json({ success: true, data: order });
+});
+
+router.post('/purchase-orders/:id/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  const receptionItems = Array.isArray(req.body.items) ? req.body.items : undefined;
+  const order = db.receivePurchaseOrder(req.params.id, getAuthenticatedUser(req)?.name || 'Usuario Almacén', receptionItems);
+  if (!order) return res.status(400).json({ success: false, error: 'La orden ya fue recibida, cancelada o no existe' });
+  res.json({ success: true, data: order });
+});
+
+router.delete('/purchase-orders/:id', requirePermission('canManageInventory'), (req: Request, res: Response) => {
+  if (!db.deletePurchaseOrder(req.params.id)) {
+    return res.status(400).json({ success: false, error: 'La orden de compra no existe' });
+  }
+  res.json({ success: true });
 });
 
 router.post('/stock-transfers/receive', requirePermission('canManageInventory'), (req: Request, res: Response) => {
@@ -480,13 +582,17 @@ router.get('/customers', requirePermission('canManageContacts'), (req: Request, 
 
 router.post('/customers', requirePermission('canManageContacts'), (req: Request, res: Response) => {
   try {
-    const { name, taxId, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
+    const { name, taxId, documentType, email, phone, address, city, creditLimit, paymentTerms, status, notes } = req.body;
     if (!name || !taxId) {
       return res.status(400).json({ success: false, error: 'Nombre y Documento de Identidad/RUC son obligatorios' });
+    }
+    if (db.getCustomers().some(customer => customer.taxId.replace(/\D/g, '') === String(taxId).replace(/\D/g, ''))) {
+      return res.status(409).json({ success: false, error: 'Ya existe un cliente registrado con ese documento' });
     }
     const newCust = db.addCustomer({ 
       name, 
       taxId, 
+      documentType,
       email: email || '', 
       phone: phone || '', 
       address: address || '',
@@ -888,12 +994,13 @@ router.put('/settings', requirePermission('canManageSettings'), (req: Request, r
 // --- AUTHENTICATION & USERS ---
 router.post('/auth/login', (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
-    if (!username) {
-      return res.status(400).json({ success: false, error: 'Ingrese su nombre de usuario o correo' });
+    const { username, password } = req.body ?? {};
+    if (typeof username !== 'string' || !username.trim() || username.length > 254 ||
+        typeof password !== 'string' || !password || password.length > 1024) {
+      return res.status(401).json({ success: false, error: 'Credenciales inválidas' });
     }
 
-    const authResult = db.authenticateUser(username, password || '');
+    const authResult = db.authenticateUser(username, password);
     if (authResult.error || !authResult.user) {
       return res.status(401).json({ success: false, error: authResult.error || 'Credenciales inválidas' });
     }
@@ -909,8 +1016,8 @@ router.post('/auth/login', (req: Request, res: Response) => {
       user: authResult.user,
       message: `Bienvenido(a), ${authResult.user.name}`
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch {
+    res.status(503).json({ success: false, error: 'No se pudo iniciar sesión. Intente de nuevo más tarde.' });
   }
 });
 
@@ -929,6 +1036,7 @@ router.get('/auth/me', (req: Request, res: Response) => {
 });
 
 router.post('/auth/logout', (req: Request, res: Response) => {
+  revokeAuthToken(req.headers.authorization);
   res.json({ success: true, message: 'Sesión cerrada correctamente' });
 });
 
@@ -943,30 +1051,13 @@ router.get('/users', requirePermission('canManageUsers'), (req: Request, res: Re
 
 router.post('/users', requirePermission('canManageUsers'), (req: Request, res: Response) => {
   try {
-    const { username, name, email, role, password, permissions } = req.body;
-    if (!username || !name || !email) {
-      return res.status(400).json({ success: false, error: 'Campos requeridos: username, name, email' });
-    }
-
-    // Check duplicate
-    const existing = db.getUserByUsernameOrEmail(username);
-    if (existing) {
-      return res.status(400).json({ success: false, error: 'El nombre de usuario o correo ya está registrado' });
-    }
-
-    const newUser = db.addUser({
-      username: username.trim().toLowerCase(),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: role || 'collaborator',
-      roleLabel: role === 'admin' ? 'Administrador' : role === 'warehouse' ? 'Almacén' : role === 'cashier' ? 'Caja' : 'Colaborador',
-      password: password || '123456',
-      status: 'active',
-      permissions: permissions || undefined
-    });
+    const newUser = db.addUser(req.body);
 
     res.status(201).json({ success: true, data: newUser, message: 'Usuario colaborador creado con éxito' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -979,6 +1070,9 @@ router.put('/users/:id', requirePermission('canManageUsers'), (req: Request, res
     }
     res.json({ success: true, data: updated, message: 'Usuario actualizado correctamente' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -991,6 +1085,9 @@ router.delete('/users/:id', requirePermission('canManageUsers'), requirePermissi
     }
     res.json({ success: true, message: 'Usuario eliminado exitosamente' });
   } catch (error: any) {
+    if (error instanceof TransactionValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -998,7 +1095,7 @@ router.delete('/users/:id', requirePermission('canManageUsers'), requirePermissi
 // --- SYSTEM STATE / RESET / SQL EXPORT ---
 router.get('/system/raw-db', (req: Request, res: Response) => {
   try {
-    const data = db.exportDatabase();
+    const data = redactUserPasswords(db.exportDatabase());
     res.json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -1174,7 +1271,7 @@ router.get('/system/sql-export', (req: Request, res: Response) => {
 
 router.get('/database/mysql-script', (req: Request, res: Response) => {
   try {
-    const data = db.exportDatabase();
+    const data = redactUserPasswords(db.exportDatabase());
     const dbName = 'phantom_erp';
     const prefix = 'nexus_';
 
@@ -1420,7 +1517,7 @@ router.get('/database/mysql-script', (req: Request, res: Response) => {
     // Users
     data.users.forEach(u => {
       const perms = JSON.stringify(u.permissions || {}).replace(/'/g, "\\'");
-      const password = (u.password || '123456').replace(/'/g, "\\'");
+      const password = (u.password || '[REDACTED]').replace(/'/g, "\\'");
       sql += `INSERT INTO \`${prefix}users\` (\`id\`, \`username\`, \`name\`, \`email\`, \`password\`, \`role\`, \`role_label\`, \`avatar_color\`, \`status\`, \`permissions\`) VALUES ('${u.id}', '${u.username}', '${u.name.replace(/'/g, "\\'")}', '${u.email}', '${password}', '${u.role}', '${u.roleLabel.replace(/'/g, "\\'")}', '${u.avatarColor || 'indigo'}', '${u.status}', '${perms}');\n`;
     });
     sql += `\n`;
@@ -1470,7 +1567,7 @@ router.get('/database/mysql-script', (req: Request, res: Response) => {
 
 router.post('/system/reset-demo', (req: Request, res: Response) => {
   try {
-    const data = db.resetDemoData();
+    const data = redactUserPasswords(db.resetDemoData());
     res.json({ success: true, message: 'Datos de prueba reiniciados con éxito', data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });

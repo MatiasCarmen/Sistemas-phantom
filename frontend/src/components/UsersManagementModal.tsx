@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { User, UserRole, UserPermissions } from '../types';
 import { api } from '../lib/api';
+import { userValidationError } from '../../../shared/userValidation';
 
 interface UsersManagementModalProps {
   isOpen: boolean;
@@ -189,6 +190,26 @@ export const UsersManagementModal: React.FC<UsersManagementModalProps> = ({
     setErrorMessage(null);
     setSuccessMessage(null);
 
+    const validationError = userValidationError({
+      ...(!isEditing ? { username: formUsername } : {}),
+      name: formName,
+      email: formEmail,
+      role: formRole,
+      status: formStatus,
+      permissions: formPermissions,
+      ...(!isEditing || formPassword !== '' ? { password: formPassword } : {})
+    }, !isEditing);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+    const identifiers = [formEmail.trim().toLowerCase(), formUsername.trim().toLowerCase()];
+    if (users.some(user => user.id !== selectedUserId &&
+        [user.username.toLowerCase(), user.email.toLowerCase()].some(value => identifiers.includes(value)))) {
+      setErrorMessage('El nombre de usuario o correo ya está registrado');
+      return;
+    }
+
     try {
       if (isEditing && selectedUserId) {
         const payload: any = {
@@ -198,8 +219,8 @@ export const UsersManagementModal: React.FC<UsersManagementModalProps> = ({
           status: formStatus,
           permissions: formPermissions
         };
-        if (formPassword.trim()) {
-          payload.password = formPassword.trim();
+        if (formPassword !== '') {
+          payload.password = formPassword;
         }
 
         await api.updateUser(selectedUserId, payload);
@@ -214,7 +235,7 @@ export const UsersManagementModal: React.FC<UsersManagementModalProps> = ({
           username: formUsername.trim().toLowerCase(),
           name: formName.trim(),
           email: formEmail.trim().toLowerCase(),
-          password: formPassword.trim(),
+          password: formPassword,
           role: formRole,
           status: formStatus,
           permissions: formPermissions
@@ -494,6 +515,10 @@ export const UsersManagementModal: React.FC<UsersManagementModalProps> = ({
                     <input
                       type="password"
                       required={!isEditing}
+                      minLength={12}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      title="Entre 12 y 128 caracteres, con mayúsculas, minúsculas y números"
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}
                       placeholder="••••••••"

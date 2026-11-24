@@ -14,8 +14,14 @@ import {
   User,
   Store,
   StoreStock,
-  StockTransfer
+  StockTransfer,
+  ReplenishmentSuggestion,
+  PurchaseSuggestion,
+  PurchaseOrder
 } from './types';
+import { buildReplenishmentSuggestions } from './replenishment';
+import { buildPurchaseSuggestions } from './purchaseSuggestions';
+import { getNextSaleNumber, getStoreSeriesNumber } from './saleNumbering';
 import { 
   initialProducts, 
   initialCategories, 
@@ -28,7 +34,8 @@ import {
   initialUsers
 } from './initialData';
 import { closeMongoConnection, loadDatabaseSnapshot, saveDatabaseSnapshot } from './mongo';
-import { hashPassword, verifyPassword } from './security';
+import { hashPassword, verifyPassword, revokeUserSessions, revokeAllSessions } from './security';
+import { ROLE_LABELS, userValidationError } from '../../shared/userValidation';
 
 export class TransactionValidationError extends Error {
   constructor(message: string) {
@@ -50,8 +57,11 @@ export interface DatabaseSchema {
   stores: Store[];
   storeStock: StoreStock[];
   stockTransfers: StockTransfer[];
+  purchaseOrders: PurchaseOrder[];
   lastUpdated: string;
 }
+
+const DUMMY_PASSWORD_HASH = hashPassword(randomBytes(32).toString('hex'));
 
 class DataStore {
   private data: DatabaseSchema;
@@ -91,6 +101,7 @@ class DataStore {
         )
       ],
       stockTransfers: [],
+      purchaseOrders: [],
       lastUpdated: new Date().toISOString()
     };
   }
@@ -119,7 +130,9 @@ class DataStore {
 
   async initialize(): Promise<void> {
     const snapshot = await loadDatabaseSnapshot();
-    if (snapshot && Array.isArray(snapshot.products)) {
+    const loadedFromMongo = Boolean(snapshot && Array.isArray(snapshot.products));
+
+    if (loadedFromMongo && snapshot) {
       const snapshotData = { ...snapshot } as DatabaseSchema & { mysqlConfig?: unknown };
       delete snapshotData.mysqlConfig;
       this.data = {
@@ -136,6 +149,15 @@ class DataStore {
       this.data = this.getDefaultSchema();
     }
 
+    if (loadedFromMongo) {
+      // Los documentos restaurados desde MongoDB son la fuente de verdad:
+      // no se renumeran, no se recalculan importes y no se persiste nada al iniciar.
+      if (!Array.isArray(this.data.stores)) this.data.stores = [];
+      if (!Array.isArray(this.data.storeStock)) this.data.storeStock = [];
+      if (!Array.isArray(this.data.stockTransfers)) this.data.stockTransfers = [];
+      return;
+    }
+
     if (!Array.isArray(this.data.stores) || this.data.stores.length < 6) {
       this.data.stores = this.getDefaultSchema().stores;
     } else {
@@ -150,6 +172,7 @@ class DataStore {
     });
     if (!Array.isArray(this.data.storeStock)) this.data.storeStock = [];
     if (!Array.isArray(this.data.stockTransfers)) this.data.stockTransfers = [];
+    if (!Array.isArray(this.data.purchaseOrders)) this.data.purchaseOrders = [];
     this.normalizeProductCodes();
     this.normalizeHistoricalTransactions();
     this.normalizeSaleNumbering();
@@ -286,11 +309,25 @@ class DataStore {
     });
     const saleNumbersById = new Map<string, string>();
     const saleNumbersByPreviousNumber = new Map<string, string>();
+    const storeNumbers = new Map(this.data.stores.map(store => [store.id, getStoreSeriesNumber(store)]));
+    let legacySequence = chronologicalSales.reduce((highest, sale) => {
+      const sequence = Number(sale.saleNumber.match(/^FAC-(\d{8})$/)?.[1] || 0);
+      return Math.max(highest, sequence);
+    }, 0);
 
-    chronologicalSales.forEach((sale, index) => {
-      const saleNumber = `FAC-${String(index + 1).padStart(8, '0')}`;
+    chronologicalSales.forEach(sale => {
+      const previousSaleNumber = sale.saleNumber;
+      const storeNumber = (sale.storeId && storeNumbers.get(sale.storeId)) || '00';
+      const expectedSeries = `${sale.voucherType === 'BOLETA' ? 'BOL' : sale.voucherType === 'TICKET' ? 'TKT' : 'FAC'}${storeNumber}`;
+      const matchesExpectedSeries = new RegExp(`^${expectedSeries}-\\d{8}$`).test(previousSaleNumber);
+      const saleNumber = matchesExpectedSeries
+        ? previousSaleNumber
+        : getNextSaleNumber(this.data.sales, storeNumber, sale.voucherType);
+      if (!matchesExpectedSeries && /^FAC-\d{8}$/.test(previousSaleNumber)) {
+        legacySequence += 1;
+      }
       saleNumbersById.set(sale.id, saleNumber);
-      saleNumbersByPreviousNumber.set(sale.saleNumber, saleNumber);
+      saleNumbersByPreviousNumber.set(previousSaleNumber, saleNumber);
       sale.saleNumber = saleNumber;
     });
 
@@ -310,7 +347,7 @@ class DataStore {
     }
 
     this.data.settings.invoicePrefix = 'FAC-';
-    this.data.settings.nextInvoiceNumber = chronologicalSales.length + 1;
+    this.data.settings.nextInvoiceNumber = legacySequence + 1;
   }
 
   private persistToMongo() {
@@ -321,6 +358,101 @@ class DataStore {
       .catch((err) => {
         console.error('[DataStore] Failed to persist snapshot to MongoDB:', err);
       });
+  }
+
+  // --- PURCHASE ORDERS ---
+  getPurchaseOrders(): PurchaseOrder[] {
+    return this.data.purchaseOrders || [];
+  }
+
+  addPurchaseOrder(orderData: Omit<PurchaseOrder, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'> & { orderNumber?: string }): PurchaseOrder {
+    const now = new Date().toISOString();
+    const maximum = (this.data.purchaseOrders || []).reduce((highest, order) => {
+      const match = order.orderNumber.match(/(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    const order: PurchaseOrder = {
+      ...orderData,
+      id: `oc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      orderNumber: orderData.orderNumber || `OC-${String(maximum + 1).padStart(8, '0')}`,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.data.purchaseOrders.unshift(order);
+    this.persistToMongo();
+    return order;
+  }
+
+  updatePurchaseOrder(id: string, updates: Partial<PurchaseOrder>): PurchaseOrder | null {
+    const index = this.data.purchaseOrders.findIndex(order => order.id === id);
+    if (index === -1) return null;
+    this.data.purchaseOrders[index] = {
+      ...this.data.purchaseOrders[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    this.persistToMongo();
+    return this.data.purchaseOrders[index];
+  }
+
+  receivePurchaseOrder(id: string, receivedBy: string, receptionItems?: Array<{ productId: string; sellingPrice?: number; minStock?: number; location?: string }>): PurchaseOrder | null {
+    const order = this.data.purchaseOrders.find(item => item.id === id);
+    if (!order || order.status === 'RECEIVED' || order.status === 'CANCELLED') return null;
+
+    for (const item of order.items) {
+      const product = this.getProductById(item.productId);
+      if (!product) continue;
+      const previousStock = product.stock;
+      const receptionItem = receptionItems?.find(entry => entry.productId === item.productId);
+      product.stock += item.quantity;
+      if (receptionItem) {
+        if (Number.isFinite(Number(receptionItem.sellingPrice))) product.sellingPrice = Number(receptionItem.sellingPrice);
+        if (Number.isFinite(Number(receptionItem.minStock))) product.minStock = Math.max(0, Number(receptionItem.minStock));
+        product.location = 'Almacén principal';
+      }
+      product.updatedAt = new Date().toISOString();
+      product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
+      this.addInventoryMovement({
+        productId: product.id,
+        productSku: product.sku,
+        productName: product.name,
+        type: 'IN_PURCHASE',
+        quantity: item.quantity,
+        previousStock,
+        newStock: product.stock,
+        unitCost: item.unitCost,
+        referenceId: order.orderNumber,
+        notes: `Recepción de orden de compra ${order.orderNumber}`,
+        createdBy: receivedBy
+      });
+    }
+
+    order.status = 'RECEIVED';
+    order.receivedAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+    this.persistToMongo();
+    return order;
+  }
+
+  deletePurchaseOrder(id: string): boolean {
+    const index = this.data.purchaseOrders.findIndex(order => order.id === id);
+    if (index === -1) return false;
+
+    const order = this.data.purchaseOrders[index];
+    if (order.status === 'RECEIVED') {
+      for (const item of order.items) {
+        const product = this.getProductById(item.productId);
+        if (!product) continue;
+        product.stock = Math.max(0, product.stock - item.quantity);
+        product.updatedAt = new Date().toISOString();
+        product.status = product.stock <= 0 ? 'out_of_stock' : (product.stock <= product.minStock ? 'low_stock' : 'in_stock');
+      }
+      this.data.inventoryMovements = this.data.inventoryMovements.filter(movement => movement.referenceId !== order.orderNumber);
+    }
+
+    this.data.purchaseOrders.splice(index, 1);
+    this.persistToMongo();
+    return true;
   }
 
   // --- PRODUCTS ---
@@ -630,6 +762,27 @@ class DataStore {
 
   getStockTransfers(): StockTransfer[] {
     return this.data.stockTransfers || [];
+  }
+
+  getReplenishmentSuggestions(): ReplenishmentSuggestion[] {
+    return buildReplenishmentSuggestions({
+      products: this.data.products,
+      stores: this.data.stores,
+      storeStock: this.data.storeStock,
+      transfers: this.data.stockTransfers,
+      sales: this.data.sales
+    });
+  }
+
+  getPurchaseSuggestions(): PurchaseSuggestion[] {
+    return buildPurchaseSuggestions({
+      products: this.data.products,
+      sales: this.data.sales,
+      orders: this.data.purchaseOrders,
+      stores: this.data.stores,
+      storeStock: this.data.storeStock,
+      transfers: this.data.stockTransfers
+    });
   }
 
   // --- CATEGORIES ---
@@ -964,14 +1117,18 @@ class DataStore {
   }
 
   addSale(saleData: Omit<Sale, 'id' | 'saleNumber' | 'createdAt' | 'updatedAt'> & { id?: string; saleNumber?: string }): Sale {
-    const settings = this.data.settings;
-    const existingSequences = this.data.sales
-      .map(sale => Number((sale.saleNumber.match(/^FAC-(\d{8})$/)?.[1] || '0')))
-      .filter(sequence => Number.isFinite(sequence));
-    const nextNum = existingSequences.length > 0 ? Math.max(...existingSequences) + 1 : 1;
-    const saleNumber = `FAC-${String(nextNum).padStart(8, '0')}`;
-    settings.invoicePrefix = 'FAC-';
-    settings.nextInvoiceNumber = nextNum + 1;
+    const store = saleData.storeId
+      ? this.data.stores.find(candidate => candidate.id === saleData.storeId && candidate.status === 'ACTIVE')
+      : this.data.stores.find(candidate => candidate.id === 'main-warehouse');
+    if (saleData.storeId && !store) {
+      throw new TransactionValidationError('La tienda seleccionada no existe o está inactiva');
+    }
+    const storeNumber = getStoreSeriesNumber(store);
+    const saleNumber = getNextSaleNumber(
+      this.data.sales,
+      storeNumber,
+      saleData.voucherType || 'FACTURA'
+    );
     const now = new Date().toISOString();
 
     const newSale: Sale = {
@@ -1213,25 +1370,12 @@ class DataStore {
   }
 
   authenticateUser(identifier: string, passwordAttempt: string): { user?: User; error?: string } {
-    const user = this.getUserByUsernameOrEmail(identifier);
-    if (!user) {
-      return { error: 'Usuario o correo no encontrado' };
+    const user = typeof identifier === 'string' ? this.getUserByUsernameOrEmail(identifier) : undefined;
+    const storedPassword = user?.password;
+    const validPassword = verifyPassword(passwordAttempt, storedPassword || DUMMY_PASSWORD_HASH);
+    if (!user || !storedPassword || user.status !== 'active' || !validPassword) {
+      return { error: 'Credenciales inválidas' };
     }
-
-    if (user.status === 'inactive') {
-      return { error: 'Este usuario se encuentra inactivo. Contacte al administrador.' };
-    }
-
-    if (user.password && !verifyPassword(passwordAttempt, user.password)) {
-      return { error: 'Contraseña incorrecta' };
-    }
-
-    // Upgrade legacy plaintext password to scrypt hash transparently on login
-    if (user.password && !user.password.startsWith('scrypt$')) {
-      user.password = hashPassword(user.password);
-    }
-
-    // Update lastLogin
     user.lastLogin = new Date().toISOString();
     this.persistToMongo();
 
@@ -1239,38 +1383,63 @@ class DataStore {
     return { user: safeUser as User };
   }
 
-  addUser(userData: Omit<User, 'id' | 'createdAt'> & { id?: string }): User {
-    const id = userData.id || `usr-${Date.now()}`;
-    const now = new Date().toISOString();
+  private validateUserInput(input: unknown, creating: boolean): asserts input is Record<string, unknown> {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw new TransactionValidationError('Datos de usuario inválidos');
+    }
+    const error = userValidationError(input as Record<string, unknown>, creating);
+    if (error) throw new TransactionValidationError(error);
+  }
 
-    const roleLabels: Record<string, string> = {
-      admin: 'Administrador',
-      collaborator: 'Ejecutivo Comercial',
-      warehouse: 'Jefe de Almacén',
-      cashier: 'Caja & Facturación'
-    };
+  private assertUniqueUser(username: string, email: string, excludedId?: string): void {
+    const identifiers = [username.trim().toLowerCase(), email.trim().toLowerCase()];
+    if (this.data.users.some(user => user.id !== excludedId &&
+        [user.username.toLowerCase(), user.email.toLowerCase()].some(value => identifiers.includes(value)))) {
+      throw new TransactionValidationError('El nombre de usuario o correo ya está registrado');
+    }
+  }
 
+  private assertAdminRemains(id: string, replacement?: User): void {
+    const existing = this.getUserById(id);
+    if (existing?.role !== 'admin' || existing.status !== 'active') return;
+    const candidates = this.data.users.filter(user => user.id !== id);
+    if (replacement) candidates.push(replacement);
+    if (!candidates.some(user => user.role === 'admin' && user.status === 'active' &&
+        user.permissions?.canManageUsers !== false && user.permissions?.canManageSettings !== false &&
+        user.permissions?.canDeleteRecords !== false)) {
+      throw new TransactionValidationError('Debe conservar al menos un administrador activo con permisos administrativos');
+    }
+  }
+
+  addUser(userData: Partial<User>): User {
+    this.validateUserInput(userData, true);
+    const username = userData.username!.trim().toLowerCase();
+    const email = userData.email!.trim().toLowerCase();
+    this.assertUniqueUser(username, email);
+    const role = userData.role!;
     const newUser: User = {
-      ...userData,
-      id,
-      password: hashPassword(userData.password || '123456'),
-      roleLabel: userData.roleLabel || roleLabels[userData.role] || 'Colaborador',
-      status: userData.status || 'active',
-      avatarColor: userData.avatarColor || (userData.role === 'admin' ? 'indigo' : 'emerald'),
-      permissions: userData.permissions || {
+      id: 'usr-' + randomBytes(16).toString('hex'),
+      username,
+      name: userData.name!.trim(),
+      email,
+      role,
+      roleLabel: ROLE_LABELS[role],
+      password: hashPassword(userData.password!),
+      status: userData.status ?? 'active',
+      avatarColor: userData.avatarColor ?? (role === 'admin' ? 'indigo' : 'emerald'),
+      permissions: userData.permissions ? { ...userData.permissions } : {
         canViewDashboard: true,
-        canManageInventory: userData.role === 'admin' || userData.role === 'warehouse',
-        canViewCosts: userData.role === 'admin',
-        canManageQuotes: userData.role !== 'warehouse',
-        canManageSales: userData.role !== 'warehouse',
+        canManageInventory: role === 'admin' || role === 'warehouse',
+        canViewCosts: role === 'admin',
+        canManageQuotes: role !== 'warehouse',
+        canManageSales: role !== 'warehouse',
         canManageContacts: true,
-        canManageSettings: userData.role === 'admin',
-        canManageUsers: userData.role === 'admin',
-        canDeleteRecords: userData.role === 'admin'
+        canManageSettings: role === 'admin',
+        canManageUsers: role === 'admin',
+        canDeleteRecords: role === 'admin'
       },
-      createdAt: now
+      createdAt: new Date().toISOString()
     };
-
     this.data.users.push(newUser);
     this.persistToMongo();
 
@@ -1279,41 +1448,38 @@ class DataStore {
   }
 
   updateUser(id: string, updates: Partial<User>): User | null {
-    const index = this.data.users.findIndex(u => u.id === id);
+    const index = this.data.users.findIndex(user => user.id === id);
     if (index === -1) return null;
-
+    this.validateUserInput(updates, false);
     const existing = this.data.users[index];
-    const resolvedPassword = updates.password ? hashPassword(updates.password) : existing.password;
-    this.data.users[index] = {
-      ...existing,
-      ...updates,
-      password: resolvedPassword,
-      id: existing.id,
-      createdAt: existing.createdAt
-    };
-
+    const next: User = { ...existing };
+    if (updates.username !== undefined) next.username = updates.username.trim().toLowerCase();
+    if (updates.name !== undefined) next.name = updates.name.trim();
+    if (updates.email !== undefined) next.email = updates.email.trim().toLowerCase();
+    if (updates.avatarColor !== undefined) next.avatarColor = updates.avatarColor;
+    if (updates.role !== undefined) next.role = updates.role;
+    if (updates.status !== undefined) next.status = updates.status;
+    if (updates.permissions !== undefined) next.permissions = { ...updates.permissions };
+    if (updates.password !== undefined) next.password = hashPassword(updates.password);
+    next.roleLabel = ROLE_LABELS[next.role];
+    this.assertUniqueUser(next.username, next.email, id);
+    this.assertAdminRemains(id, next);
+    if (updates.password !== undefined || next.role !== existing.role || next.status !== existing.status ||
+        JSON.stringify(next.permissions) !== JSON.stringify(existing.permissions)) revokeUserSessions(id);
+    this.data.users[index] = next;
     this.persistToMongo();
-    const { password, ...safeUser } = this.data.users[index];
+    const { password, ...safeUser } = next;
     return safeUser as User;
   }
 
   deleteUser(id: string): boolean {
-    const initialLen = this.data.users.length;
-    // Don't delete the last admin
-    const target = this.data.users.find(u => u.id === id);
-    if (target?.role === 'admin') {
-      const adminCount = this.data.users.filter(u => u.role === 'admin').length;
-      if (adminCount <= 1) {
-        return false;
-      }
-    }
-
-    this.data.users = this.data.users.filter(u => u.id !== id);
-    if (this.data.users.length !== initialLen) {
-      this.persistToMongo();
-      return true;
-    }
-    return false;
+    const index = this.data.users.findIndex(user => user.id === id);
+    if (index === -1) return false;
+    this.assertAdminRemains(id);
+    revokeUserSessions(id);
+    this.data.users.splice(index, 1);
+    this.persistToMongo();
+    return true;
   }
 
   // --- SYSTEM STATE & RESET ---
@@ -1322,6 +1488,7 @@ class DataStore {
   }
 
   resetDemoData(): DatabaseSchema {
+    revokeAllSessions();
     this.data = this.getDefaultSchema();
     this.persistToMongo();
     return this.data;

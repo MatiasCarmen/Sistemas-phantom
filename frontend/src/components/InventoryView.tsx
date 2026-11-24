@@ -22,7 +22,7 @@ import {
   Percent, 
   Barcode
 } from 'lucide-react';
-import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock } from '../types';
+import { Product, Category, Supplier, StockStatus, MovementType, CompanySettings, Store, StoreStock, StockTransfer, ReplenishmentSuggestion } from '../types';
 import { api } from '../lib/api';
 
 const createFormCode = (prefix: string, usedCodes: Set<string>): string => {
@@ -48,7 +48,7 @@ interface InventoryViewProps {
   categories: Category[];
   suppliers: Supplier[];
   settings: CompanySettings | null;
-  onAddProduct: (product: Partial<Product>) => Promise<void>;
+  onAddProduct: (product: Partial<Product>) => Promise<Product | void>;
   onUpdateProduct: (id: string, product: Partial<Product>) => Promise<void>;
   onDeleteProduct: (id: string) => Promise<void>;
   onAdjustStock: (data: { productId: string; type: MovementType; quantity: number; locationId?: string; newQuantity?: number; notes?: string; createdBy?: string }) => Promise<void>;
@@ -88,7 +88,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const mainWarehouses = stores.filter(store => store.type === 'MAIN_WAREHOUSE');
   const selectedMainWarehouse = mainWarehouses[0]?.name || 'Tienda principal';
   const [storeStock, setStoreStock] = useState<StoreStock[]>([]);
-  const [stockTransfers, setStockTransfers] = useState<any[]>([]);
+  const [stockTransfers, setStockTransfers] = useState<StockTransfer[]>([]);
   const [transferProduct, setTransferProduct] = useState('');
   const [transferStore, setTransferStore] = useState('');
   const [transferQuantity, setTransferQuantity] = useState(1);
@@ -101,6 +101,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [stockMatrixProduct, setStockMatrixProduct] = useState<Product | null>(null);
   const [receivingGuide, setReceivingGuide] = useState<string | null>(null);
   const [showNoPendingTransfers, setShowNoPendingTransfers] = useState(false);
+  const [replenishmentSuggestions, setReplenishmentSuggestions] = useState<ReplenishmentSuggestion[]>([]);
+  const [isReplenishmentModalOpen, setIsReplenishmentModalOpen] = useState(false);
+  const [replenishmentStoreId, setReplenishmentStoreId] = useState('');
+  const [hasGeneratedSuggestions, setHasGeneratedSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [suggestionError, setSuggestionError] = useState('');
+  const [approvingSuggestion, setApprovingSuggestion] = useState<string | null>(null);
 
   const openStoreInventory = (storeId: string) => {
     setSelectedCategory('ALL');
@@ -404,6 +411,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const handleConfirmReceipt = async (guideNumber: string, storeId: string) => {
     await api.confirmTransferReceipt(guideNumber, storeId);
     await loadStockLocations();
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
     setReceivingGuide(null);
   };
 
@@ -420,6 +429,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       await api.transferStock({ items, toStoreId: transferStore, transportSupplierId, transportSupplierName: transportSupplier?.name });
       await loadStockLocations();
       await onStockTransferred?.();
+      setReplenishmentSuggestions([]);
+      setHasGeneratedSuggestions(false);
       const destinationStore = stores.find(store => store.id === transferStore);
       setSelectedStoreId(transferStore);
       setTransferSuccess(`Transferencia exitosa hacia ${destinationStore?.name || 'la tienda destino'}.`);
@@ -430,6 +441,54 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       window.setTimeout(() => setTransferSuccess(''), 4000);
     } catch (error: any) {
       setTransferError(error.message || 'No se pudo realizar la transferencia');
+    }
+  };
+
+  const handleGenerateSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    setSuggestionError('');
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
+    try {
+      setReplenishmentSuggestions(await api.getReplenishmentSuggestions());
+      setHasGeneratedSuggestions(true);
+    } catch (error: any) {
+      setSuggestionError(error.message || 'No se pudieron generar las sugerencias');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleApproveSuggestion = async (suggestion: ReplenishmentSuggestion) => {
+    const suggestionKey = `${suggestion.storeId}:${suggestion.productId}`;
+    setApprovingSuggestion(suggestionKey);
+    setSuggestionError('');
+    try {
+      await api.transferStock({
+        productId: suggestion.productId,
+        quantity: suggestion.suggestedQuantity,
+        toStoreId: suggestion.storeId,
+        notes: `Reposición sugerida aprobada. Stock objetivo: ${suggestion.targetStock}`
+      });
+    } catch (error: any) {
+      setSuggestionError(error.message || 'No se pudo aprobar la transferencia');
+      setApprovingSuggestion(null);
+      return;
+    }
+
+    setTransferSuccess(`Reposición aprobada para ${suggestion.storeName}: ${suggestion.productName}.`);
+    window.setTimeout(() => setTransferSuccess(''), 4000);
+    setReplenishmentSuggestions([]);
+    setHasGeneratedSuggestions(false);
+    try {
+      await loadStockLocations();
+      await onStockTransferred?.();
+      setReplenishmentSuggestions(await api.getReplenishmentSuggestions());
+      setHasGeneratedSuggestions(true);
+    } catch (error: any) {
+      setSuggestionError(`La transferencia se aprobó, pero no se pudieron actualizar los datos: ${error.message || 'error de conexión'}`);
+    } finally {
+      setApprovingSuggestion(null);
     }
   };
 
@@ -447,6 +506,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const getStoreQuantity = (storeId: string, productId: string) =>
     storeStock.find(item => item.storeId === storeId && item.productId === productId)?.quantity || 0;
+  const getPendingTransfersForStore = (storeId: string) => {
+    const transfersByGuide = new Map<string, StockTransfer>();
+    stockTransfers
+      .filter(transfer => transfer.toStoreId === storeId && transfer.status !== 'RECEIVED')
+      .forEach(transfer => transfersByGuide.set(transfer.guideNumber, transfer));
+    return [...transfersByGuide.values()];
+  };
+  const pendingStoreTransfers = stores.flatMap(store =>
+    store.type === 'STORE'
+      ? getPendingTransfersForStore(store.id).map(transfer => ({ store, transfer }))
+      : []
+  );
   const totalStoreStock = (productId: string) => storeStock.filter(item => item.productId === productId).reduce((sum, item) => sum + item.quantity, 0);
   const nextTransferGuide = `TRS-${String(stockTransfers.reduce((maximum, transfer) => {
     const number = Number(transfer.guideNumber?.match(/(\d+)$/)?.[1] || 0);
@@ -499,14 +570,6 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <span>Ver Kárdex General</span>
           </button>
 
-          <button
-            id="btn-add-product-main"
-            onClick={handleOpenAdd}
-            className="px-4 py-2 bg-[#C8102E] hover:bg-[#A80C25] text-white rounded text-xs font-bold transition-colors flex items-center space-x-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Producto</span>
-          </button>
         </div>
       </div>
 
@@ -520,6 +583,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </button>
         ))}
       </div>
+
+      {inventorySection === 'stores' && !selectedStoreId && pendingStoreTransfers.length > 0 && (
+        <div role="alert" className="flex flex-col gap-3 rounded border border-amber-500/40 bg-amber-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+            <div>
+              <p className="text-sm font-bold text-amber-200">
+                Hay {pendingStoreTransfers.length} transferencia{pendingStoreTransfers.length === 1 ? '' : 's'} pendiente{pendingStoreTransfers.length === 1 ? '' : 's'} de aceptar.
+              </p>
+              <p className="mt-1 text-xs text-amber-100/80">Selecciona la tienda de destino para revisar y recibir el stock.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const { store, transfer } = pendingStoreTransfers[0];
+              openStoreInventory(store.id);
+              setReceivingGuide(transfer.guideNumber);
+            }}
+            className="shrink-0 rounded border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-900/40"
+          >
+            Revisar transferencia
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       {!(inventorySection === 'stores' && selectedStoreId) && (
@@ -571,19 +659,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
 
           {inventorySection === 'catalog' && (
-          <div className="flex items-center space-x-2">
-            <select
-              id="select-inventory-category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
-            >
-              <option value="ALL">Todas las Categorías</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
-              ))}
-            </select>
-
+          <div className="hidden items-center space-x-2 lg:flex" aria-hidden="true">
+            {/* Los filtros rápidos se muestran en la segunda fila, como en el diseño de referencia. */}
             {/* View Mode Toggle */}
             <div className="flex bg-[#0E0E0E] p-1 rounded border border-[#2D2D2D] shrink-0">
               <button
@@ -608,6 +685,26 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           )}
 
         </div>
+
+        {inventorySection === 'catalog' && (
+          <div className="flex items-center gap-2">
+            <select
+              id="select-inventory-category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full max-w-[220px] px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white font-medium focus:outline-none focus:border-[#C8102E]"
+            >
+              <option value="ALL">Todas las Categorías</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+            <div className="flex bg-[#0E0E0E] p-1 rounded border border-[#2D2D2D] shrink-0">
+              <button id="btn-view-table-secondary" onClick={() => setViewMode('table')} className={`p-1.5 rounded transition-colors ${viewMode === 'table' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`} title="Vista en tabla detallada"><List className="w-4 h-4" /></button>
+              <button id="btn-view-grid-secondary" onClick={() => setViewMode('grid')} className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-[#1E1E1E] text-white border border-[#2D2D2D]' : 'text-[#9CA3AF] hover:text-white'}`} title="Vista en cuadrícula"><Grid className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
 
         {inventorySection === 'stores' && selectedStoreId && (
           <div className="flex flex-wrap items-center gap-2">
@@ -690,6 +787,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             <>
               {orderedFilteredStores.map(store => {
                 const isWarehouse = store.type === 'MAIN_WAREHOUSE';
+                const pendingTransfers = getPendingTransfersForStore(store.id);
                 const quantity = isWarehouse
                   ? products.reduce((sum, product) => sum + product.stock, 0)
                   : storeStock.filter(item => item.storeId === store.id).reduce((sum, item) => sum + item.quantity, 0);
@@ -701,6 +799,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     <div className="flex items-center gap-3">
                       <h3 className="text-lg font-bold text-white">{store.name}</h3>
                       {isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}
+                      {pendingTransfers.length > 0 && <span className="rounded border border-amber-500/40 bg-amber-950/40 px-2 py-1 text-[10px] font-bold text-amber-300">{pendingTransfers.length} pendiente{pendingTransfers.length === 1 ? '' : 's'}</span>}
                     </div>
                     {store.address && <p className="text-xs text-[#9CA3AF] mt-1">{store.address}</p>}
                     <p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p>
@@ -730,9 +829,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id);
               return quantity <= product.minStock;
             }).length;
+            const pendingTransfers = getPendingTransfersForStore(store.id);
+            const selectedStoreSuggestions = replenishmentSuggestions.filter(suggestion => suggestion.storeId === replenishmentStoreId);
             return (
               <div className="space-y-4">
                 <button onClick={closeStoreInventory} className="text-xs text-[#9CA3AF] hover:text-white">← Volver a tiendas</button>
+                {!isWarehouse && pendingTransfers.length > 0 && (
+                  <div role="alert" className="flex flex-col gap-3 rounded border border-amber-500/40 bg-amber-950/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="text-sm font-bold text-amber-200">
+                          Tienes {pendingTransfers.length} transferencia{pendingTransfers.length === 1 ? '' : 's'} pendiente{pendingTransfers.length === 1 ? '' : 's'} de aceptar.
+                        </p>
+                        <p className="mt-1 text-xs text-amber-100/80">Recibe el stock para actualizar el inventario de esta tienda.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReceivingGuide(pendingTransfers[0].guideNumber)}
+                      className="shrink-0 rounded border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-900/40"
+                    >
+                      Aceptar transferencia
+                    </button>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div><div className="flex items-center gap-3"><h3 className="text-2xl font-bold text-white">{store.name}</h3>{isWarehouse && <span className="px-2 py-1 bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50 rounded text-[10px] font-bold">Almacén central</span>}</div>{store.address && <p className="mt-1 text-xs text-[#9CA3AF]">{store.address}</p>}<p className="mt-1 text-[11px] font-mono text-[#60A5FA]">N° verificación {store.verificationNumber}</p></div>
                   <button
@@ -753,10 +874,141 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   >
                     {isWarehouse ? 'Transferir a tiendas' : 'Recibir stock de la principal'}
                   </button>
+                  {isWarehouse && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsReplenishmentModalOpen(true);
+                        setReplenishmentStoreId('');
+                        void handleGenerateSuggestions();
+                      }}
+                      disabled={isLoadingSuggestions}
+                      className="px-4 py-2.5 bg-[#1E1E1E] hover:bg-[#2D2D2D] border border-[#3D3D3D] text-white rounded text-sm font-bold disabled:opacity-50"
+                    >
+                      Generar sugerencias de reposición
+                    </button>
+                  )}
                 </div>
+                {isWarehouse && isReplenishmentModalOpen && (
+                  <div
+                      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4"
+                      onClick={() => setIsReplenishmentModalOpen(false)}
+                  >
+                      <section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="replenishment-modal-title"
+                        className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded border border-[#3D3D3D] bg-[#141414] shadow-2xl"
+                        onClick={event => event.stopPropagation()}
+                      >
+                        <header className="flex items-start justify-between border-b border-[#303030] px-5 py-4">
+                          <div>
+                            <h4 id="replenishment-modal-title" className="font-bold text-white">Sugerencias de reposición</h4>
+                            <p className="mt-1 text-xs text-[#9CA3AF]">Selecciona una tienda para consultar y aprobar sus reposiciones.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsReplenishmentModalOpen(false)}
+                            className="text-[#9CA3AF] hover:text-white"
+                            aria-label="Cerrar sugerencias de reposición"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </header>
+                        <div className="space-y-4 overflow-y-auto p-5">
+                          <div className="max-w-md">
+                            <label htmlFor="replenishment-store" className="mb-2 block text-sm font-semibold text-white">Tienda</label>
+                            <select
+                              id="replenishment-store"
+                              value={replenishmentStoreId}
+                              onChange={event => setReplenishmentStoreId(event.target.value)}
+                              className="w-full rounded border border-[#3D3D3D] bg-[#0E0E0E] px-3 py-3 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                            >
+                              <option value="">Seleccione una tienda</option>
+                              {stores.filter(item => item.type === 'STORE' && item.status === 'ACTIVE').map(item => (
+                                <option key={item.id} value={item.id}>{item.verificationNumber} - {item.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <p className="text-xs text-[#9CA3AF]">
+                            El cálculo considera ventas de los últimos 30 días, existencias y transferencias en tránsito. El objetivo usa maxStock o, si no está definido, el doble del mínimo, y puede cubrir hasta 7 días de demanda. Cada envío requiere aprobación.
+                          </p>
+                          {isLoadingSuggestions && <p role="status" className="text-sm text-[#9CA3AF]">Calculando sugerencias...</p>}
+                          {suggestionError && <p role="alert" className="rounded border border-red-500/40 bg-red-950/30 p-3 text-sm text-red-300">{suggestionError}</p>}
+                          {!isLoadingSuggestions && hasGeneratedSuggestions && !replenishmentStoreId && (
+                            <p className="rounded border border-[#2D2D2D] bg-[#0E0E0E] p-4 text-sm text-[#9CA3AF]">Selecciona una tienda para ver sus productos sugeridos.</p>
+                          )}
+                          {!isLoadingSuggestions && replenishmentStoreId && selectedStoreSuggestions.length > 0 && (
+                            <div className="overflow-x-auto rounded border border-[#2D2D2D]">
+                              <table className="w-full min-w-[850px] text-left text-xs">
+                                <thead className="bg-[#1E1E1E] text-[#9CA3AF]">
+                                  <tr>
+                                    <th className="p-3">Producto</th>
+                                    <th className="p-3">Stock / mínimo</th>
+                                    <th className="p-3">En tránsito</th>
+                                    <th className="p-3">Venta 30 días</th>
+                                    <th className="p-3">Objetivo</th>
+                                    <th className="p-3">Sugerido</th>
+                                    <th className="p-3">Acción</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedStoreSuggestions.map(suggestion => {
+                                    const key = `${suggestion.storeId}:${suggestion.productId}`;
+                                    return (
+                                      <tr key={key} className="border-t border-[#2D2D2D]">
+                                        <td className="p-3 text-white">{suggestion.productName}<span className="block text-[#9CA3AF]">SKU {suggestion.sku}</span></td>
+                                        <td className="p-3 font-mono text-white">{suggestion.currentStock} / {suggestion.minimumStock}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.inTransitQuantity}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.recentSales}</td>
+                                        <td className="p-3 font-mono text-white">{suggestion.targetStock}</td>
+                                        <td className="p-3 font-mono font-bold text-white">
+                                          {suggestion.suggestedQuantity} {suggestion.unit}
+                                          {suggestion.requestedQuantity > suggestion.availableQuantity && (
+                                            <span className="mt-1 block text-[10px] font-normal text-amber-400">Necesario: {suggestion.requestedQuantity}; stock central insuficiente</span>
+                                          )}
+                                        </td>
+                                        <td className="p-3">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleApproveSuggestion(suggestion)}
+                                            disabled={suggestion.suggestedQuantity <= 0 || approvingSuggestion !== null}
+                                            className="rounded bg-[#C8102E] px-3 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                          >
+                                            {approvingSuggestion === key ? 'Enviando...' : 'Aprobar envío'}
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          {!isLoadingSuggestions && hasGeneratedSuggestions && replenishmentStoreId && selectedStoreSuggestions.length === 0 && !suggestionError && (
+                            <p className="rounded border border-[#2D2D2D] bg-[#0E0E0E] p-4 text-sm text-[#9CA3AF]">Esta tienda no necesita reposición por el momento.</p>
+                          )}
+                        </div>
+                        <footer className="flex justify-end border-t border-[#303030] px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => setIsReplenishmentModalOpen(false)}
+                            className="rounded bg-[#252525] px-4 py-2 text-xs font-bold text-white hover:bg-[#333]"
+                          >
+                            Cerrar
+                          </button>
+                        </footer>
+                      </section>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   {[['SKUs', locationProducts.length], ['Unidades', units], ['Inventario a costo', `${currency} ${formatAmount(cost)}`], ['Inventario a venta', `${currency} ${formatAmount(selling)}`], ['Productos bajo mínimo', lowStock]].map(([label, value]) => <div key={String(label)} className="bg-[#141414] border border-[#2D2D2D] rounded p-4"><div className="text-lg font-mono font-bold text-white">{value}</div><div className="mt-1 text-xs text-[#9CA3AF]">{label}</div></div>)}
                 </div>
+                {isWarehouse && (
+                  <p className="text-xs text-[#9CA3AF]">
+                    Existencias mostradas abajo: stock disponible en el almacén central, sin sumar las cantidades de las tiendas.
+                  </p>
+                )}
                 <div className="bg-[#141414] p-4 rounded border border-[#2D2D2D] space-y-3">
                   <div className="relative">
                     <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -859,8 +1111,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   </div>
                 )}
                 <div className="overflow-x-auto bg-[#141414] border border-[#2D2D2D] rounded">
-                  <table className="w-full text-left text-xs min-w-[760px]"><thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase"><tr><th className="p-3">Producto</th><th className="p-3">Existencia</th><th className="p-3">Valor costo</th><th className="p-3">Estado</th><th className="p-3">Acciones</th></tr></thead>
-                    <tbody>{locationProducts.map(product => { const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id); return <tr key={product.id} className="border-t border-[#2D2D2D]"><td className="p-3"><div className="font-bold text-white">{product.name}</div><div className="text-[#9CA3AF]">SKU {product.sku}</div></td><td className="p-3 font-mono font-bold text-white">{quantity} <span className="text-[#9CA3AF] font-normal">de mín. {product.minStock}</span></td><td className="p-3 font-mono">{currency} {formatAmount(quantity * product.costPrice)}</td><td className="p-3"><span className={`px-2 py-1 rounded border text-[10px] font-bold ${quantity <= product.minStock ? 'text-[#FBBF24] border-[#F59E0B]/50' : 'text-[#31D0AA] border-[#10B981]/50'}`}>{quantity <= product.minStock ? 'Bajo mínimo' : 'OK'}</span></td><td className="p-3"><button onClick={() => onOpenKardex(product)} className="px-2 py-1 border border-[#2563EB]/50 rounded text-[#60A5FA]">Kárdex</button></td></tr>; })}</tbody>
+                  <table className="w-full text-left text-xs min-w-[760px]"><thead className="bg-[#1E1E1E] text-[#9CA3AF] uppercase"><tr><th className="p-3">Producto</th><th className="p-3">{isWarehouse ? 'Cantidad en almacén central' : 'Cantidad en tienda'}</th><th className="p-3">Valor costo</th><th className="p-3">Estado</th><th className="p-3">Acciones</th></tr></thead>
+                    <tbody>{locationProducts.map(product => { const quantity = isWarehouse ? product.stock : getStoreQuantity(store.id, product.id); return <tr key={product.id} className="border-t border-[#2D2D2D]"><td className="p-3"><div className="font-bold text-white">{product.name}</div><div className="text-[#9CA3AF]">SKU {product.sku}</div></td><td className="p-3 font-mono font-bold text-white">{quantity} {product.unit} <span className="text-[#9CA3AF] font-normal">de mín. {product.minStock}</span></td><td className="p-3 font-mono">{currency} {formatAmount(quantity * product.costPrice)}</td><td className="p-3"><span className={`px-2 py-1 rounded border text-[10px] font-bold ${quantity <= product.minStock ? 'text-[#FBBF24] border-[#F59E0B]/50' : 'text-[#31D0AA] border-[#10B981]/50'}`}>{quantity <= product.minStock ? 'Bajo mínimo' : 'OK'}</span></td><td className="p-3"><button onClick={() => onOpenKardex(product)} className="px-2 py-1 border border-[#2563EB]/50 rounded text-[#60A5FA]">Kárdex</button></td></tr>; })}</tbody>
                   </table>
                 </div>
               </div>
@@ -1230,95 +1482,53 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Pricing & Profit Margin Preview */}
-              <div className="p-4 bg-[#1E1E1E] border border-[#2D2D2D] rounded space-y-3">
-                <span className="text-xs font-bold text-white uppercase font-mono block">Precios & Margen de Ganancia</span>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
-                    <input
-                      id="input-prod-cost"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.costPrice}
-                      onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Precio Venta ({currency}) *</label>
-                    <input
-                      id="input-prod-price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      required
-                      value={formData.sellingPrice}
-                      onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#FFDAD8] focus:border-[#C8102E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Margen Calculado</label>
-                    <div className="px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-bold text-[#A7F3D0] font-mono">
-                      +{marginPercent}% (${formatAmount(formData.sellingPrice - formData.costPrice)})
+              {editingProduct ? (
+                <>
+                  <div className="pt-1">
+                    <p className="mb-3 text-xs font-bold text-[#9CA3AF]">PRECIOS &amp; MARGEN DE GANANCIA</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
+                        <input id="input-prod-cost" type="number" step="0.01" min="0" required readOnly value={formData.costPrice} className="w-full px-3 py-2 bg-[#151515] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#9CA3AF] cursor-not-allowed" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Precio Venta ({currency}) *</label>
+                        <input id="input-prod-selling-price" type="number" step="0.01" min="0" required value={formData.sellingPrice} onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Margen Calculado</label>
+                        <div className="flex h-[34px] items-center rounded border border-[#2D2D2D] bg-[#0E0E0E] px-3 text-xs font-mono font-bold text-[#10B981]">
+                          {formData.costPrice > 0 ? `${((((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100)).toFixed(1)}% (${(formData.sellingPrice - formData.costPrice).toFixed(2)})` : '0.0%'}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Stock and Thresholds */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Stock Actual *</label>
+                      <input id="input-prod-stock" type="number" min="0" required readOnly value={formData.stock} className="w-full px-3 py-2 bg-[#151515] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-[#9CA3AF] cursor-not-allowed" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Stock Mínimo (Alerta) *</label>
+                      <input id="input-prod-min-stock" type="number" min="0" required value={formData.minStock} onChange={e => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Ubicación en Almacén *</label>
+                      <select id="select-prod-location" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white focus:border-[#C8102E]">
+                        <option value="">Seleccione ubicación</option>
+                        {mainWarehouses.map(store => <option key={store.id} value={store.name}>{store.name}</option>)}
+                        {!mainWarehouses.some(store => store.name === formData.location) && <option value={formData.location}>{formData.location}</option>}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              ) : (
                 <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">
-                    {editingProduct ? `Stock Actual - ${selectedMainWarehouse} *` : 'Stock Actual *'}
-                  </label>
-                  <input
-                    id="input-prod-stock"
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.stock}
-                    onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]"
-                  />
+                  <label className="block text-[11px] font-semibold text-[#9CA3AF] mb-1 font-mono">Costo Unitario ({currency}) *</label>
+                  <input id="input-prod-cost" type="number" step="0.01" min="0" required value={formData.costPrice} onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono font-bold text-white focus:border-[#C8102E]" />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Stock Mínimo (Alerta) *</label>
-                  <input
-                    id="input-prod-minstock"
-                    type="number"
-                    min="1"
-                    required
-                    value={formData.minStock}
-                    onChange={e => setFormData({ ...formData, minStock: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs font-mono text-white focus:border-[#C8102E]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#9CA3AF] mb-1 font-mono">Ubicación en Almacén *</label>
-                  <select
-                    id="input-prod-location"
-                    required
-                    disabled={Boolean(editingProduct)}
-                    value={mainWarehouses.some(store => store.name === formData.location) ? formData.location : selectedMainWarehouse}
-                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-xs text-white disabled:opacity-100 focus:border-[#C8102E]"
-                  >
-                    {(mainWarehouses.length ? mainWarehouses : [{ id: 'main-warehouse', name: 'Tienda principal' }]).map(store => (
-                      <option key={store.id} value={store.name}>{store.name}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[10px] text-[#6B7280]">Los productos nuevos se registran únicamente en el almacén principal.</p>
-                </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Descripción / Especificaciones Técnicas</label>

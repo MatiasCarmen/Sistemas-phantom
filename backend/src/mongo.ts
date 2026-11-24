@@ -97,6 +97,7 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       stores,
       storeStock,
       stockTransfers,
+      purchaseOrders,
       settings,
       metadata,
     ] = await Promise.all([
@@ -111,6 +112,7 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       database.collection<MongoRecord>('stores').find().toArray(),
       database.collection<MongoRecord>('store_stock').find().toArray(),
       database.collection<MongoRecord>('stock_transfers').find().toArray(),
+      database.collection<MongoRecord>('purchase_orders').find().toArray(),
       database.collection<MongoRecord>('company_settings').findOne({ _id: 'primary' }),
       database.collection<MongoRecord>('system_state').findOne({ _id: 'primary' }),
     ]);
@@ -123,6 +125,7 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       !inventoryMovements.length &&
       !quotes.length &&
       !sales.length &&
+      !purchaseOrders.length &&
       !users.length &&
       !settings
     ) {
@@ -142,6 +145,7 @@ export async function loadDatabaseSnapshot(): Promise<DatabaseSchema | null> {
       stores: removeMongoId(stores) as unknown as DatabaseSchema['stores'],
       storeStock: removeMongoId(storeStock) as unknown as DatabaseSchema['storeStock'],
       stockTransfers: removeMongoId(stockTransfers) as unknown as DatabaseSchema['stockTransfers'],
+      purchaseOrders: removeMongoId(purchaseOrders) as unknown as DatabaseSchema['purchaseOrders'],
       settings: settings?.value as DatabaseSchema['settings'],
       lastUpdated: String(metadata?.lastUpdated || new Date().toISOString()),
     };
@@ -200,6 +204,7 @@ export async function saveDatabaseSnapshot(data: DatabaseSchema): Promise<void> 
       saveCollection('users', data.users),
       saveCollection('stores', data.stores),
       saveCollection('stock_transfers', data.stockTransfers),
+      saveCollection('purchase_orders', data.purchaseOrders || []),
       database
         .collection<MongoRecord>('company_settings')
         .replaceOne({ _id: 'primary' }, { _id: 'primary', value: data.settings }, { upsert: true }),

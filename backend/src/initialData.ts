@@ -1015,7 +1015,7 @@ export const initialUsers: User[] = [
     role: 'admin',
     roleLabel: 'Administrador General',
     avatarColor: 'indigo',
-    password: 'admin',
+    password: 'scrypt$f4500044607b2b6dc481899ce5fa0d4b$95a2e0064fc388bb587500e52ec2a707e38c58d2f943563a0306f771eb8e930f7e50892f733b2971be0ef9e22680ce2dc1d44668c3be932e3d160c783124c17d',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1039,7 +1039,7 @@ export const initialUsers: User[] = [
     role: 'collaborator',
     roleLabel: 'Ejecutiva de Ventas',
     avatarColor: 'emerald',
-    password: 'carlos123',
+    password: 'scrypt$91c6b5de2778b37ac7fb7332416cacb9$ce725c9c2ee077e46f83387690277e8e560a598b2ce102dc74efd33029fe58f70803267bc9ba4914920f1ded6f993a3edf1794b44b59a8167931f93185a1be75',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1063,7 +1063,7 @@ export const initialUsers: User[] = [
     role: 'warehouse',
     roleLabel: 'Encargado de Almacén',
     avatarColor: 'amber',
-    password: 'rosa123',
+    password: 'scrypt$6808985f73ce77850a3866e10c2f2bff$1ecfb5067adc1b4ac123efcfbeae8076b73d565c053ec98b0147490bb3b1fbc7aef278b895575e12cf2583c47b9e45cfe65d59389e5e66edcd43d61a4cc15ee0',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1087,7 +1087,7 @@ export const initialUsers: User[] = [
     role: 'cashier',
     roleLabel: 'Supervisora de Operaciones',
     avatarColor: 'blue',
-    password: 'ana123',
+    password: 'scrypt$e697f773d9e6c2e84e321976985364f0$5efac1477c010135570e98fabbfff13bbb1f3d69884e169aaf58c3199d45dc456e678f539ac11dfdcd5fa8590a9ae3edc941802e6d481ca78aff5e3b8740488b',
     status: 'active',
     permissions: {
       canViewDashboard: true,
@@ -1111,7 +1111,7 @@ export const initialUsers: User[] = [
     role: 'collaborator',
     roleLabel: 'Ejecutivo de Ventas',
     avatarColor: 'red',
-    password: '123456',
+    password: 'scrypt$b25f7d00723ef1949b99656e69d3abc7$c2ebc01510d9aa49445c51fdd1387f6f129cf4ec8a380bced45eda1a3baea04e5ff8a0e4a72cb97a44f66e902f6ed132b7dd6734d9da65801a5af9b6ae271c63',
     status: 'inactive',
     permissions: {
       canViewDashboard: true,

@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { 
   ShoppingCart, 
   Search, 
+  UserPlus,
   Plus, 
   Minus, 
   Trash2, 
   DollarSign, 
   CreditCard, 
-  Building2, 
+  Tag,
   Receipt, 
   FileText, 
   Download, 
@@ -19,7 +20,6 @@ import {
   Calculator, 
   ArrowRight,
   Printer,
-  Calendar,
   X
 } from 'lucide-react';
 import { Sale, SaleItem, Product, Customer, CompanySettings, VoucherType, PaymentMethod, Category, Store, StoreStock } from '../types';
@@ -35,6 +35,7 @@ interface SalesViewProps {
   storeStock: StoreStock[];
   settings: CompanySettings | null;
   onCreateSale: (sale: Partial<Sale>) => Promise<void>;
+  onRegisterCustomer: (customer: Partial<Customer>) => Promise<Customer>;
   onCancelSale: (id: string, reason: string) => Promise<void>;
   isPosModalOpen: boolean;
   setIsPosModalOpen: (open: boolean) => void;
@@ -50,6 +51,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   storeStock,
   settings,
   onCreateSale,
+  onRegisterCustomer,
   onCancelSale,
   isPosModalOpen,
   setIsPosModalOpen,
@@ -77,53 +79,159 @@ export const SalesView: React.FC<SalesViewProps> = ({
   
   const [voucherType, setVoucherType] = useState<VoucherType>('FACTURA');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
-  const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0]?.id || '');
-  const [customerName, setCustomerName] = useState(customers[0]?.name || 'CLIENTE GENERAL');
-  const [customerTaxId, setCustomerTaxId] = useState(customers[0]?.taxId || '99999999');
-  const [customerEmail, setCustomerEmail] = useState(customers[0]?.email || '');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerTaxId, setCustomerTaxId] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerSearchMessage, setCustomerSearchMessage] = useState('');
+  const [isRegisteringCustomer, setIsRegisteringCustomer] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: '',
+    documentType: 'RUC' as 'RUC' | 'NIT' | 'DNI',
+    taxId: '',
+    email: '',
+    phone: '',
+    address: '',
+    status: 'Activo'
+  });
+  const [customerRegistrationError, setCustomerRegistrationError] = useState('');
   const [sellerName, setSellerName] = useState('Cajero Principal');
+  const [selectedCardBrand, setSelectedCardBrand] = useState<'VISA' | 'MASTERCARD' | 'AMEX' | ''>('');
+  const [isGiftCouponModalOpen, setIsGiftCouponModalOpen] = useState(false);
+  const [giftCouponNumber, setGiftCouponNumber] = useState('');
   const [selectedStoreId, setSelectedStoreId] = useState('main-warehouse');
   const getAvailableStock = (productId: string) => selectedStoreId === 'main-warehouse'
     ? products.find(product => product.id === productId)?.stock || 0
     : storeStock.find(stock => stock.storeId === selectedStoreId && stock.productId === productId)?.quantity || 0;
+  const getRemainingStock = (productId: string) => {
+    const cartQuantity = cartItems.find(item => item.productId === productId)?.quantity || 0;
+    return Math.max(0, getAvailableStock(productId) - cartQuantity);
+  };
   const [notes, setNotes] = useState('');
   
   // Cash Tendered & Change
   const [cashTendered, setCashTendered] = useState<number>(0);
 
-  useEffect(() => {
-    if (!customers.length) {
-      setSelectedCustomerId('general');
-      setCustomerName('CLIENTE GENERAL');
-      setCustomerTaxId('99999999');
-      setCustomerEmail('');
-      return;
-    }
+  const getRequiredCustomerDocumentType = (type: VoucherType = voucherType): 'RUC' | 'DNI' =>
+    type === 'FACTURA' ? 'RUC' : 'DNI';
 
-    const hasCurrentCustomer = customers.some((customer) => customer.id === selectedCustomerId) || selectedCustomerId === 'general';
-    if (!hasCurrentCustomer) {
-      const firstCustomer = customers[0];
-      setSelectedCustomerId(firstCustomer.id);
-      setCustomerName(firstCustomer.name);
-      setCustomerTaxId(firstCustomer.taxId);
-      setCustomerEmail(firstCustomer.email);
-    }
-  }, [customers, selectedCustomerId]);
+  const getCustomerDocumentType = (customer: Customer): 'RUC' | 'DNI' | 'NIT' => {
+    if (customer.documentType) return customer.documentType;
+    const digits = customer.taxId.replace(/\D/g, '');
+    if (digits.length === 8) return 'DNI';
+    if (digits.length === 11 || digits.length === 12) return 'RUC';
+    return 'NIT';
+  };
 
-  // Quick Select Customer Handler
+  const isValidDocumentLength = (documentType: 'RUC' | 'DNI' | 'NIT', length: number) =>
+    documentType === 'RUC' ? length === 11 || length === 12 : length === (documentType === 'DNI' ? 8 : 9);
+
   const handleSelectCustomer = (custId: string) => {
     setSelectedCustomerId(custId);
     if (custId === 'general') {
-      setCustomerName('CLIENTES VARIOS / GENERAL');
+      setCustomerName('CLIENTES VARIOS / PÚBLICO GENERAL');
       setCustomerTaxId('99999999');
       setCustomerEmail('');
+      setCustomerSearchMessage('');
       return;
     }
     const found = customers.find(c => c.id === custId);
-    if (found) {
+    if (found && getCustomerDocumentType(found) === getRequiredCustomerDocumentType()) {
       setCustomerName(found.name);
       setCustomerTaxId(found.taxId);
       setCustomerEmail(found.email);
+      setCustomerSearchMessage(`Cliente encontrado: ${found.name}`);
+    } else {
+      setSelectedCustomerId('');
+      setCustomerName('');
+      setCustomerEmail('');
+    }
+  };
+
+  const handleFindCustomer = () => {
+    const documentType = getRequiredCustomerDocumentType();
+    const digits = customerTaxId.replace(/\D/g, '');
+    if (!isValidDocumentLength(documentType, digits.length)) {
+      setSelectedCustomerId('');
+      setCustomerName('');
+      setCustomerEmail('');
+      setCustomerSearchMessage(documentType === 'RUC'
+        ? 'Ingrese un RUC válido de 11 o 12 dígitos.'
+        : 'Ingrese un DNI válido de 8 dígitos.');
+      return;
+    }
+
+    const found = customers.find(customer =>
+      customer.taxId.replace(/\D/g, '') === digits && getCustomerDocumentType(customer) === documentType
+    );
+    if (found) {
+      setSelectedCustomerId(found.id);
+      setCustomerTaxId(found.taxId);
+      setCustomerName(found.name);
+      setCustomerEmail(found.email);
+      setCustomerSearchMessage(`Cliente encontrado: ${found.name}`);
+      return;
+    }
+    setSelectedCustomerId('');
+    setCustomerName('');
+    setCustomerEmail('');
+    setCustomerTaxId(digits);
+    setCustomerSearchMessage(`Cliente no registrado con este ${documentType}.`);
+    setCustomerRegistrationError('');
+  };
+
+  const handleSelectNoDni = () => {
+    if (voucherType !== 'BOLETA') return;
+    handleSelectCustomer('general');
+  };
+
+  const handleVoucherTypeChange = (type: VoucherType) => {
+    setVoucherType(type);
+    setSelectedCustomerId('');
+    setCustomerName('');
+    setCustomerTaxId('');
+    setCustomerEmail('');
+    setCustomerSearchMessage('');
+  };
+
+  const handleRegisterCustomer = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const documentType = getRequiredCustomerDocumentType();
+    const digits = newCustomerForm.taxId.replace(/\D/g, '');
+    const requiredLength = { RUC: 11, NIT: 9, DNI: 8 }[newCustomerForm.documentType];
+    if (!newCustomerForm.name.trim()) {
+      setCustomerRegistrationError('Ingrese el nombre o razón social del cliente.');
+      return;
+    }
+    if (newCustomerForm.documentType !== documentType) {
+      setCustomerRegistrationError(`Para esta venta seleccione el tipo de documento ${documentType}.`);
+      return;
+    }
+    if (!isValidDocumentLength(newCustomerForm.documentType, digits.length)) {
+      setCustomerRegistrationError(newCustomerForm.documentType === 'RUC'
+        ? 'RUC debe contener 11 o 12 dígitos.'
+        : `${newCustomerForm.documentType} debe contener exactamente ${requiredLength} dígitos.`);
+      return;
+    }
+
+    try {
+      const customer = await onRegisterCustomer({
+        ...newCustomerForm,
+        name: newCustomerForm.name.trim(),
+        documentType: newCustomerForm.documentType,
+        taxId: digits,
+        email: newCustomerForm.email.trim(),
+        phone: newCustomerForm.phone.trim(),
+        address: newCustomerForm.address.trim(),
+      });
+      setSelectedCustomerId(customer.id);
+      setCustomerName(customer.name);
+      setCustomerTaxId(customer.taxId);
+      setCustomerEmail(customer.email || '');
+      setCustomerSearchMessage(`Cliente registrado: ${customer.name}`);
+      setIsRegisteringCustomer(false);
+    } catch (error) {
+      setCustomerRegistrationError(error instanceof Error ? error.message : 'No se pudo registrar el cliente.');
     }
   };
 
@@ -235,8 +343,23 @@ export const SalesView: React.FC<SalesViewProps> = ({
       alert('Agrega al menos un producto al carrito de venta.');
       return;
     }
-    if (!customerName.trim()) {
-      alert('Ingresa el nombre del cliente o receptor.');
+    const requiredDocumentType = getRequiredCustomerDocumentType();
+    const isPublicGeneralBoleta = voucherType === 'BOLETA' && selectedCustomerId === 'general';
+    const hasValidRegisteredCustomer = customers.some(customer =>
+      customer.id === selectedCustomerId &&
+      getCustomerDocumentType(customer) === requiredDocumentType &&
+      isValidDocumentLength(requiredDocumentType, customer.taxId.replace(/\D/g, '').length)
+    );
+    if (!isPublicGeneralBoleta && !hasValidRegisteredCustomer) {
+      alert(`Busca y selecciona un cliente registrado con ${requiredDocumentType} para emitir esta ${voucherType.toLowerCase()}.`);
+      return;
+    }
+    if (paymentMethod === 'CARD' && !selectedCardBrand) {
+      alert('Selecciona la marca de la tarjeta.');
+      return;
+    }
+    if (paymentMethod === 'CREDIT' && !giftCouponNumber.trim()) {
+      setIsGiftCouponModalOpen(true);
       return;
     }
 
@@ -256,15 +379,35 @@ export const SalesView: React.FC<SalesViewProps> = ({
       currency,
       paymentMethod,
       paymentStatus: 'PAID',
-      paidAmount: paymentMethod === 'CASH' && cashTendered > 0 ? cashTendered : cartGrandTotal,
+      paidAmount: cartGrandTotal,
       dueAmount: 0,
-      notes,
+      notes: [
+        notes,
+        paymentMethod === 'CARD' ? `Tarjeta: ${selectedCardBrand}` : '',
+        paymentMethod === 'CREDIT' ? `Giftcard/Cupón: ${giftCouponNumber.trim()}` : ''
+      ].filter(Boolean).join(' | '),
       sellerName,
       status: 'COMPLETED'
     });
 
     handleClearCart();
     setSubTab('history');
+  };
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (method === 'CREDIT') {
+      setGiftCouponNumber('');
+      setIsGiftCouponModalOpen(true);
+    } else {
+      setIsGiftCouponModalOpen(false);
+    }
+    if (method !== 'CARD') setSelectedCardBrand('');
+  };
+
+  const closeGiftCouponModal = () => {
+    setIsGiftCouponModalOpen(false);
+    if (!giftCouponNumber.trim()) setPaymentMethod('CASH');
   };
 
   // Confirm Sale Cancellation
@@ -295,7 +438,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
       p.name.toLowerCase().includes(posSearch.toLowerCase()) ||
       p.sku.toLowerCase().includes(posSearch.toLowerCase()) ||
       (p.barcode && p.barcode.toLowerCase().includes(posSearch.toLowerCase()));
-    return matchesCategory && matchesSearch;
+    const belongsToLocation = selectedStoreId === 'main-warehouse'
+      ? true
+      : storeStock.some(stock => stock.storeId === selectedStoreId && stock.productId === p.id);
+    return matchesCategory && matchesSearch && belongsToLocation;
   });
 
   return (
@@ -308,7 +454,22 @@ export const SalesView: React.FC<SalesViewProps> = ({
           <select
             id="select-pos-store"
             value={selectedStoreId}
-            onChange={e => setSelectedStoreId(e.target.value)}
+            onChange={e => {
+              setSelectedStoreId(e.target.value);
+              setCartItems([]);
+              setSelectedCustomerId('');
+              setCustomerName('');
+              setCustomerTaxId('');
+              setCustomerEmail('');
+              setCustomerSearchMessage('');
+              setCustomerRegistrationError('');
+              setPaymentMethod('CASH');
+              setCashTendered(0);
+              setSelectedCardBrand('');
+              setGiftCouponNumber('');
+              setIsGiftCouponModalOpen(false);
+              setNotes('');
+            }}
             className="w-full px-2.5 py-1.5 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs focus:outline-none focus:border-[#C8102E]"
           >
             {stores.filter(store => store.status === 'ACTIVE').map(store => (
@@ -405,7 +566,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
             {/* Products Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-1">
               {posFilteredProducts.map(product => {
-                const isOutOfStock = product.stock <= 0;
+                const remainingStock = getRemainingStock(product.id);
+                const isOutOfStock = remainingStock <= 0;
                 return (
                   <button
                     key={product.id}
@@ -423,9 +585,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <span className="text-[10px] font-mono text-[#71717A] truncate max-w-[100px]">{product.sku}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono tabular-nums ${
                           isOutOfStock ? 'bg-[#C8102E]/15 text-[#ffb3b1] border border-[#C8102E]/40' :
-                          product.stock <= product.minStock ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/40'
+                          remainingStock <= product.minStock ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/40'
                         }`}>
-                          {product.stock} {product.unit}
+                          {isOutOfStock ? 'AGOTADO' : `${remainingStock} ${product.unit}`}
                         </span>
                       </div>
                       <h4 className="text-xs font-bold text-white line-clamp-2 group-hover:text-[#ffb3b1] transition-colors">
@@ -434,12 +596,16 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-[#1E1E1E] flex items-center justify-between">
-                      <span className="text-sm font-bold text-white font-mono tabular-nums">
+                      <span className={`text-sm font-bold font-mono tabular-nums ${isOutOfStock ? 'text-[#71717A]' : 'text-white'}`}>
                         {currency} {formatAmount(product.sellingPrice)}
                       </span>
-                      <span className="w-6 h-6 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] font-bold flex items-center justify-center text-xs group-hover:bg-[#C8102E] group-hover:text-white group-hover:border-[#C8102E] transition-colors">
-                        +
-                      </span>
+                      {isOutOfStock ? (
+                        <span className="w-6 h-6 rounded border border-[#303030] text-[#4F4F4F] flex items-center justify-center text-xs">+</span>
+                      ) : (
+                        <span className="w-6 h-6 rounded bg-[#1E1E1E] text-[#ffb3b1] border border-[#2D2D2D] font-bold flex items-center justify-center text-xs group-hover:bg-[#C8102E] group-hover:text-white group-hover:border-[#C8102E] transition-colors">
+                          +
+                        </span>
+                      )}
                     </div>
                   </button>
                 );
@@ -470,12 +636,12 @@ export const SalesView: React.FC<SalesViewProps> = ({
             {/* Voucher & Customer Selector */}
             <div className="space-y-3 p-3 bg-[#0E0E0E] border border-[#2D2D2D] rounded-md text-xs">
               
-              <div className="grid grid-cols-3 gap-2">
-                {(['FACTURA', 'BOLETA', 'TICKET'] as VoucherType[]).map(type => (
+              <div className="grid grid-cols-2 gap-2">
+                {(['FACTURA', 'BOLETA'] as VoucherType[]).map(type => (
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setVoucherType(type)}
+                    onClick={() => handleVoucherTypeChange(type)}
                     className={`py-1.5 text-center font-bold rounded transition-colors ${
                       voucherType === type
                         ? 'bg-[#C8102E] text-white shadow-xs'
@@ -489,34 +655,106 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
               <div>
                 <label className="block text-[11px] font-semibold text-[#c8c6c6] mb-1">Cliente / Receptor</label>
-                <select
-                  id="select-pos-customer"
-                  value={selectedCustomerId}
-                  onChange={e => handleSelectCustomer(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs focus:outline-none focus:border-[#C8102E]"
-                >
-                  <option value="general">CLIENTES VARIOS / PÚBLICO GENERAL</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.taxId})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={e => setCustomerName(e.target.value)}
-                  placeholder="Nombre / Razón Social"
-                  className="px-2.5 py-1 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs focus:outline-none focus:border-[#C8102E]"
-                />
-                <input
-                  type="text"
-                  value={customerTaxId}
-                  onChange={e => setCustomerTaxId(e.target.value)}
-                  placeholder="RUC / DNI"
-                  className="px-2.5 py-1 bg-[#141414] border border-[#2D2D2D] text-white rounded-md text-xs font-mono focus:outline-none focus:border-[#C8102E]"
-                />
+                <div className="flex gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <input
+                      id="input-pos-customer-document"
+                      type="text"
+                      inputMode="numeric"
+                      value={customerTaxId}
+                      onChange={event => {
+                        setCustomerTaxId(event.target.value.replace(/\D/g, '').slice(0, voucherType === 'FACTURA' ? 12 : 8));
+                        setSelectedCustomerId('');
+                        setCustomerName('');
+                        setCustomerEmail('');
+                        setCustomerSearchMessage('');
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleFindCustomer();
+                        }
+                      }}
+                      placeholder={`Ingrese ${getRequiredCustomerDocumentType()}`}
+                      aria-label={`Número de ${getRequiredCustomerDocumentType()}`}
+                      className="w-full min-w-0 rounded-md border border-[#2D2D2D] bg-[#141414] py-1.5 pl-2.5 pr-9 font-mono text-xs text-white focus:border-[#C8102E] focus:outline-none"
+                    />
+                    {customerTaxId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerTaxId('');
+                          setSelectedCustomerId('');
+                          setCustomerName('');
+                          setCustomerEmail('');
+                          setCustomerSearchMessage('');
+                          setCustomerRegistrationError('');
+                        }}
+                        aria-label="Limpiar búsqueda de cliente"
+                        title="Limpiar"
+                        className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-[#9CA3AF] hover:bg-[#2D2D2D] hover:text-white"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFindCustomer}
+                    aria-label={`Buscar cliente por ${getRequiredCustomerDocumentType()}`}
+                    title="Buscar cliente"
+                    className="flex items-center justify-center rounded-md border border-[#3D3D3D] bg-[#1E1E1E] px-3 text-white hover:border-[#C8102E] hover:bg-[#2D2D2D]"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+                {customerSearchMessage && (
+                  <div className={`mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] ${selectedCustomerId ? 'text-emerald-400' : 'text-amber-300'}`} role="status">
+                    <span>{customerSearchMessage}</span>
+                    {customerSearchMessage.startsWith('Cliente no registrado') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerRegistrationError('');
+                          setNewCustomerForm({
+                            name: '',
+                            documentType: getRequiredCustomerDocumentType(),
+                            taxId: customerTaxId,
+                            email: '',
+                            phone: '',
+                            address: '',
+                            status: 'Activo'
+                          });
+                          setIsRegisteringCustomer(true);
+                        }}
+                        className="inline-flex items-center gap-1 rounded border border-[#3D3D3D] px-2 py-1 font-bold text-white hover:border-[#C8102E]"
+                      >
+                        <UserPlus className="h-3 w-3" />Registrar cliente
+                      </button>
+                    )}
+                  </div>
+                )}
+                {selectedCustomerId && (
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded border border-[#2D2D2D] bg-[#141414] p-2 text-[11px]">
+                    <div className="min-w-0">
+                      <span className="block text-[#9CA3AF]">Cliente / Receptor</span>
+                      <strong className="block truncate text-white">{customerName}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[#9CA3AF]">{selectedCustomerId === 'general' ? 'Documento' : getRequiredCustomerDocumentType()}</span>
+                      <strong className="block font-mono text-white">{customerTaxId}</strong>
+                    </div>
+                  </div>
+                )}
+                {voucherType === 'BOLETA' && (
+                  <button
+                    type="button"
+                    onClick={handleSelectNoDni}
+                    className="mt-2 rounded border border-[#3D3D3D] px-2.5 py-1.5 text-[10px] font-bold text-[#D1D5DB] hover:border-[#C8102E] hover:text-white"
+                  >
+                    Sin DNI
+                  </button>
+                )}
               </div>
 
             </div>
@@ -568,12 +806,11 @@ export const SalesView: React.FC<SalesViewProps> = ({
             {/* Payment Method Selector */}
             <div className="space-y-2 pt-2 border-t border-[#2D2D2D]">
               <label className="block text-[11px] font-semibold text-[#c8c6c6]">Método de Pago</label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
                 {[
                   { id: 'CASH', label: 'Efectivo', icon: DollarSign },
                   { id: 'CARD', label: 'Tarjeta', icon: CreditCard },
-                  { id: 'TRANSFER', label: 'Transf.', icon: Building2 },
-                  { id: 'CREDIT', label: 'Crédito', icon: Calendar }
+                  { id: 'CREDIT', label: 'Giftcard / Cupón', icon: Tag }
                 ].map(method => {
                   const Icon = method.icon;
                   const isSelected = paymentMethod === method.id;
@@ -581,7 +818,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     <button
                       key={method.id}
                       type="button"
-                      onClick={() => setPaymentMethod(method.id as PaymentMethod)}
+                      onClick={() => handlePaymentMethodChange(method.id as PaymentMethod)}
                       className={`p-2 rounded-md text-center flex flex-col items-center justify-center gap-1 transition-all ${
                         isSelected
                           ? 'bg-[#C8102E]/15 border border-[#C8102E] text-[#ffb3b1] font-bold'
@@ -594,6 +831,25 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   );
                 })}
               </div>
+              {paymentMethod === 'CARD' && (
+                <div className="grid grid-cols-3 gap-1.5" aria-label="Marca de tarjeta">
+                  {(['VISA', 'MASTERCARD', 'AMEX'] as const).map(brand => (
+                    <button
+                      key={brand}
+                      type="button"
+                      onClick={() => setSelectedCardBrand(brand)}
+                      aria-pressed={selectedCardBrand === brand}
+                      className={`rounded border px-2 py-2 text-[10px] font-bold transition-colors ${
+                        selectedCardBrand === brand
+                          ? 'border-[#C8102E] bg-[#C8102E]/15 text-[#ffb3b1]'
+                          : 'border-[#2D2D2D] bg-[#0E0E0E] text-[#c8c6c6] hover:border-[#71717A] hover:text-white'
+                      }`}
+                    >
+                      {brand}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Cash Tendered & Change Calculator (if CASH) */}
@@ -605,7 +861,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     id="input-cash-tendered"
                     type="number"
                     min="0"
-                    step="1"
+                    step="0.01"
+                    inputMode="decimal"
                     value={cashTendered || ''}
                     onChange={e => setCashTendered(parseFloat(e.target.value) || 0)}
                     placeholder={formatAmount(cartGrandTotal)}
@@ -977,6 +1234,139 @@ export const SalesView: React.FC<SalesViewProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {isRegisteringCustomer && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4">
+          <form onSubmit={handleRegisterCustomer} className="max-h-[95vh] w-full max-w-lg overflow-y-auto rounded-md border border-[#2D2D2D] bg-[#141414] shadow-2xl">
+            <header className="flex items-center justify-between border-b border-[#2D2D2D] bg-[#0E0E0E] px-5 py-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-[#C8102E]" />
+                <h3 className="text-base font-bold text-white">Registrar Nuevo Cliente</h3>
+              </div>
+              <button type="button" onClick={() => setIsRegisteringCustomer(false)} aria-label="Cerrar registro de cliente" className="text-[#9CA3AF] hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="space-y-3 p-5">
+              <label className="block text-xs font-semibold text-[#D1D5DB]">
+                Nombre / Razón Social *
+                <input
+                  required
+                  value={newCustomerForm.name}
+                  onChange={event => setNewCustomerForm({ ...newCustomerForm, name: event.target.value })}
+                  className="mt-1 w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#D1D5DB]">Tipo de documento *</label>
+                  <div className="mb-2 grid grid-cols-3 gap-2">
+                    {(['RUC', 'NIT', 'DNI'] as const).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setNewCustomerForm({ ...newCustomerForm, documentType: type, taxId: type === getRequiredCustomerDocumentType() ? customerTaxId : '' })}
+                        className={`rounded border px-3 py-2 text-xs font-bold transition-colors ${newCustomerForm.documentType === type ? 'border-[#C8102E] bg-[#C8102E] text-white' : 'border-[#2D2D2D] bg-[#1E1E1E] text-[#D1D5DB] hover:text-white'}`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    required
+                    inputMode="numeric"
+                    value={newCustomerForm.taxId}
+                    onChange={event => {
+                      const maxLength = { RUC: 12, NIT: 9, DNI: 8 }[newCustomerForm.documentType];
+                      setNewCustomerForm({ ...newCustomerForm, taxId: event.target.value.replace(/\D/g, '').slice(0, maxLength) });
+                    }}
+                    maxLength={{ RUC: 12, NIT: 9, DNI: 8 }[newCustomerForm.documentType]}
+                    placeholder={newCustomerForm.documentType === 'RUC' ? 'RUC: 11 o 12 dígitos' : `${newCustomerForm.documentType}: ${{ RUC: 11, NIT: 9, DNI: 8 }[newCustomerForm.documentType]} dígitos`}
+                    className="w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 font-mono text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                  />
+                </div>
+                <label className="block text-xs font-semibold text-[#D1D5DB]">
+                  Teléfono
+                  <input
+                    value={newCustomerForm.phone}
+                    onChange={event => setNewCustomerForm({ ...newCustomerForm, phone: event.target.value })}
+                    className="mt-1 w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                  />
+                </label>
+              </div>
+              <label className="block text-xs font-semibold text-[#D1D5DB]">
+                Correo Electrónico *
+                <input
+                  type="email"
+                  required
+                  value={newCustomerForm.email}
+                  onChange={event => setNewCustomerForm({ ...newCustomerForm, email: event.target.value })}
+                  className="mt-1 w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-[#D1D5DB]">
+                Dirección Fiscal
+                <input
+                  value={newCustomerForm.address}
+                  onChange={event => setNewCustomerForm({ ...newCustomerForm, address: event.target.value })}
+                  className="mt-1 w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                />
+              </label>
+              <div>
+                <label className="block text-xs font-semibold text-[#D1D5DB]">
+                  Estado
+                  <select
+                    value={newCustomerForm.status}
+                    onChange={event => setNewCustomerForm({ ...newCustomerForm, status: event.target.value })}
+                    className="mt-1 w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </label>
+              </div>
+              {customerRegistrationError && <p role="alert" className="text-xs text-red-400">{customerRegistrationError}</p>}
+            </div>
+            <footer className="flex justify-end gap-2 border-t border-[#2D2D2D] px-5 py-4">
+              <button type="button" onClick={() => setIsRegisteringCustomer(false)} className="rounded border border-[#404040] px-4 py-2 text-xs font-semibold text-white hover:bg-[#252525]">Cancelar</button>
+              <button type="submit" className="rounded bg-[#C8102E] px-4 py-2 text-xs font-bold text-white hover:bg-[#A80C25]">Guardar Cliente</button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {isGiftCouponModalOpen && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4">
+          <form
+            onSubmit={event => {
+              event.preventDefault();
+              if (!giftCouponNumber.trim()) return;
+              setIsGiftCouponModalOpen(false);
+            }}
+            className="w-full max-w-sm overflow-hidden rounded-md border border-[#2D2D2D] bg-[#141414] shadow-2xl"
+          >
+            <header className="border-b border-[#2D2D2D] bg-[#0E0E0E] px-5 py-4">
+              <h3 className="text-sm font-bold text-white">Giftcard / Cupón</h3>
+              <p className="mt-1 text-[11px] text-[#9CA3AF]">Ingrese el número de la Giftcard o del Cupón.</p>
+            </header>
+            <div className="p-5">
+              <input
+                autoFocus
+                required
+                value={giftCouponNumber}
+                onChange={event => setGiftCouponNumber(event.target.value)}
+                aria-label="Número de Giftcard o Cupón"
+                placeholder="Nro. Giftcard o Cupón"
+                className="w-full rounded border border-[#303030] bg-[#0E0E0E] px-3 py-2 text-sm text-white focus:border-[#C8102E] focus:outline-none"
+              />
+            </div>
+            <footer className="flex justify-end gap-2 border-t border-[#2D2D2D] px-5 py-4">
+              <button type="button" onClick={closeGiftCouponModal} className="rounded border border-[#404040] px-4 py-2 text-xs font-semibold text-white hover:bg-[#252525]">Cancelar</button>
+              <button type="submit" className="rounded bg-[#C8102E] px-4 py-2 text-xs font-bold text-white hover:bg-[#A80C25]">Aceptar</button>
+            </footer>
+          </form>
         </div>
       )}
 

@@ -29,7 +29,7 @@ Esto confirma que el problema era de carga/inicialización de la base y no de la
 4. Se añadió `backend/scripts/seed-demo.ts`.
 5. Se añadió `npm run seed:demo`.
 6. El seed solo hace `upsert` con IDs deterministas y no elimina documentos ni bases.
-7. El backend demo usa `PHANTOM_DATA_DIR` temporal para no escribir `backend/data/db.json` ni `backend/data/audit.json`.
+7. La persistencia en archivos JSON fue eliminada; MongoDB es la única fuente de datos.
 
 ## Base demo creada y verificada
 
@@ -91,7 +91,6 @@ $env:PORT = "3010"
 $env:MONGODB_URI = "mongodb://127.0.0.1:27017"
 $env:MONGODB_DATABASE = "phantom_erp_demo"
 $env:PHANTOM_DEMO_MODE = "true"
-$env:PHANTOM_DATA_DIR = "$env:TEMP\phantom-erp-demo-data"
 $env:JWT_SECRET = "<secreto local de 32 o más caracteres>"
 npm run dev --prefix backend
 ```
@@ -129,6 +128,6 @@ db.store_stock.aggregate([
 
 ## Estado de archivos protegidos y Git
 
-`backend/data/db.json` y `backend/data/audit.json` no forman parte de los cambios finales. La ejecución demo utiliza el directorio temporal definido por `PHANTOM_DATA_DIR`.
+`backend/data/db.json` y `backend/data/audit.json` fueron eliminados del repositorio y ya no existe persistencia en archivos JSON.
 
 No se ejecutó `bd_phantom.txt`, no se modificaron `phantom_erp` ni `phantom_erp_test`, y no se hizo commit, merge, push ni deploy.

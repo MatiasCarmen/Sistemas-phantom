@@ -63,8 +63,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     phone: '',
     address: '',
     city: '',
-    creditLimit: 0,
-    paymentTerms: 'Contado',
     status: 'Activo'
   });
 
@@ -94,8 +92,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       phone: '',
       address: '',
       city: '',
-      creditLimit: 2000,
-      paymentTerms: 'Contado',
       status: 'Activo'
     });
     setIsCustModalOpen(true);
@@ -113,12 +109,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
       phone: c.phone,
       address: c.address || '',
       city: c.city || '',
-      creditLimit: c.creditLimit || 0,
-      paymentTerms: c.paymentTerms && c.paymentTerms !== 'Contado'
-        ? (['Crédito 7 días', 'Crédito 15 días', 'Crédito 30 días', 'Crédito 45 días', 'Crédito 60 días'].includes(c.paymentTerms)
-          ? c.paymentTerms
-          : /30/i.test(c.paymentTerms) ? 'Crédito 30 días' : 'Crédito 30 días')
-        : 'Contado',
       status: c.status || 'Activo'
     });
     setIsCustModalOpen(true);
@@ -129,16 +119,18 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
     e.preventDefault();
     if (!custForm.name.trim()) return;
 
-    const documentLengths = { RUC: 12, NIT: 9, DNI: 8 };
-    if (!/^\d+$/.test(custForm.taxId) || custForm.taxId.length !== documentLengths[custForm.documentType]) {
-      alert(`${custForm.documentType} debe contener exactamente ${documentLengths[custForm.documentType]} dígitos.`);
+    const documentLengths = { RUC: 11, NIT: 9, DNI: 8 };
+    const isValidLength = custForm.documentType === 'RUC'
+      ? custForm.taxId.length === 11 || custForm.taxId.length === 12
+      : custForm.taxId.length === documentLengths[custForm.documentType];
+    if (!/^\d+$/.test(custForm.taxId) || !isValidLength) {
+      alert(custForm.documentType === 'RUC'
+        ? 'RUC debe contener 11 o 12 dígitos.'
+        : `${custForm.documentType} debe contener exactamente ${documentLengths[custForm.documentType]} dígitos.`);
       return;
     }
 
-    const customerData = {
-      ...custForm,
-      creditLimit: custForm.paymentTerms === 'Contado' ? 0 : Number(custForm.creditLimit)
-    };
+    const customerData = custForm;
 
     if (editingCustomer) {
       await onUpdateCustomer(editingCustomer.id, customerData);
@@ -269,7 +261,10 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
           <div className="flex bg-[#0E0E0E] p-1 rounded-md border border-[#2D2D2D]">
             <button
               id="tab-customers-view"
-              onClick={() => setActiveTab('customers')}
+              onClick={() => {
+                setActiveTab('customers');
+                setStatusFilter('all');
+              }}
               className={`px-4 py-2 text-xs font-bold rounded transition-all flex items-center space-x-1.5 ${
                 activeTab === 'customers'
                   ? 'bg-[#C8102E] text-white shadow-sm'
@@ -281,7 +276,10 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
             </button>
             <button
               id="tab-suppliers-view"
-              onClick={() => setActiveTab('suppliers')}
+              onClick={() => {
+                setActiveTab('suppliers');
+                setStatusFilter('all');
+              }}
               className={`px-4 py-2 text-xs font-bold rounded transition-all flex items-center space-x-1.5 ${
                 activeTab === 'suppliers'
                   ? 'bg-[#C8102E] text-white shadow-sm'
@@ -339,7 +337,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
             ['inactive', 'Inactivos'],
             ['cash', 'Contado'],
             ['credit', 'Crédito']
-          ] as const).map(([value, label]) => {
+          ] as const).filter(([value]) => activeTab === 'suppliers' || !['cash', 'credit'].includes(value)).map(([value, label]) => {
             const currentItems = activeTab === 'customers' ? customers : suppliers;
             const count = value === 'all'
               ? currentItems.length
@@ -419,16 +417,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[#1E1E1E] space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#71717A]">Condición de Pago:</span>
-                    <span className="font-semibold text-white">{cust.paymentTerms || 'Contado'}</span>
-                  </div>
-                    <div className="flex items-center justify-between">
-                    <span className="text-[#71717A]">Límite Crédito:</span>
-                    <span className="font-mono tabular-nums font-bold text-white">
-                      {currency} {(cust.creditLimit || 0).toLocaleString()}
-                    </span>
-                  </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[#71717A]">Estado:</span>
                       <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${isActive(cust.status) ? 'bg-[#063A2F] text-[#31D0AA] border border-[#10B981]/50' : 'bg-[#1E1E1E] text-[#9CA3AF] border border-[#3D3D3D]'}`}>
@@ -587,7 +575,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                       setCustForm({ ...custForm, taxId: e.target.value.replace(/\D/g, '').slice(0, maxLength) });
                     }}
                     maxLength={{ RUC: 12, NIT: 9, DNI: 8 }[custForm.documentType]}
-                    placeholder={`${custForm.documentType}: ${ { RUC: 12, NIT: 9, DNI: 8 }[custForm.documentType]} dígitos`}
+                    placeholder={custForm.documentType === 'RUC' ? 'RUC: 11 o 12 dígitos' : `${custForm.documentType}: ${ { RUC: 11, NIT: 9, DNI: 8 }[custForm.documentType]} dígitos`}
                     className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
@@ -623,7 +611,7 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <div>
                   <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Estado</label>
                   <select
@@ -634,40 +622,6 @@ export const CustomersSuppliersView: React.FC<CustomersSuppliersViewProps> = ({
                     <option value="Activo">Activo</option>
                     <option value="Inactivo">Inactivo</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Condición de Pago</label>
-                  <select
-                    value={custForm.paymentTerms}
-                    onChange={e => {
-                      const paymentTerms = e.target.value;
-                      setCustForm({
-                        ...custForm,
-                        paymentTerms,
-                        creditLimit: paymentTerms === 'Contado' ? 0 : (custForm.creditLimit || 2000)
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs focus:outline-none focus:border-[#C8102E]"
-                  >
-                    <option value="Contado">Al contado</option>
-                    <option value="Crédito 7 días">Crédito 7 días</option>
-                    <option value="Crédito 15 días">Crédito 15 días</option>
-                    <option value="Crédito 30 días">Crédito 30 días</option>
-                    <option value="Crédito 45 días">Crédito 45 días</option>
-                    <option value="Crédito 60 días">Crédito 60 días</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#c8c6c6] mb-1">Límite de Crédito ({currency})</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    disabled={custForm.paymentTerms === 'Contado'}
-                    value={custForm.paymentTerms === 'Contado' ? 0 : custForm.creditLimit}
-                    onChange={e => setCustForm({ ...custForm, creditLimit: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-[#0E0E0E] border border-[#2D2D2D] rounded text-white text-xs font-mono tabular-nums focus:outline-none focus:border-[#C8102E] disabled:bg-[#141414] disabled:text-[#71717A] disabled:cursor-not-allowed"
-                  />
                 </div>
               </div>
 

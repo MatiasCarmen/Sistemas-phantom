@@ -15,7 +15,10 @@ import {
   AuditLogEvent,
   Store,
   StoreStock,
-  StockTransfer
+  StockTransfer,
+  ReplenishmentSuggestion,
+  PurchaseSuggestion,
+  PurchaseOrder
 } from '../types';
 
 const API_BASE = '/api';
@@ -94,10 +97,22 @@ export const api = {
 
   getStores: () => fetchJson<Store[]>('/stores'),
   getStoreStock: () => fetchJson<{ storeStock: StoreStock[]; transfers: StockTransfer[] }>('/store-stock'),
+  getReplenishmentSuggestions: () => fetchJson<ReplenishmentSuggestion[]>('/stock-transfers/suggestions'),
   transferStock: (data: { productId?: string; items?: Array<{ productId: string; quantity: number }>; toStoreId: string; quantity?: number; transportSupplierId?: string; transportSupplierName?: string; notes?: string; createdBy?: string }) =>
     fetchJson<StockTransfer>('/stock-transfers', { method: 'POST', body: JSON.stringify(data) }),
   confirmTransferReceipt: (guideNumber: string, storeId: string) =>
     fetchJson<StockTransfer[]>('/stock-transfers/receive', { method: 'POST', body: JSON.stringify({ guideNumber, storeId }) }),
+
+  // Purchase orders
+  getPurchaseOrders: () => fetchJson<PurchaseOrder[]>('/purchase-orders'),
+  getPurchaseSuggestions: () => fetchJson<PurchaseSuggestion[]>('/purchase-orders/suggestions'),
+  createPurchaseOrder: (order: Omit<Partial<PurchaseOrder>, 'items'> & { items: Array<{ productId: string; quantity: number; unitCost: number }> }) =>
+    fetchJson<PurchaseOrder>('/purchase-orders', { method: 'POST', body: JSON.stringify(order) }),
+  updatePurchaseOrder: (id: string, order: Partial<PurchaseOrder>) =>
+    fetchJson<PurchaseOrder>(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(order) }),
+  receivePurchaseOrder: (id: string, items?: Array<{ productId: string; sellingPrice: number; minStock: number; location: string }>) =>
+    fetchJson<PurchaseOrder>(`/purchase-orders/${id}/receive`, { method: 'POST', body: JSON.stringify({ items }) }),
+  deletePurchaseOrder: (id: string) => fetchJson<{ success: boolean }>(`/purchase-orders/${id}`, { method: 'DELETE' }),
 
   // Categories
   getCategories: () => fetchJson<Category[]>('/categories'),

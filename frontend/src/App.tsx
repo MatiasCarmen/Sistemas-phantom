@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Product, 
   Quote, 
@@ -14,7 +14,9 @@ import {
   User,
   UserRole,
   Store,
-  StoreStock
+  StoreStock,
+  PurchaseOrder,
+  PurchaseOrderStatus
 } from './types';
 import { api } from './lib/api';
 
@@ -25,13 +27,14 @@ import { KardexView } from './components/KardexView';
 import { QuotesView } from './components/QuotesView';
 import { SalesView } from './components/SalesView';
 import { CustomersSuppliersView } from './components/CustomersSuppliersView';
+import { PurchaseOrdersView } from './components/PurchaseOrdersView';
 import { ReportsSettingsView } from './components/ReportsSettingsView';
 import { LoginView } from './components/LoginView';
 import { UsersManagementModal } from './components/UsersManagementModal';
 import { DatabaseExplorerModal } from './components/DatabaseExplorerModal';
 import { AuditLogModal } from './components/AuditLogModal';
 
-type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
+type ActiveTab = 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'purchaseOrders' | 'customers' | 'suppliers' | 'settings';
 
 export default function App() {
   // Authentication & Session State
@@ -59,6 +62,7 @@ export default function App() {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const mainContentRef = useRef<HTMLElement | null>(null);
 
   // Theme State (Dark / Light)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -95,6 +99,12 @@ export default function App() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
+
   // Application Domain State
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -107,6 +117,7 @@ export default function App() {
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeStock, setStoreStock] = useState<StoreStock[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
   // Filter for Kardex by Product
   const [kardexProductFilter, setKardexProductFilter] = useState<Product | null>(null);
@@ -141,7 +152,8 @@ export default function App() {
         movsData,
         settingsData,
         storesData,
-        storeStockData
+        storeStockData,
+        purchaseOrdersData
       ] = await Promise.all([
         api.getDashboardStats(),
         api.getProducts(),
@@ -153,7 +165,8 @@ export default function App() {
         api.getKardex(),
         api.getSettings(),
         api.getStores(),
-        api.getStoreStock()
+        api.getStoreStock(),
+        api.getPurchaseOrders()
       ]);
 
       setStats(dashStats);
@@ -167,6 +180,7 @@ export default function App() {
       setSettings(settingsData);
       setStores(storesData);
       setStoreStock(storeStockData.storeStock);
+      setPurchaseOrders(purchaseOrdersData);
     } catch (err: any) {
       console.error('Error loading initial data:', err);
       showToast(err.message || 'Error al conectar con la API RESTful', 'error');
@@ -205,6 +219,7 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (user: User, _token: string) => {
+    setActiveTab('dashboard');
     setCurrentUser(user);
     showToast(`¡Bienvenido(a), ${user.name}!`);
     fetchAllData();
@@ -216,6 +231,7 @@ export default function App() {
     } catch {}
     localStorage.removeItem('nexus_auth_token');
     localStorage.removeItem('nexus_auth_user');
+    setActiveTab('dashboard');
     setCurrentUser(null);
     showToast('Sesión finalizada correctamente.');
   };
@@ -264,8 +280,10 @@ export default function App() {
       const [newStats, newMovs] = await Promise.all([api.getDashboardStats(), api.getKardex()]);
       setStats(newStats);
       setMovements(newMovs);
+      return newProd;
     } catch (err: any) {
       showToast(err.message || 'Error al registrar producto', 'error');
+      throw err;
     }
   };
 
@@ -401,6 +419,49 @@ export default function App() {
     }
   };
 
+  const handleCreatePurchaseOrder = async (orderData: Omit<Partial<PurchaseOrder>, 'items'> & { items: Array<{ productId: string; quantity: number; unitCost: number }> }) => {
+    try {
+      const order = await api.createPurchaseOrder(orderData);
+      setPurchaseOrders(current => [order, ...current]);
+      showToast(`Orden de compra ${order.orderNumber} registrada.`);
+    } catch (err: any) {
+      showToast(err.message || 'Error al registrar la orden de compra', 'error');
+    }
+  };
+
+  const handlePurchaseOrderStatus = async (id: string, status: PurchaseOrderStatus) => {
+    try {
+      const order = await api.updatePurchaseOrder(id, { status });
+      setPurchaseOrders(current => current.map(item => item.id === id ? order : item));
+      showToast(`Orden ${order.orderNumber} actualizada.`);
+    } catch (err: any) {
+      showToast(err.message || 'Error al actualizar la orden', 'error');
+    }
+  };
+
+  const handleDeletePurchaseOrder = async (id: string) => {
+    try {
+      await api.deletePurchaseOrder(id);
+      setPurchaseOrders(current => current.filter(order => order.id !== id));
+      showToast('Orden de compra eliminada.');
+    } catch (err: any) {
+      showToast(err.message || 'Error al eliminar la orden de compra', 'error');
+    }
+  };
+
+  const handleReceivePurchaseOrder = async (id: string, items?: Array<{ productId: string; sellingPrice: number; minStock: number; location: string }>) => {
+    try {
+      const order = await api.receivePurchaseOrder(id, items);
+      setPurchaseOrders(current => current.map(item => item.id === id ? order : item));
+      const [newProducts, newMovements] = await Promise.all([api.getProducts(), api.getKardex()]);
+      setProducts(newProducts);
+      setMovements(newMovements);
+      showToast(`Orden ${order.orderNumber} recibida e ingresada al inventario.`);
+    } catch (err: any) {
+      showToast(err.message || 'Error al recibir la orden', 'error');
+    }
+  };
+
   // Handlers for Customers & Suppliers
   const handleAddCustomer = async (c: Partial<Customer>) => {
     try {
@@ -412,6 +473,13 @@ export default function App() {
     } catch (err: any) {
       showToast(err.message || 'Error al crear cliente', 'error');
     }
+  };
+
+  const handleRegisterCustomerFromPOS = async (customer: Partial<Customer>): Promise<Customer> => {
+    const newCustomer = await api.createCustomer(customer);
+    setCustomers(current => [newCustomer, ...current]);
+    showToast(`Cliente "${newCustomer.name}" registrado.`);
+    return newCustomer;
   };
 
   const handleUpdateCustomer = async (id: string, c: Partial<Customer>) => {
@@ -586,7 +654,7 @@ export default function App() {
         />
 
         {/* Scrollable View Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           
           {activeTab === 'dashboard' && (
             <DashboardView
@@ -669,10 +737,27 @@ export default function App() {
               storeStock={storeStock}
               settings={settings}
               onCreateSale={handleCreateSale}
+              onRegisterCustomer={handleRegisterCustomerFromPOS}
               onCancelSale={handleCancelSale}
               isPosModalOpen={isPosModalOpen}
               setIsPosModalOpen={setIsPosModalOpen}
               isLoading={isLoading}
+            />
+          )}
+
+          {activeTab === 'purchaseOrders' && (
+            <PurchaseOrdersView
+              orders={purchaseOrders}
+              products={products}
+              suppliers={suppliers}
+              categories={categories}
+              settings={settings}
+              onAddProduct={handleAddProduct}
+              onCreate={handleCreatePurchaseOrder}
+              onStatusChange={handlePurchaseOrderStatus}
+              onReceive={handleReceivePurchaseOrder}
+              onDelete={handleDeletePurchaseOrder}
+              onNavigateToKardex={() => handleOpenKardex()}
             />
           )}
 

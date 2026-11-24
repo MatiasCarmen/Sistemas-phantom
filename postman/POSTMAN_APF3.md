@@ -30,10 +30,6 @@ Desde `backend` y usando PowerShell:
 
 ```powershell
 $env:MONGODB_DATABASE = "phantom_erp_postman_<fecha_hora>"
-$env:PHANTOM_DATA_DIR = "$env:TEMP\phantom-postman-data"
-New-Item -ItemType Directory -Force $env:PHANTOM_DATA_DIR | Out-Null
-Copy-Item .\data\db.json "$env:PHANTOM_DATA_DIR\db.json"
-Copy-Item .\data\audit.json "$env:PHANTOM_DATA_DIR\audit.json"
 npm run dev
 ```
 

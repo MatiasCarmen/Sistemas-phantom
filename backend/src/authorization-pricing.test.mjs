@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { MongoClient } from 'mongodb';
 
 process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
-process.env.MONGODB_DATABASE = `phantom_erp_auth_pricing_${Date.now()}`;
+process.env.MONGODB_DATABASE = `phantom_erp_auth_pricing_${randomUUID().replaceAll('-', '')}`;
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 
@@ -49,6 +50,7 @@ after(async () => {
   }
   await db.close();
   if (mongo) {
+    assert.match(process.env.MONGODB_DATABASE, /^phantom_erp_(controlled|auth_pricing)_[a-f0-9]{32}$/);
     await mongo.db(process.env.MONGODB_DATABASE).dropDatabase();
     await mongo.close();
   }

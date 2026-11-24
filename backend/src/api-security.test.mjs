@@ -1,6 +1,10 @@
+import 'dotenv/config';
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 
+process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
+process.env.MONGODB_DATABASE = `phantom_api_security_${randomUUID().replaceAll('-', '')}`;
 process.env.JWT_SECRET = 'test-secret-with-at-least-32-characters-long';
 process.env.FRONTEND_URL = 'http://localhost:5173';
 

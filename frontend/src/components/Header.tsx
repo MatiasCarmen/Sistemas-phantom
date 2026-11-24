@@ -22,13 +22,14 @@ import {
   Sparkles,
   Info,
   Sun,
-  Moon
+  Moon,
+  ClipboardList
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
 export interface SidebarProps {
-  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'customers' | 'suppliers' | 'settings') => void;
+  activeTab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'purchaseOrders' | 'customers' | 'suppliers' | 'settings';
+  setActiveTab: (tab: 'dashboard' | 'inventory' | 'kardex' | 'quotes' | 'sales' | 'purchaseOrders' | 'customers' | 'suppliers' | 'settings') => void;
   companyName?: string;
   lowStockCount?: number;
   outOfStockCount?: number;
@@ -93,7 +94,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
               badgeColor: 'bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border border-[#C8102E]' 
             },
-            { id: 'kardex' as const, label: 'Kardex Valorizado', icon: History, desc: 'Trazabilidad de entradas, salidas y ajustes' }
+            { id: 'kardex' as const, label: 'Kardex Valorizado', icon: History, desc: 'Trazabilidad de entradas, salidas y ajustes' },
+            { id: 'purchaseOrders' as const, label: 'Órdenes de compra', icon: ClipboardList, desc: 'Abastecimiento y recepción de mercadería' }
           ]
         },
         {
@@ -135,7 +137,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               badge: lowStockCount + outOfStockCount > 0 ? lowStockCount + outOfStockCount : undefined,
               badgeColor: 'bg-[rgba(200,16,46,0.14)] text-[#FFDAD8] border border-[#C8102E]' 
             },
-            { id: 'kardex' as const, label: 'Kardex / Movimientos', icon: History, desc: 'Registro de entradas y despachos' }
+            { id: 'kardex' as const, label: 'Kardex / Movimientos', icon: History, desc: 'Registro de entradas y despachos' },
+            { id: 'purchaseOrders' as const, label: 'Órdenes de compra', icon: ClipboardList, desc: 'Recepción de mercadería de proveedores' }
           ]
         },
         {

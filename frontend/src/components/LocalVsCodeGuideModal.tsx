@@ -207,7 +207,7 @@ export class ProductsController {
                 <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded">
                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1 font-mono">Persistencia</span>
                   <p className="text-xs text-zinc-300">
-                    Los datos se guardan en MongoDB; el servidor importa <code className="text-[#ffb3b1] font-mono">data/db.json</code> una sola vez si la colección aún está vacía.
+                    Los datos se guardan exclusivamente en MongoDB (Atlas). El servidor no inicia si MongoDB no está disponible.
                   </p>
                 </div>
               </div>
@@ -239,9 +239,7 @@ export class ProductsController {
 │   ├── lib/              # api.ts (cliente HTTP) y pdfGenerator.ts
 │   ├── types.ts          # Modelos TypeScript compartidos
 │   ├── App.tsx           # Router de vistas y estado global
-│   └── main.tsx          # Bootstrap React
-└── data/
-  └── db.json           # Fuente heredada para la primera migración`}
+│   └── main.tsx          # Bootstrap React`}
                   </pre>
                 </div>
 
@@ -332,9 +330,9 @@ export class ProductsController {
           {activeTab === 'database' && (
             <div className="space-y-4">
               <div className="p-4 bg-[#0E0E0E] border border-[#2D2D2D] rounded space-y-2">
-                <h4 className="text-sm font-semibold text-white">MongoDB y migración inicial</h4>
+                <h4 className="text-sm font-semibold text-white">Persistencia en MongoDB</h4>
                 <p className="text-xs text-zinc-400">
-                  MongoDB es el almacenamiento principal. Configure <code className="text-[#ffb3b1]">MONGODB_URI</code> y <code className="text-[#ffb3b1]">MONGODB_DATABASE</code>; si MongoDB está vacío, el servidor migra automáticamente el contenido de <code className="text-[#ffb3b1]">data/db.json</code> sin borrar el archivo. El siguiente DDL es solo un formato de exportación SQL heredado y no configura la persistencia activa:
+                  MongoDB es la única fuente de datos. Configure <code className="text-[#ffb3b1]">MONGODB_URI</code> y <code className="text-[#ffb3b1]">MONGODB_DATABASE</code>; si MongoDB no está disponible, el servidor muestra un error y se detiene. El siguiente DDL es solo un formato de exportación SQL heredado y no configura la persistencia activa:
                 </p>
               </div>
 
