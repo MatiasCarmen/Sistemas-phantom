@@ -89,7 +89,7 @@ npm run build
 
 El backend expone un modelo estrella (tablas de hechos y dimensiones planas en JSON o CSV mediante `?format=csv`) protegido exclusivamente con el header `x-api-key` (comparado contra `BI_API_KEY` en `backend/.env`):
 
-* **Tablas de Hechos:** `/api/bi/fact_ventas` (excluye ventas anuladas), `/api/bi/fact_detalle_venta`, `/api/bi/fact_kardex`, `/api/bi/fact_cotizaciones`
+* **Tablas de Hechos:** `/api/bi/fact_ventas` (solo ventas válidas `COMPLETED`), `/api/bi/fact_detalle_venta`, `/api/bi/fact_ordenes_compra`, `/api/bi/fact_detalle_orden_compra`, `/api/bi/fact_transferencias`, `/api/bi/fact_kardex`, `/api/bi/fact_cotizaciones`
 * **Tablas de Dimensiones:** `/api/bi/dim_productos`, `/api/bi/dim_clientes`, `/api/bi/dim_proveedores`, `/api/bi/dim_tiendas`
 
 ### Pasos en Power BI Desktop

@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { timingSafeEqual } from 'crypto';
 import { db } from './dataStore';
+import type { Sale } from './types';
 
 const biRouter = Router();
 
@@ -60,6 +61,23 @@ function toMoney(value: unknown): number {
   return Number(toNumber(value).toFixed(2));
 }
 
+/**
+ * Determina si un registro de venta representa una operación comercial válida.
+ * Tras los cambios de posventa/anulación, únicamente las ventas con estado exacto
+ * 'COMPLETED' y monto no negativo contabilizan ingresos y rotación (alineado con
+ * DashboardMetrics, cálculo de compras de clientes, reposición y sugerencias de OC).
+ * Las anulaciones/devoluciones de comprobantes quedan en estado 'CANCELLED' (o cualquier
+ * estado distinto de 'COMPLETED') y sus reversiones de stock quedan trazadas en fact_kardex.
+ */
+function isValidSale(sale: Sale): boolean {
+  return sale.status === 'COMPLETED' && toNumber(sale.total) >= 0;
+}
+
+function shouldIncludeInvalidSales(req: Request): boolean {
+  const flag = String(req.query.incluir_no_validas || '').trim().toLowerCase();
+  return flag === 'true' || flag === '1';
+}
+
 function escapeCsvCell(value: PrimitiveValue | undefined): string {
   if (value === null || value === undefined) {
     return '';
@@ -106,6 +124,7 @@ biRouter.use(verifyBiApiKey);
 const FACT_VENTAS_COLUMNS = [
   'id_venta',
   'numero_venta',
+  'serie',
   'tipo_comprobante',
   'fecha',
   'fecha_creacion',
@@ -119,6 +138,9 @@ const FACT_VENTAS_COLUMNS = [
   'metodo_pago',
   'estado_pago',
   'estado',
+  'es_venta_valida',
+  'motivo_anulacion',
+  'fecha_anulacion',
   'cantidad_items',
   'subtotal',
   'descuento_total',
@@ -131,12 +153,14 @@ const FACT_VENTAS_COLUMNS = [
 ] as const;
 
 biRouter.get('/fact_ventas', (req: Request, res: Response) => {
+  const includeInvalid = shouldIncludeInvalidSales(req);
   const rows: FlatRecord[] = db
     .getSales()
-    .filter((sale) => sale.status !== 'CANCELLED')
+    .filter((sale) => includeInvalid || isValidSale(sale))
     .map((sale) => ({
       id_venta: sale.id,
       numero_venta: sale.saleNumber,
+      serie: sale.saleNumber.includes('-') ? sale.saleNumber.split('-')[0] : '',
       tipo_comprobante: sale.voucherType,
       fecha: toIsoDate(sale.date, sale.createdAt),
       fecha_creacion: toIsoDate(sale.createdAt),
@@ -149,7 +173,10 @@ biRouter.get('/fact_ventas', (req: Request, res: Response) => {
       moneda: sale.currency || 'S/.',
       metodo_pago: sale.paymentMethod,
       estado_pago: sale.paymentStatus,
-      estado: sale.status,
+      estado: String(sale.status || ''),
+      es_venta_valida: isValidSale(sale),
+      motivo_anulacion: sale.cancellationReason || '',
+      fecha_anulacion: toIsoDate(sale.cancelledAt),
       cantidad_items: sale.items.reduce((sum, item) => sum + toNumber(item.quantity), 0),
       subtotal: toMoney(sale.subtotal),
       descuento_total: toMoney(sale.discountTotal),
@@ -187,12 +214,14 @@ const FACT_DETALLE_VENTA_COLUMNS = [
   'costo_total',
   'margen_bruto',
   'estado_venta',
+  'es_venta_valida',
 ] as const;
 
 biRouter.get('/fact_detalle_venta', (req: Request, res: Response) => {
+  const includeInvalid = shouldIncludeInvalidSales(req);
   const rows: FlatRecord[] = db
     .getSales()
-    .filter((sale) => sale.status !== 'CANCELLED')
+    .filter((sale) => includeInvalid || isValidSale(sale))
     .flatMap((sale) =>
       sale.items.map((item) => {
         const quantity = toNumber(item.quantity);
@@ -221,12 +250,183 @@ biRouter.get('/fact_detalle_venta', (req: Request, res: Response) => {
           total: toMoney(item.total),
           costo_total: totalCost,
           margen_bruto: toMoney(subtotal - totalCost),
-          estado_venta: sale.status,
+          estado_venta: String(sale.status || ''),
+          es_venta_valida: isValidSale(sale),
         };
       })
     );
 
   sendDataset(req, res, 'fact_detalle_venta', FACT_DETALLE_VENTA_COLUMNS, rows);
+});
+
+const FACT_ORDENES_COMPRA_COLUMNS = [
+  'id_orden_compra',
+  'numero_orden',
+  'id_proveedor',
+  'proveedor_nombre',
+  'proveedor_ruc',
+  'id_tienda_destino',
+  'fecha',
+  'fecha_esperada',
+  'fecha_recepcion',
+  'fecha_creacion',
+  'fecha_actualizacion',
+  'estado',
+  'es_orden_valida',
+  'moneda',
+  'condicion_pago',
+  'cantidad_lineas',
+  'cantidad_unidades',
+  'subtotal',
+  'impuesto_total',
+  'total',
+  'creado_por',
+  'notas',
+] as const;
+
+biRouter.get('/fact_ordenes_compra', (req: Request, res: Response) => {
+  const rows: FlatRecord[] = db.getPurchaseOrders().map((order) => ({
+    id_orden_compra: order.id,
+    numero_orden: order.orderNumber,
+    id_proveedor: order.supplierId,
+    proveedor_nombre: order.supplierName,
+    proveedor_ruc: order.supplierTaxId || '',
+    id_tienda_destino: 'main-warehouse',
+    fecha: toIsoDate(order.date, order.createdAt),
+    fecha_esperada: toIsoDate(order.expectedDate),
+    fecha_recepcion: toIsoDate(order.receivedAt),
+    fecha_creacion: toIsoDate(order.createdAt),
+    fecha_actualizacion: toIsoDate(order.updatedAt, order.createdAt),
+    estado: String(order.status || ''),
+    es_orden_valida: order.status !== 'CANCELLED',
+    moneda: order.currency || 'S/.',
+    condicion_pago: order.paymentTerms || '',
+    cantidad_lineas: order.items.length,
+    cantidad_unidades: order.items.reduce((sum, item) => sum + toNumber(item.quantity), 0),
+    subtotal: toMoney(order.subtotal),
+    impuesto_total: toMoney(order.taxTotal),
+    total: toMoney(order.total),
+    creado_por: order.createdBy || '',
+    notas: order.notes || '',
+  }));
+
+  sendDataset(req, res, 'fact_ordenes_compra', FACT_ORDENES_COMPRA_COLUMNS, rows);
+});
+
+const FACT_DETALLE_ORDEN_COMPRA_COLUMNS = [
+  'id_detalle_oc',
+  'id_orden_compra',
+  'numero_orden',
+  'id_proveedor',
+  'id_tienda_destino',
+  'id_producto',
+  'sku',
+  'producto',
+  'unidad',
+  'fecha',
+  'fecha_recepcion',
+  'estado_orden',
+  'es_orden_valida',
+  'moneda',
+  'cantidad',
+  'costo_unitario',
+  'tasa_impuesto',
+  'subtotal',
+  'impuesto',
+  'total',
+] as const;
+
+biRouter.get('/fact_detalle_orden_compra', (req: Request, res: Response) => {
+  const rows: FlatRecord[] = db.getPurchaseOrders().flatMap((order) =>
+    order.items.map((item) => ({
+      id_detalle_oc: item.id,
+      id_orden_compra: order.id,
+      numero_orden: order.orderNumber,
+      id_proveedor: order.supplierId,
+      id_tienda_destino: 'main-warehouse',
+      id_producto: item.productId,
+      sku: item.sku,
+      producto: item.name,
+      unidad: item.unit,
+      fecha: toIsoDate(order.date, order.createdAt),
+      fecha_recepcion: toIsoDate(order.receivedAt),
+      estado_orden: String(order.status || ''),
+      es_orden_valida: order.status !== 'CANCELLED',
+      moneda: order.currency || 'S/.',
+      cantidad: toNumber(item.quantity),
+      costo_unitario: toMoney(item.unitCost),
+      tasa_impuesto: toNumber(item.taxRate),
+      subtotal: toMoney(item.subtotal),
+      impuesto: toMoney(item.taxAmount),
+      total: toMoney(item.total),
+    }))
+  );
+
+  sendDataset(req, res, 'fact_detalle_orden_compra', FACT_DETALLE_ORDEN_COMPRA_COLUMNS, rows);
+});
+
+const FACT_TRANSFERENCIAS_COLUMNS = [
+  'id_transferencia',
+  'numero_guia',
+  'numero_verificacion',
+  'fecha_creacion',
+  'fecha_recepcion',
+  'estado',
+  'id_producto',
+  'sku',
+  'producto',
+  'unidad',
+  'id_tienda_origen',
+  'tienda_origen',
+  'id_tienda_destino',
+  'tienda_destino',
+  'cantidad',
+  'costo_unitario',
+  'costo_total',
+  'id_proveedor_transporte',
+  'proveedor_transporte',
+  'creado_por',
+  'notas',
+] as const;
+
+biRouter.get('/fact_transferencias', (req: Request, res: Response) => {
+  const productsById = new Map(db.getProducts().map((product) => [product.id, product]));
+  const storesById = new Map(db.getStores().map((store) => [store.id, store]));
+
+  const rows: FlatRecord[] = db.getStockTransfers().map((transfer) => {
+    const product = productsById.get(transfer.productId);
+    const fromStoreId = transfer.fromStoreId || 'main-warehouse';
+    const fromStore = storesById.get(fromStoreId);
+    const toStore = storesById.get(transfer.toStoreId);
+    const quantity = toNumber(transfer.quantity);
+    const unitCost = toMoney(product?.costPrice ?? 0);
+
+    return {
+      id_transferencia: transfer.id,
+      numero_guia: transfer.guideNumber,
+      numero_verificacion: transfer.verificationNumber || '',
+      fecha_creacion: toIsoDate(transfer.createdAt),
+      fecha_recepcion: toIsoDate(transfer.receivedAt),
+      estado: transfer.status || 'IN_TRANSIT',
+      id_producto: transfer.productId,
+      sku: product?.sku || '',
+      producto: product?.name || '',
+      unidad: product?.unit || 'UND',
+      id_tienda_origen: fromStoreId,
+      tienda_origen: fromStore?.name || '',
+      id_tienda_destino: transfer.toStoreId,
+      tienda_destino: toStore?.name || '',
+      cantidad: quantity,
+      costo_unitario: unitCost,
+      costo_total: toMoney(quantity * unitCost),
+      id_proveedor_transporte: transfer.transportSupplierId || '',
+      proveedor_transporte: transfer.transportSupplierName || '',
+      creado_por: transfer.createdBy || '',
+      notas: transfer.notes || '',
+    };
+  });
+
+  sendDataset(req, res, 'fact_transferencias', FACT_TRANSFERENCIAS_COLUMNS, rows);
 });
 
 const FACT_KARDEX_COLUMNS = [
@@ -386,6 +586,7 @@ biRouter.get('/dim_productos', (req: Request, res: Response) => {
 const DIM_CLIENTES_COLUMNS = [
   'id_cliente',
   'cliente',
+  'tipo_documento',
   'documento',
   'email',
   'telefono',
@@ -402,6 +603,7 @@ biRouter.get('/dim_clientes', (req: Request, res: Response) => {
   const rows: FlatRecord[] = db.getCustomers().map((customer) => ({
     id_cliente: customer.id,
     cliente: customer.name,
+    tipo_documento: customer.documentType || '',
     documento: customer.taxId,
     email: customer.email || '',
     telefono: customer.phone || '',
